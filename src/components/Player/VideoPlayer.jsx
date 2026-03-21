@@ -144,7 +144,7 @@ export default function VideoPlayer({ channel, channels, onClose }) {
               <div className="flex items-center gap-3">
                 <h3 className="text-xl font-bold">{currentChannel.name} {attempt > 0 && <span className="text-yellow-400 text-sm">(Rota {attempt})</span>}</h3>
                 {attempt < fallbackList.current.length && (
-                  <button onClick={triggerManualFallback} className="text-xs bg-[#b6a0ff]/20 text-[#b6a0ff] border border-[#b6a0ff]/50 px-2 py-1 rounded-md hover:bg-[#b6a0ff]/40 transition-colors">
+                  <button onClick={triggerManualFallback} className="text-xs bg-[#F7941D]/20 text-[#F7941D] border border-[#F7941D]/50 px-2 py-1 rounded-md hover:bg-[#F7941D]/40 transition-colors">
                     Trocar Rota (Link {attempt + 1}/{fallbackList.current.length})
                   </button>
                 )}
@@ -159,7 +159,7 @@ export default function VideoPlayer({ channel, channels, onClose }) {
 
         {loading && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-            <div className="w-12 h-12 border-4 border-[#b6a0ff]/20 border-t-[#b6a0ff] rounded-full animate-spin" />
+            <div className="w-12 h-12 border-4 border-[#F7941D]/20 border-t-[#F7941D] rounded-full animate-spin shadow-[0_0_12px_rgba(229,9,20,0.4)]" />
           </div>
         )}
 
@@ -180,7 +180,7 @@ export default function VideoPlayer({ channel, channels, onClose }) {
         )}
 
         <div className="absolute bottom-0 w-full p-6 bg-gradient-to-t from-black/90 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-6">
-          <button onClick={togglePlay} className="text-white hover:text-[#b6a0ff] transition-colors">
+          <button onClick={togglePlay} className="text-white hover:text-[#F7941D] transition-colors">
             {isPlaying ? <Pause size={32} fill="currentColor"/> : <Play size={32} fill="currentColor"/>}
           </button>
           
@@ -191,7 +191,7 @@ export default function VideoPlayer({ channel, channels, onClose }) {
 
           <div className="flex-1" />
           
-          <button onClick={toggleFullscreen} className="text-white hover:text-[#b6a0ff] transition-colors">
+          <button onClick={toggleFullscreen} className="text-white hover:text-[#F7941D] transition-colors">
             <Maximize size={24}/>
           </button>
         </div>

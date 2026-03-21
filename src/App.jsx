@@ -103,6 +103,9 @@ export default function App() {
 
   const filteredChannels = useMemo(() => {
     return channels.filter(c => {
+      const isAdult = /adulto|sexo|hot|xxx|18\+|porno/i.test(c.group);
+      if (isAdult) return false;
+
       const matchGroup = activeGroup === 'All' || c.group === activeGroup;
       const matchSearch = c.name.toLowerCase().includes(search.toLowerCase());
       return matchGroup && matchSearch;
@@ -110,8 +113,12 @@ export default function App() {
   }, [activeGroup, search, channels]);
 
   const groups = useMemo(() => {
+    // Filtrar grupos adultos
+    const validChannels = channels.filter(c => !(/adulto|sexo|hot|xxx|18\+|porno/i.test(c.group)));
+    
     if (channels === INITIAL_CHANNELS) return INITIAL_GROUPS;
-    const uniqueGroups = [...new Set(channels.map(c => c.group))];
+    const uniqueGroups = [...new Set(validChannels.map(c => c.group))];
+    
     return [
       { id: 1, name: 'All', icon: 'home' },
       ...uniqueGroups.map((g, i) => ({ id: i + 2, name: g, icon: 'tv' }))
@@ -119,7 +126,7 @@ export default function App() {
   }, [channels]);
 
   return (
-    <div className="bg-[#0e0e0f] text-white min-h-screen flex flex-col">
+    <div className="bg-[#E8E8E8] text-[#1B2838] min-h-screen flex flex-col font-sans selection:bg-[#F7941D] selection:text-white">
       <Navbar 
         search={search} 
         setSearch={setSearch} 
@@ -127,39 +134,52 @@ export default function App() {
         onSelectSource={fetchSource}
       />
       
-      <div className="flex flex-1 pt-20 overflow-hidden">
+      <div className="flex flex-1 pt-20">
         <Sidebar 
           groups={groups} 
           activeGroup={activeGroup} 
           setActiveGroup={setActiveGroup} 
         />
         
-        <main className="flex-1 overflow-y-auto p-8 pl-28 custom-scrollbar">
-          <header className="mb-8 flex justify-between items-end">
-            <div>
-              <h1 className="text-3xl font-black tracking-tight">
-                {activeGroup === 'All' ? 'Todos os Canais' : activeGroup}
-              </h1>
-              <p className="text-[#adaaac] text-sm">{filteredChannels.length} canais encontrados</p>
-            </div>
-            {loading && (
-              <div className="flex items-center gap-2 text-[#b6a0ff] font-bold text-xs uppercase tracking-widest animate-pulse">
-                <div className="w-2 h-2 bg-current rounded-full" />
-                Carregando Lista...
+        <main className="flex-1 ml-20 transition-all p-8 lg:p-12 overflow-x-hidden">
+          <div className="max-w-[1700px] mx-auto">
+            {(activeGroup !== 'All' || (search && search.trim().length > 0)) && (
+              <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+                <div className="space-y-4">
+                  <h1 className="text-5xl font-black tracking-tighter text-[#1D1D1F]">
+                    {activeGroup === 'All' ? 'Resultados' : activeGroup}
+                  </h1>
+                  <p className="text-gray-500 text-base font-medium tracking-wide">{filteredChannels.length} canais disponíveis</p>
+                </div>
+                {loading && (
+                  <div className="flex items-center gap-3 text-[#6366F1] font-bold text-xs uppercase tracking-[0.2em] animate-pulse bg-[#6366F1]/10 px-6 py-2.5 rounded-full border border-[#6366F1]/20 shadow-lg">
+                    Sincronizando sinal...
+                  </div>
+                )}
               </div>
             )}
-          </header>
+            {loading && activeGroup === 'All' && !(search && search.trim().length > 0) && (
+              <div className="flex justify-end mb-4">
+                <div className="flex items-center gap-3 text-[#6366F1] font-bold text-xs uppercase tracking-[0.2em] animate-pulse bg-[#6366F1]/10 px-6 py-2.5 rounded-full border border-[#6366F1]/20 shadow-lg">
+                  Sincronizando sinal...
+                </div>
+              </div>
+            )}
 
-          <ChannelGrid 
-            channels={filteredChannels} 
-            validity={validity}
-            activeGroup={activeGroup}
-            onPlay={(c) => { 
-              setActiveChannel(c); 
-              setShowPlayer(true); 
-              checkChannelStatus(c); // Check status when playing
-            }} 
-          />
+            <ChannelGrid 
+              channels={filteredChannels} 
+              validity={validity}
+              activeGroup={activeGroup}
+              setActiveGroup={setActiveGroup}
+              groups={groups}
+              search={search}
+              onPlay={(c) => { 
+                setActiveChannel(c); 
+                setShowPlayer(true); 
+                checkChannelStatus(c);
+              }} 
+            />
+          </div>
         </main>
       </div>
 
