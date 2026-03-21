@@ -1,0 +1,16 @@
+src/
+├── components/
+│   ├── Channels/
+│   │   ├── ChannelCard.jsx
+│   │   └── ChannelGrid.jsx
+│   ├── Layout/
+│   │   ├── Navbar.jsx
+│   │   └── Sidebar.jsx
+│   └── Player/
+│       ├── VideoPlayer.jsx
+│       └── MiniPlayer.jsx
+├── data/
+│   └── channels.js
+├── App.jsx
+├── index.css
+└── main.jsx

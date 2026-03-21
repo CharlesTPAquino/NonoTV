@@ -1,0 +1,61 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --ds-indigo: #6366F1;
+  --ds-emerald: #10B981;
+  --ds-amber: #F59E0B;
+  --ds-rose: #F43F5E;
+  --ds-sky: #0EA5E9;
+  --ds-matte-black: #1A1A1A;
+}
+
+@layer base {
+  body {
+    @apply bg-[#E8E8E8] text-[#1B2838] antialiased selection:bg-[#6366F1] selection:text-white;
+    margin: 0;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+}
+
+@layer components {
+  /* Header e Sidebar preto fosco SÓLIDO */
+  .glass-header {
+    @apply bg-[#1A1A1A] border-b border-white/10 shadow-lg;
+  }
+  
+  .glass-sidebar {
+    @apply bg-[#1A1A1A] border-r border-white/10;
+  }
+  
+  .cinematic-shadow {
+    @apply shadow-[0_8px_30px_-8px_rgba(27,40,56,0.2)];
+  }
+  
+  .glow-orange {
+    @apply shadow-[0_0_20px_rgba(247,148,29,0.4)];
+  }
+  
+  /* Cards grafite escuro */
+  .card-nono {
+    @apply bg-[#121212] border border-white/10 hover:border-[#F7941D]/60 shadow-lg hover:shadow-xl rounded-2xl;
+  }
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #D1C7B8;
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #F7941D;
+}
