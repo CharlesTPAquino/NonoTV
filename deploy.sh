@@ -65,7 +65,7 @@ echo -e "${GREEN}✅ Qualidade validada!${NC}"
 
 # === PASSO 1.8: Sincronização de Ícones Premium ===
 echo -e "${YELLOW}[1.8/4] Sincronizando Ícones e Logos Premium...${NC}"
-ICON_SRC="/home/pcnono/.gemini/antigravity/brain/8ebdb3f9-c741-49dd-880c-0adab35da5a3/media__1774189485309.jpg"
+ICON_SRC="/home/pcnono/.gemini/antigravity/brain/844a8088-4b19-4d2a-b4c6-c5aa1ffb23ae/media__1774209584735.png"
 if [ -f "$ICON_SRC" ]; then
   # Sincroniza logos da Web
   cp "$ICON_SRC" "$PROJECT_DIR/public/logo.png"

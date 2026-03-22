@@ -5,11 +5,24 @@
   "android": {
     "allowMixedContent": true,
     "captureInput": true,
-    "webContentsDebuggingEnabled": false
+    "webContentsDebuggingEnabled": true
   },
   "server": {
     "androidScheme": "https",
-    "cleartext": true
+    "hostname": "localhost",
+    "cleartext": true,
+    "allowNavigation": [
+      "*",
+      "*.kazing.online",
+      "*.zero-um.tv",
+      "bit.ly",
+      "*.ultraflex.top",
+      "*.linuxnovo1.com",
+      "*.americakg.xyz",
+      "*.conecdg.me",
+      "*.phaptom.shop",
+      "*.doctorclub25.com"
+    ]
   },
   "plugins": {
     "StatusBar": {
@@ -21,6 +34,9 @@
       "resize": "body",
       "style": "DARK",
       "resizeOnFullScreen": true
+    },
+    "CapacitorHttp": {
+      "enabled": true
     }
   }
 }

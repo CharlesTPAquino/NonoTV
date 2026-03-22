@@ -6,6 +6,12 @@
 
 export const SOURCES = [
   { 
+    id: 'iptv-org',
+    name: 'IPTV-ORG (Global)', 
+    url: 'https://iptv-org.github.io/iptv/index.m3u',
+    category: 'Estável'
+  },
+  { 
     id: 'kazing',
     name: 'Kazing Premium', 
     url: 'https://kazing.online/lista.m3u',
