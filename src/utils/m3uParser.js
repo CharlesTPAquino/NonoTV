@@ -1,102 +1,114 @@
 /**
- * NonoTV M3U Parser Otimizado
- * Processa listas gigantes com menos consumo de memória e mais velocidade.
+ * NonoTV — M3U Parser v2
+ * Detecção de tipo ampla para playlists IPTV brasileiras
  */
-export const parseM3U = (content) => {
+export function parseM3U(content) {
   if (!content) return [];
-  
-  // Lida com quebras de linha Windows/Unix e remove espaços extras
-  const lines = content.split(/\r?\n/);
-  const channels = [];
-  let nextId = 10000;
 
-  const parseContentType = (group, url) => {
-    // Normalização para lidar com acentos (SÉRIES -> SERIES)
-    const normalizedGroup = group.normalize('NFD').replace(/[\u0300-\u036f]/g, "").toUpperCase();
-    const lcUrl = url.toLowerCase();
-    
-    if (normalizedGroup.includes('SERIE') || normalizedGroup.includes('SEASON') || normalizedGroup.includes('NOVELA') || lcUrl.includes('/series/')) {
-      return 'series';
-    }
-    if (normalizedGroup.includes('FILME') || normalizedGroup.includes('CINE') || normalizedGroup.includes('VOD') || normalizedGroup.includes('MOVIE') || lcUrl.endsWith('.mp4') || lcUrl.endsWith('.av')) {
-      return 'movie';
-    }
-    if (lcUrl.includes('/movie/') || lcUrl.endsWith('.mkv')) {
-       return 'movie';
-    }
-    return 'live';
-  };
-
-  for (let i = 0; i < lines.length; i++) {
-    try {
-      const line = lines[i].trim();
-      if (!line.startsWith('#EXTINF:')) continue;
-
-      let url = "";
-      for (let j = i + 1; j < lines.length; j++) {
-        const nextLine = lines[j].trim();
-        if (nextLine && !nextLine.startsWith('#')) {
-          url = nextLine;
-          i = j;
-          break;
-        } else if (nextLine.startsWith('#EXTINF:')) {
-          i = j - 1; // Pula para processar esse EXTINF no próximo loop
-          break;
-        }
-      }
-      
-      if (!url) continue;
-
-      // Extração robusta de atributos
-      const logoMatch = line.match(/tvg-logo="([^"]*)"/i);
-      const groupMatch = line.match(/group-title="([^"]*)"/i);
-      const nameMatch = line.match(/,(.*)$/); // Pega tudo após a última vírgula
-      
-      const name = nameMatch ? nameMatch[1].trim() : "CANAL SEM NOME";
-      const group = (groupMatch ? groupMatch[1] : (logoMatch ? 'GERAL' : 'VARIADOS')).trim() || 'GERAL';
-      const type = parseContentType(group, url);
-
-      channels.push({
-        id: nextId++,
-        name: name || 'HD SIGNAL',
-        group: group,
-        type: type,
-        logo: logoMatch ? logoMatch[1] : '',
-        url: url,
-        emoji: '📺'
-      });
-    } catch (err) {
-      console.warn('Erro ao processar entrada M3U, pulando...', err);
-    }
-  }
-
-  // ─── Post-Processing: Series Grouping (DDD Pattern) ───
-  const processed = [];
+  const lines = content.split('\n');
+  const items = [];
+  let currentItem = null;
   const seriesMap = new Map();
 
-  for (const ch of channels) {
-    try {
-      if (ch.type === 'series') {
-        const cleanName = ch.name
-          .replace(/\s[sS]\d+.*$/i, '')
-          .replace(/\s\[[sS]\d+.*\]/i, '')
-          .replace(/\s\(\d{4}\).*$/i, '')
-          .trim() || ch.name;
-        
-        if (!seriesMap.has(cleanName)) {
-          const seriesObj = { ...ch, name: cleanName, isSeries: true, episodes: [ch] };
-          seriesMap.set(cleanName, seriesObj);
-          processed.push(seriesObj);
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+
+    if (line.startsWith('#EXTINF:')) {
+      currentItem = {};
+
+      const nameMatch  = line.match(/tvg-name="([^"]+)"/i);
+      const groupMatch = line.match(/group-title="([^"]+)"/i);
+      const logoMatch  = line.match(/tvg-logo="([^"]+)"/i);
+      // Encontra a vírgula que separa atributos do nome do canal.
+      // Estratégia: primeira vírgula APÓS a última aspa fechada (fim dos atributos).
+      // Para linhas sem atributos (ex: #EXTINF:-1,Canal, Com, Virgula),
+      // usa a primeira vírgula — preserva vírgulas no nome.
+      const lastQuoteIdx = line.lastIndexOf('"');
+      const commaIdx = lastQuoteIdx >= 0
+        ? line.indexOf(',', lastQuoteIdx)   // após atributos entre aspas
+        : line.indexOf(',');                // sem atributos: primeira vírgula
+
+      currentItem.name  = (nameMatch ? nameMatch[1] : commaIdx > -1 ? line.substring(commaIdx + 1).trim() : '').trim() || 'Canal';
+      currentItem.group = (groupMatch ? groupMatch[1] : 'Geral').trim();
+      currentItem.logo  = logoMatch ? logoMatch[1] : '';
+      currentItem.id    = Math.random().toString(36).substring(2, 9) + Date.now();
+
+    } else if (line.startsWith('http') && currentItem) {
+      currentItem.url  = line;
+      currentItem.type = detectType(currentItem);
+
+      if (currentItem.type === 'series') {
+        const baseName = extractSeriesBase(currentItem.name);
+        const key      = normalize(baseName);
+
+        if (!seriesMap.has(key)) {
+          seriesMap.set(key, { ...currentItem, name: baseName, isSeries: true, episodes: [currentItem] });
         } else {
-          seriesMap.get(cleanName).episodes.push(ch);
+          seriesMap.get(key).episodes.push(currentItem);
         }
       } else {
-        processed.push(ch);
+        items.push(currentItem);
       }
-    } catch {
-      processed.push(ch);
+
+      currentItem = null;
     }
   }
 
-  return (processed.length > 0 ? processed : channels).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-};
+  seriesMap.forEach(serie => items.push(serie));
+  console.log(`[Parser] ${items.length} itens (${[...seriesMap.values()].length} séries agrupadas)`);
+  return items;
+}
+
+// ─── Detecção de tipo ampla para playlists BR ─────────────────────────────────
+
+function detectType(c) {
+  const group = removeDiacritics((c.group || '')).toUpperCase();
+  const name  = removeDiacritics((c.name  || '')).toUpperCase();
+  const url   = (c.url || '').toLowerCase();
+
+  // ── Séries ───────────────────────────────────────────────────────────────────
+  const seriesKeywords = [
+    'SERIE', 'SERIES', 'SEASON', 'TEMPORADA', 'EPISODIO', 'EPISODE',
+    'S0', 'S1', 'S2', 'S3', 'S4', // S01, S02...
+  ];
+  if (seriesKeywords.some(k => group.includes(k) || name.includes(k))) return 'series';
+  if (/S\d{1,2}E\d{1,2}/i.test(c.name)) return 'series'; // padrão S01E01
+  if (url.includes('/series/') || url.includes('/serie/'))           return 'series';
+
+  // ── Filmes ────────────────────────────────────────────────────────────────────
+  const movieKeywords = [
+    'FILME', 'FILMES', 'MOVIE', 'MOVIES', 'CINEMA', 'VOD',
+    'LANCAMENTO', 'LANÇAMENTO', 'ESTREIA', '4K', 'DUBLADO',
+    'LEGENDADO', 'NACIONAL', 'INTERNACIONAL',
+  ];
+  if (movieKeywords.some(k => group.includes(k)))          return 'movie';
+  if (['FILME', 'FILMES', 'MOVIE', 'MOVIES'].some(k => name.includes(k))) return 'movie';
+  if (url.includes('/movie/') || url.includes('/filme/'))  return 'movie';
+  // Extensão de arquivo = VOD direto
+  if (/\.(mp4|mkv|avi|mov|m4v)(\?|$)/i.test(url))         return 'movie';
+
+  // ── Ao vivo (padrão) ──────────────────────────────────────────────────────────
+  return 'live';
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function removeDiacritics(str) {
+  return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+function normalize(str) {
+  return removeDiacritics(str).toLowerCase().replace(/[^a-z0-9]/g, ' ').trim();
+}
+
+function extractSeriesBase(name) {
+  // Remove padrões como S01E02, T1, Ep3, 1x02 do final do nome
+  return name
+    .replace(/\s*[-–]\s*S\d+\s*E\d+.*/i, '')
+    .replace(/\s*S\d{1,2}E\d{1,2}.*/i, '')
+    .replace(/\s*T\d+\s*Ep\d+.*/i, '')
+    .replace(/\s*\d+x\d+.*/i, '')
+    .replace(/\s*[-–|]\s*Ep(isodio|isódio)?\s*\d+.*/i, '')
+    .trim();
+}
