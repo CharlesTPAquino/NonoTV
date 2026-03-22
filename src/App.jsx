@@ -125,6 +125,40 @@ export default function App() {
     ];
   }, [channels]);
 
+  // Função para mudar para o PRÓXIMO canal (Zapping)
+  const nextChannel = () => {
+    if (!activeChannel) return;
+    const currentIndex = filteredChannels.findIndex(c => c.id === activeChannel.id);
+    const nextIndex = (currentIndex + 1) % filteredChannels.length;
+    setActiveChannel(filteredChannels[nextIndex]);
+  };
+
+  // Função para mudar para o canal ANTERIOR (Zapping)
+  const prevChannel = () => {
+    if (!activeChannel) return;
+    const currentIndex = filteredChannels.findIndex(c => c.id === activeChannel.id);
+    const prevIndex = (currentIndex - 1 + filteredChannels.length) % filteredChannels.length;
+    setActiveChannel(filteredChannels[prevIndex]);
+  };
+
+  // Teclas de atalho para TV e Teclado
+  useEffect(() => {
+    const handleKeys = (e) => {
+      // Se o player estiver aberto, permitimos o Zapping
+      if (showPlayer) {
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') nextChannel();
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') prevChannel();
+        if (e.key === 'Escape') {
+          setShowPlayer(false);
+          setActiveChannel(null);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeys);
+    return () => window.removeEventListener('keydown', handleKeys);
+  }, [showPlayer, activeChannel, filteredChannels]);
+
   return (
     <div className="bg-[#E8E8E8] text-[#1B2838] min-h-screen flex flex-col font-sans selection:bg-[#F7941D] selection:text-white">
       <Navbar 
@@ -192,11 +226,14 @@ export default function App() {
       />
 
       {showPlayer && (
-        <VideoPlayer channel={activeChannel} channels={channels} onClose={() => setShowPlayer(false)} />
-      )}
-
-      {!showPlayer && activeChannel && (
-        <MiniPlayer channel={activeChannel} onOpen={() => setShowPlayer(true)} onClose={() => setActiveChannel(null)} />
+        <VideoPlayer 
+          channel={activeChannel} 
+          channels={channels} 
+          onClose={() => {
+            setShowPlayer(false);
+            setActiveChannel(null);
+          }} 
+        />
       )}
     </div>
   );
