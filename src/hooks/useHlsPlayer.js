@@ -1,161 +1,127 @@
-import { useEffect, useRef, useCallback, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import Hls from 'hls.js';
 
-export function useHlsPlayer(onFatalError) {
-  const videoRef = useRef(null);
-  const hlsRef   = useRef(null);
-  const retryRef = useRef(0);
+function detectStreamType(url) {
+  if (!url) return 'hls';
+  const lower = url.toLowerCase();
+  const path = lower.split('?')[0];
 
+  // VOD direto — extensão explícita
+  if (/\.(mp4|mkv|avi|mov|m4v|webm|flv)$/i.test(path)) return 'direct';
+
+  // Tudo mais é HLS (incluindo /get.php, output=m3u8, etc.)
+  return 'hls';
+}
+
+export function useHlsPlayer(url, videoRef, options = {}) {
   const [playerState, setPlayerState] = useState({
-    playing:   false,
-    muted:     false,
-    volume:    1,
-    buffering: false,
-    error:     null,
-    qualities: [],     
-    quality:   -1,     
-    pip:       false,
+    playing: false, buffering: true, error: null,
   });
 
-  const update = useCallback((patch) => {
-    setPlayerState(prev => ({ ...prev, ...patch }));
-  }, []);
+  const hlsRef = useRef(null);
+  const update = useCallback((patch) => setPlayerState(s => ({ ...s, ...patch })), []);
 
   const destroyHls = useCallback(() => {
-    if (hlsRef.current) {
-      hlsRef.current.destroy();
-      hlsRef.current = null;
-    }
+    if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null; }
   }, []);
 
-  const loadUrl = useCallback((url, useProxy = false) => {
-    const video = videoRef.current;
-    if (!video || !url) return;
-
-    destroyHls();
-    retryRef.current = 0;
-    update({ error: null, buffering: true, playing: false, qualities: [], quality: -1, pip: false });
-
-    // Fallback para Modo Nativo caso não suporte HLS ou seja MP4 direto
-    const isDirect = /\.(mp4|mkv|avi|mov|ts|m4v)$/i.test(url) || 
-                   url.toLowerCase().includes('movie/') || 
-                   url.toLowerCase().includes('series/') || 
-                   (!url.includes('.m3u8') && !url.includes('m3u8')); // Se não tem m3u8, assume direct
-
-    if (!Hls.isSupported() || isDirect) {
-        console.log("[Player] Usando Modo Nativo (Fast-Start):", url);
-        video.crossOrigin = "anonymous";
-        video.preload = "auto";
-        video.src = url;
-        video.load();
-        
-        // Disparar play assim que os primeiros metadados chegarem
-        const onReady = () => { video.play().catch(() => {}); video.removeEventListener('loadedmetadata', onReady); };
-        video.addEventListener('loadedmetadata', onReady);
-        
-        update({ buffering: false }); 
-        return;
+  const initHls = useCallback((video, src) => {
+    if (!Hls.isSupported()) {
+      if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.src = src;
+        video.play().catch(() => {});
+        return () => {};
+      }
+      update({ error: 'Stream não suportado.', buffering: false });
+      return () => {};
     }
 
     const hls = new Hls({
-      enableWorker:     true,
-      lowLatencyMode:   false, // VOD não precisa de baixo delay, mas sim de buffer estável
-      startLevel:       -1,    // Auto-seleção de qualidade inicial baseada no tempo de resposta
-      fragLoadingMaxRetry: 5,
-      manifestLoadingMaxRetry: 5,
-      backBufferLength: 30,
-      maxBufferLength:  30,     // Buffer curto para começar rápido
-      maxMaxBufferLength: 60,
+      enableWorker: true, lowLatencyMode: false, startLevel: -1,
+      fragLoadingMaxRetry: 5, manifestLoadingMaxRetry: 5,
+      backBufferLength: 30, maxBufferLength: 30, maxMaxBufferLength: 60,
       xhrSetup: (xhr) => { xhr.withCredentials = false; },
     });
 
     hlsRef.current = hls;
-    hls.loadSource(url);
+    hls.loadSource(src);
     hls.attachMedia(video);
 
     hls.on(Hls.Events.MANIFEST_PARSED, (_, data) => {
-      const qualities = data.levels.map((l, i) => ({
-        id: i,
-        label: l.height ? `${l.height}p` : `${Math.round(l.bitrate / 1000)}kbps`,
-      }));
-      update({ qualities, quality: -1, buffering: false });
-      video.play().catch(() => {});
+      update({ buffering: false });
+      if (options.autoPlay !== false) video.play().catch(() => {});
+      if (options.onQualitiesFound) options.onQualitiesFound(data.levels);
     });
 
     hls.on(Hls.Events.ERROR, (_, data) => {
       if (!data.fatal) return;
-
-      if (data.type === Hls.ErrorTypes.NETWORK_ERROR && retryRef.current < 3) {
-        retryRef.current++;
-        setTimeout(() => hls.startLoad(), 1500 * retryRef.current);
-        update({ error: `Reconectando... (${retryRef.current}/3)`, buffering: true });
-        return;
-      }
-
-      if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
-        hls.recoverMediaError();
-        update({ error: 'Recuperando sinal...', buffering: true });
-        return;
-      }
-
-      destroyHls();
-      onFatalError?.(data.type);
+      if (data.type === Hls.ErrorTypes.NETWORK_ERROR) { hls.startLoad(); update({ buffering: true }); }
+      else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) { hls.recoverMediaError(); }
+      else { destroyHls(); update({ error: 'Stream indisponível.', buffering: false }); options.onError?.(data); }
     });
-  }, [destroyHls, update, onFatalError]);
 
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    const onPlaying      = () => update({ playing: true,  buffering: false, error: null });
-    const onPause        = () => update({ playing: false });
-    const onWaiting      = () => update({ buffering: true });
-    const onVolumeChange = () => update({ volume: video.volume, muted: video.muted });
-    const onPipEnter     = () => update({ pip: true });
-    const onPipLeave     = () => update({ pip: false });
-
-    video.addEventListener('playing',        onPlaying);
-    video.addEventListener('pause',          onPause);
-    video.addEventListener('waiting',        onWaiting);
-    video.addEventListener('volumechange',   onVolumeChange);
-    video.addEventListener('enterpictureinpicture',  onPipEnter);
-    video.addEventListener('leavepictureinpicture',  onPipLeave);
+    const onPlay    = () => update({ playing: true,  buffering: false });
+    const onPause   = () => update({ playing: false });
+    const onWaiting = () => update({ buffering: true });
+    const onPlaying = () => update({ playing: true,  buffering: false });
+    video.addEventListener('play',    onPlay);
+    video.addEventListener('pause',   onPause);
+    video.addEventListener('waiting', onWaiting);
+    video.addEventListener('playing', onPlaying);
 
     return () => {
-      video.removeEventListener('playing',       onPlaying);
-      video.removeEventListener('pause',         onPause);
-      video.removeEventListener('waiting',       onWaiting);
-      video.removeEventListener('volumechange',  onVolumeChange);
-      video.removeEventListener('enterpictureinpicture', onPipEnter);
-      video.removeEventListener('leavepictureinpicture', onPipLeave);
+      video.removeEventListener('play',    onPlay);
+      video.removeEventListener('pause',   onPause);
+      video.removeEventListener('waiting', onWaiting);
+      video.removeEventListener('playing', onPlaying);
+      destroyHls();
     };
-  }, [update]);
+  }, [destroyHls, update, options]);
 
-  // Controles encapsulados
-  const togglePlay = useCallback(() => { 
-    if (videoRef.current) videoRef.current.paused ? videoRef.current.play() : videoRef.current.pause(); 
-  }, []);
-  
-  const toggleMute = useCallback(() => { 
-    if (videoRef.current) videoRef.current.muted = !videoRef.current.muted; 
-  }, []);
-  
-  const setVolume = useCallback((vol) => { 
-    if (videoRef.current) { videoRef.current.volume = Math.max(0, Math.min(1, vol)); videoRef.current.muted = vol === 0; }
+  const initPlayer = useCallback(() => {
+    if (!url || !videoRef.current) return;
+    const video = videoRef.current;
+    destroyHls();
+    update({ buffering: true, error: null, playing: false });
+
+    const type = detectStreamType(url);
+
+    if (type === 'direct') {
+      console.log('[Player] VOD direto:', url);
+      video.preload = 'metadata';
+      video.src = url;
+
+      const onMeta  = () => { update({ buffering: false }); video.play().catch(() => {}); video.removeEventListener('loadedmetadata', onMeta); };
+      const onError = () => { console.warn('[Player] Direto falhou, tentando HLS...'); video.removeEventListener('error', onError); initHls(video, url); };
+
+      video.addEventListener('loadedmetadata', onMeta);
+      video.addEventListener('error', onError);
+      video.load();
+
+      return () => {
+        video.removeEventListener('loadedmetadata', onMeta);
+        video.removeEventListener('error', onError);
+        video.src = '';
+      };
+    }
+
+    return initHls(video, url);
+  }, [url, videoRef, destroyHls, update, initHls]);
+
+  useEffect(() => {
+    const cleanup = initPlayer();
+    return () => cleanup?.();
+  }, [initPlayer]);
+
+  const togglePlay = useCallback(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    playerState.playing ? v.pause() : v.play().catch(() => {});
+  }, [playerState.playing, videoRef]);
+
+  const changeQuality = useCallback((index) => {
+    if (hlsRef.current) hlsRef.current.currentLevel = index;
   }, []);
 
-  const setQuality = useCallback((id) => { 
-    if (hlsRef.current) hlsRef.current.currentLevel = id; 
-    update({ quality: id });
-  }, [update]);
-
-  const togglePip = useCallback(async () => {
-    if (!videoRef.current) return;
-    try {
-        if (document.pictureInPictureElement) await document.exitPictureInPicture();
-        else await videoRef.current.requestPictureInPicture();
-    } catch (e) {}
-  }, []);
-
-  return { videoRef, playerState, loadUrl, togglePlay, toggleMute, setVolume, setQuality, togglePip, hlsRef };
+  return { playerState, togglePlay, changeQuality };
 }

@@ -1,90 +1,49 @@
 /**
- * NonoTV - Spatial Navigation Engine (Geometric Focus)
- * Permite navegação fluida pelo controle remoto (D-pad) da Android TV / Mi Stick
+ * NonoTV — Spatial Navigation
+ * Navegação por controle remoto / TV Box
+ * Implementação segura: nunca lança exceção mesmo em ambientes sem suporte
  */
 
 export function initSpatialNavigation() {
-  window.addEventListener('keydown', (e) => {
-    const KEYS = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
-    if (!KEYS.includes(e.key)) return;
+  try {
+    // Só ativa em ambientes de TV / controle remoto
+    // Em mobile/desktop é no-op seguro
+    const isTvLike = window.navigator?.userAgent?.includes('TV') ||
+                     window.navigator?.userAgent?.includes('SmartTV') ||
+                     window.navigator?.userAgent?.includes('Tizen') ||
+                     window.navigator?.userAgent?.includes('WebOS');
 
-    // Elementos focáveis do NonoTV
-    const focusableSelectors = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
-    const elements = Array.from(document.querySelectorAll(focusableSelectors))
-      .filter(el => !el.disabled && el.offsetWidth > 0 && el.offsetHeight > 0 && window.getComputedStyle(el).visibility !== 'hidden');
+    if (!isTvLike) return;
 
-    if (elements.length === 0) return;
+    // Navegação por setas — foca o próximo elemento focável na direção
+    document.addEventListener('keydown', (e) => {
+      const focusable = [
+        ...document.querySelectorAll(
+          'button:not([disabled]), [tabindex]:not([tabindex="-1"]), input:not([disabled]), select:not([disabled])'
+        )
+      ].filter(el => {
+        const rect = el.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0;
+      });
 
-    let current = document.activeElement;
-    if (!elements.includes(current)) {
-      // Se nada tem foco, foca o primeiro
-      elements[0].focus();
-      e.preventDefault();
-      return;
-    }
-
-    const currentRect = current.getBoundingClientRect();
-    let bestMatch = null;
-    let minDistance = Infinity;
-
-    elements.forEach(el => {
-      if (el === current) return;
-      const rect = el.getBoundingClientRect();
-
-      let isCandidate = false;
-      let distance = Infinity;
-
-      // Distância Euclidiana do centro
-      const centerX1 = currentRect.left + currentRect.width / 2;
-      const centerY1 = currentRect.top + currentRect.height / 2;
-      const centerX2 = rect.left + rect.width / 2;
-      const centerY2 = rect.top + rect.height / 2;
-      const dist = Math.sqrt(Math.pow(centerX2 - centerX1, 2) + Math.pow(centerY2 - centerY1, 2));
-
-      // Filtro Geométrico Direcional Estrito
-      switch (e.key) {
-        case 'ArrowUp':
-          isCandidate = centerY2 < centerY1 && Math.abs(centerX2 - centerX1) < currentRect.width;
-          if (!isCandidate && dist < minDistance && centerY2 < centerY1) isCandidate = true; // Fallback
-          break;
-        case 'ArrowDown':
-          isCandidate = centerY2 > centerY1 && Math.abs(centerX2 - centerX1) < currentRect.width;
-          if (!isCandidate && dist < minDistance && centerY2 > centerY1) isCandidate = true;
-          break;
-        case 'ArrowLeft':
-          isCandidate = centerX2 < centerX1 && Math.abs(centerY2 - centerY1) < currentRect.height;
-          if (!isCandidate && dist < minDistance && centerX2 < centerX1) isCandidate = true;
-          break;
-        case 'ArrowRight':
-          isCandidate = centerX2 > centerX1 && Math.abs(centerY2 - centerY1) < currentRect.height;
-          if (!isCandidate && dist < minDistance && centerX2 > centerX1) isCandidate = true;
-          break;
+      const current = document.activeElement;
+      const idx = focusable.indexOf(current);
+      if (idx === -1) {
+        focusable[0]?.focus();
+        return;
       }
 
-      if (isCandidate && dist < minDistance) {
-        minDistance = dist;
-        bestMatch = el;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        focusable[(idx + 1) % focusable.length]?.focus();
+      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        focusable[(idx - 1 + focusable.length) % focusable.length]?.focus();
       }
     });
 
-    if (bestMatch) {
-      bestMatch.focus();
-      e.preventDefault();
-      
-      // Garante que o item focado apareça na tela (Scroll suave)
-      bestMatch.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
-    }
-  });
-
-  // Corrige o foco perdido ao fechar o player
-  window.addEventListener('keyup', (e) => {
-    if (e.key === 'Escape' || e.key === 'Backspace') {
-      setTimeout(() => {
-        if (document.activeElement === document.body) {
-           const firstCard = document.querySelector('.group.relative.flex.flex-col');
-           if (firstCard) firstCard.focus();
-        }
-      }, 100);
-    }
-  });
+  } catch (err) {
+    // Nunca deixa o erro subir — spatial nav é enhancement, não core
+    console.warn('[SpatialNav] Não inicializado:', err.message);
+  }
 }

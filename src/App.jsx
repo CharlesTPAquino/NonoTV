@@ -1,274 +1,180 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Navbar from './components/Layout/Navbar';
 import Sidebar from './components/Layout/Sidebar';
 import ChannelGrid from './components/Channels/ChannelGrid';
-import VideoPlayer from './components/Player/VideoPlayer';
-import { PlayerProvider, usePlayer } from './context/PlayerContext';
-import { CHANNELS as INITIAL_CHANNELS, GROUPS as INITIAL_GROUPS } from './data/channels';
 import { parseM3U } from './utils/m3uParser';
-import { validateLink } from './utils/linkValidator';
+import VideoPlayer from './components/Player/VideoPlayer';
+import { CHANNELS as INITIAL_CHANNELS, GROUPS as INITIAL_GROUPS } from './data/channels';
 import { initSpatialNavigation } from './utils/spatialNavigation';
+import { AlertCircle, RefreshCw } from 'lucide-react';
 
-const SOURCES = [
-  { name: 'Local (Premium)', url: 'local' },
-  { name: 'Kazing Premium', url: 'http://kazing.fun/get.php?username=jhonny1729&password=882700994121&type=m3u_plus&output=m3u8' },
-  { name: 'ZeroUm Premium', url: 'https://zeroum.blog/get.php?username=LuizRicardo11&password=445355968&type=m3u_plus&output=m3u8' },
-  { name: 'UltraFlex Premium', url: 'https://ultraflex.top/get.php?username=97772520813953&password=50467775206402&type=m3u_plus&output=m3u8' },
-  { name: 'AmericaKG Premium', url: 'http://americakg.xyz/get.php?username=u7yckwn5&password=agkedgp9&type=m3u_plus&output=m3u8' },
-  { name: '+ Adicionar URL', url: 'custom' },
-  { name: '+ Arquivo M3U', url: 'file' },
-];
+const CACHE_VERSION = 'v2';
+const PROXY_URL = 'http://localhost:3131';
 
-function MainContent() {
-  const { playChannel, activeChannel, showPlayer, closePlayer } = usePlayer();
-  const [activeCategory, setActiveCategory] = useState('All'); // 'All' | 'live' | 'movie' | 'series'
-  const [activeGroup, setActiveGroup] = useState('All');
-  const [search, setSearch] = useState('');
-  const [channels, setChannels] = useState(INITIAL_CHANNELS);
-  const [loading, setLoading] = useState(false);
-  const [validity, setValidity] = useState({});
-  const [selectedSeries, setSelectedSeries] = useState(null);
+function getCacheKey(url) { return `nono_${CACHE_VERSION}_${btoa(url).slice(0, 40)}`; }
+function readCache(url) {
+  try {
+    const raw = localStorage.getItem(getCacheKey(url));
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    if (data.length > 0 && data[0].type === undefined) { localStorage.removeItem(getCacheKey(url)); return null; }
+    return data;
+  } catch { return null; }
+}
+import { SOURCES } from './data/sources';
 
-  const handleFileUpload = (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-    setLoading(true);
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const parsed = parseM3U(e.target.result);
-        setChannels(parsed);
-        localStorage.setItem('nono_cache_file', JSON.stringify(parsed));
-      } catch { alert('Erro no processamento da lista.'); }
-      finally { setLoading(false); event.target.value = null; }
-    };
-    reader.readAsText(file);
-  };
-
-  /**
-   * Domain Service: Fetch & Sync Stream Source
-   * Implements Caching Strategy & Error Resilience
-   */
-  const syncSource = useCallback(async (sourceUrl, skipLoader = false) => {
-    let url = sourceUrl;
-    
-    // Abstract Factory for Source types
-    if (url === 'file') {
-      const cached = localStorage.getItem('nono_cache_file');
-      if (cached) setChannels(JSON.parse(cached));
-      document.getElementById('m3u-file-input').click();
-      return;
-    }
-    
-    if (url === 'custom') {
-      const customUrl = window.prompt('URL da Lista M3U:');
-      if (!customUrl) return;
-      url = customUrl;
-    }
-    
-    if (url === 'local') { 
-      // Processa os canais locais para garantir que tenham tipos e metadados corretos
-      setChannels(INITIAL_CHANNELS.map(c => ({ ...c, type: c.type || 'live' }))); 
-      return; 
-    }
-
-    const cacheKey = `nono_cache_${url}`;
-    const cachedData = localStorage.getItem(cacheKey);
-    if (cachedData) {
-      setChannels(JSON.parse(cachedData));
-      if (skipLoader) return;
-    }
-
-    setLoading(true);
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
-    
-    try {
-      const resp = await fetch(url, { signal: controller.signal });
-      const text = await resp.text();
-      clearTimeout(timeoutId);
-      
-      const parsed = parseM3U(text);
-      if (parsed && parsed.length > 0) {
-        setChannels(parsed);
-        localStorage.setItem(cacheKey, JSON.stringify(parsed));
-      } else {
-        throw new Error('Nenhum canal encontrado na fonte.');
-      }
-    } catch (err) {
-      console.error('Erro na sincronização:', err);
-      // Fallback para cache se o fetch falhar
-      if (cachedData) {
-        setChannels(JSON.parse(cachedData));
-      } else if (url !== 'local') {
-          // Fallback para local se tudo mais falhar e for a primeira carga
-          setChannels(INITIAL_CHANNELS.map(c => ({ ...c, type: c.type || 'live' })));
-      }
-    } finally { 
-      setLoading(false); 
-      clearTimeout(timeoutId);
-    }
-  }, []);
-
-  useEffect(() => {
-    syncSource(SOURCES[0].url, true);
-    initSpatialNavigation();
-  }, [syncSource]);
-
-  // Reset group filter when category changes
-  useEffect(() => { setActiveGroup('All'); }, [activeCategory]);
-
-  useEffect(() => {
-    const handleKeys = (e) => {
-      if (showPlayer && e.key === 'Escape') closePlayer();
-    };
-    window.addEventListener('keydown', handleKeys);
-    return () => window.removeEventListener('keydown', handleKeys);
-  }, [showPlayer, closePlayer]);
-
-  // Filter by category type first, then by group / search
-  const filteredChannels = useMemo(() => {
-    if (!channels || channels.length === 0) return [];
-    
-    return channels.filter(c => {
-      // Regra de segurança: Ocultar canais adultos por padrão
-      const g = (c.group || '').toLowerCase();
-      if (g.includes('adulto') || g.includes('xxx') || g.includes('hot') || g.includes('sexo')) {
-          return false;
-      }
-      
-      // Filtro de Categoria (Live/Movie/Series/All)
-      const matchCategory = activeCategory === 'All' || (c.type || 'live') === activeCategory;
-      
-      // Filtro de Grupo (Sub-categorias)
-      const matchGroup = activeGroup === 'All' || c.group === activeGroup;
-      
-      // Busca Global
-      const matchSearch = !search || c.name.toLowerCase().includes(search.toLowerCase());
-      
-      return matchCategory && matchGroup && matchSearch;
-    });
-  }, [activeCategory, activeGroup, search, channels]);
-
-  const groups = useMemo(() => {
-    const base = channels.filter(c =>
-      !(/adulto|sexo|hot|xxx|18\+|porno/i.test(c.group)) &&
-      (activeCategory === 'All' || c.type === activeCategory)
-    );
-    if (channels === INITIAL_CHANNELS) return INITIAL_GROUPS;
-    const unique = [...new Set(base.map(c => c.group))];
-    return [{ id: 1, name: 'All', icon: 'home' }, ...unique.map((g, i) => ({ id: i + 2, name: g, icon: 'tv' }))];
-  }, [channels, activeCategory]);
-
-  const checkChannelStatus = async (channel) => {
-    const isValid = await validateLink(channel.url);
-    setValidity(prev => ({ ...prev, [channel.id]: isValid }));
-  };
-
-  const categoryTitle = {
-    'All': null, 'live': '📡 TV Ao Vivo', 'movie': '🎬 Filmes', 'series': '📺 Séries'
-  }[activeCategory];
-
-  return (
-    <div className="bg-[#0F1115] text-white min-h-screen flex flex-col font-sans selection:bg-[#F7941D]/30">
-      <Navbar search={search} setSearch={setSearch} sources={SOURCES} onSelectSource={syncSource} />
-
-      <div className="flex flex-1 pt-20 pb-16 md:pb-0">
-        <Sidebar activeCategory={activeCategory} setActiveCategory={setActiveCategory} />
-
-        <main className="flex-1 md:ml-20 transition-all p-4 md:p-8 lg:p-10 overflow-x-hidden">
-          <div className="max-w-[1700px] mx-auto">
-
-            {/* Simplified Sub-navigation (Only search status or subtle info) */}
-            {loading && (
-              <div className="flex justify-end mb-4">
-                <div className="flex items-center gap-2 text-[#F7941D] font-black text-[9px] uppercase tracking-[0.2em] animate-pulse bg-[#F7941D]/5 px-4 py-1.5 rounded-full border border-[#F7941D]/10">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#F7941D] animate-ping" />
-                  Sincronizando...
-                </div>
-              </div>
-            )}
-
-
-            <ChannelGrid
-              channels={filteredChannels}
-              validity={validity}
-              activeGroup={activeGroup}
-              activeCategory={activeCategory}
-              setActiveGroup={setActiveGroup}
-              groups={groups}
-              search={search}
-              isPlayerOpen={showPlayer || selectedSeries}
-              onPlay={(c) => { 
-                if (c.isSeries) {
-                  setSelectedSeries(c);
-                } else {
-                  playChannel(c); 
-                  checkChannelStatus(c); 
-                }
-              }}
-            />
-          </div>
-        </main>
-      </div>
-
-      {/* Series Episode Selector Modal (Premium Glass) */}
-      {selectedSeries && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300">
-          <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setSelectedSeries(null)} />
-          <div className="relative w-full max-w-2xl max-h-[80vh] bg-[#1A1C22] border border-white/10 rounded-[40px] shadow-2xl flex flex-col overflow-hidden">
-            <div className="p-8 border-b border-white/5 flex items-center justify-between bg-gradient-to-r from-[#F7941D]/10 to-transparent">
-              <div>
-                <h2 className="text-2xl font-black text-white uppercase tracking-tighter">{selectedSeries.name}</h2>
-                <p className="text-[#F7941D] text-[10px] font-black uppercase tracking-widest mt-1">{selectedSeries.episodes.length} Episódios Disponíveis</p>
-              </div>
-              <button 
-                onClick={() => setSelectedSeries(null)}
-                className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-[#F7941D] transition-all"
-              >
-                <span className="text-xl">×</span>
-              </button>
-            </div>
-            
-            <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-2 no-scrollbar">
-              {selectedSeries.episodes.map((ep, idx) => (
-                <button
-                  key={ep.url + idx}
-                  onClick={() => {
-                    playChannel(ep);
-                    checkChannelStatus(ep);
-                    setSelectedSeries(null);
-                  }}
-                  className="w-full flex items-center gap-4 p-4 rounded-2xl bg-white/5 hover:bg-[#F7941D] border border-white/5 hover:border-[#F7941D] transition-all group text-left"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-xs font-black group-hover:bg-white/20">
-                    {idx + 1}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-white text-sm truncate uppercase tracking-tight">{ep.name}</p>
-                    <p className="text-white/30 text-[9px] font-black uppercase tracking-widest group-hover:text-white/60">HD Stream • {ep.group}</p>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-
-      <input type="file" id="m3u-file-input" accept=".m3u,.m3u8,.txt" style={{ display: 'none' }} onChange={handleFileUpload} />
-
-      {showPlayer && (
-        <VideoPlayer channel={activeChannel} channels={filteredChannels} onClose={closePlayer} />
-      )}
-    </div>
-  );
+function writeCache(url, data) {
+  try { localStorage.setItem(getCacheKey(url), JSON.stringify(data)); } catch {}
 }
 
 export default function App() {
+  const [channels,        setChannels]       = useState(() => INITIAL_CHANNELS.map(c => ({ ...c, type: c.type || 'live' })));
+  const [activeCategory,  setActiveCategory] = useState('All');
+  const [activeGroup,     setActiveGroup]    = useState('All');
+  const [search,          setSearch]         = useState('');
+  const [selectedChannel, setSelectedChannel]= useState(null);
+  const [isLoading,       setIsLoading]      = useState(false);
+  const [error,           setError]          = useState(null);
+  const [syncStatus,      setSyncStatus]     = useState(null);
+
+  useEffect(() => { initSpatialNavigation(); }, []);
+
+  const resetNav = useCallback(() => {
+    setActiveCategory('All');
+    setActiveGroup('All');
+    setSearch('');
+  }, []);
+
+  const handleSourceSelect = useCallback(async (source) => {
+    if (!source.url) {
+      setChannels(INITIAL_CHANNELS.map(c => ({ ...c, type: c.type || 'live' })));
+      resetNav(); setError(null); return;
+    }
+
+    setError(null); setIsLoading(true);
+    setSyncStatus(`Sincronizando ${source.name}...`);
+
+    const cached = readCache(source.url);
+    if (cached) { 
+      setChannels(cached); 
+      resetNav(); 
+    }
+
+    try {
+      // Tunela o fetch através do proxy local para evitar 503/403 (CORS e User-Agent VLC)
+      const response = await fetch(`${PROXY_URL}/${source.url}`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const text = await response.text();
+      const parsed = parseM3U(text);
+      
+      if (!parsed || parsed.length === 0) throw new Error('Lista vazia ou inválida');
+
+      setChannels(parsed);
+      writeCache(source.url, parsed);
+      resetNav();
+      setSyncStatus('Lista Sincronizada!');
+      setTimeout(() => setSyncStatus(null), 3000);
+    } catch (err) {
+      console.error('[handleSourceSelect]', err.message);
+      if (!cached) {
+        setError(`Erro ao carregar "${source.name}": ${err.message}`);
+        setChannels(INITIAL_CHANNELS.map(c => ({ ...c, type: c.type || 'live' })));
+        resetNav();
+      } else {
+        setSyncStatus(null);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, [resetNav]);
+
+  const filteredChannels = useMemo(() => {
+    if (!channels || channels.length === 0) return [];
+    return channels.filter(c => {
+      if (/adulto|sexo|hot|xxx|18\+|porno/i.test(c.group || '')) return false;
+      const matchSearch   = !search || c.name.toLowerCase().includes(search.toLowerCase()) || (c.group || '').toLowerCase().includes(search.toLowerCase());
+      const matchCategory = activeCategory === 'All' || (c.type || 'live') === activeCategory;
+      const matchGroup    = activeGroup === 'All' || c.group === activeGroup;
+      return matchSearch && matchCategory && matchGroup;
+    });
+  }, [channels, search, activeCategory, activeGroup]);
+
+  const groups = useMemo(() => {
+    const base = channels.filter(c =>
+      !(/adulto|sexo|hot|xxx|18\+|porno/i.test(c.group || '')) &&
+      (activeCategory === 'All' || (c.type || 'live') === activeCategory)
+    );
+    if (channels.length <= INITIAL_CHANNELS.length && activeCategory === 'All') return INITIAL_GROUPS;
+    const unique = [...new Set(base.map(c => c.group).filter(Boolean))];
+    return [{ id: 1, name: 'All', icon: 'home' }, ...unique.map((g, i) => ({ id: i + 2, name: g, icon: 'tv' }))];
+  }, [channels, activeCategory]);
+
   return (
-    <PlayerProvider>
-      <MainContent />
-    </PlayerProvider>
+    <div className="min-h-screen bg-[#0F1115] text-white selection:bg-[#F7941D]/30">
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-[#F7941D]/10 blur-[150px] rounded-full animate-pulse" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-500/5 blur-[120px] rounded-full" />
+        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/dark-matter.png')] opacity-[0.03] mix-blend-overlay" />
+      </div>
+
+      <Sidebar activeCategory={activeCategory} setActiveCategory={(cat) => { setActiveCategory(cat); setActiveGroup('All'); }} />
+
+      <main className="md:pl-20 lg:pl-64 min-h-screen transition-all duration-700">
+        <Navbar 
+          search={search}
+          setSearch={setSearch} 
+          sources={SOURCES}
+          onSourceSelect={handleSourceSelect} 
+          syncStatus={syncStatus} 
+        />
+
+        <div className="p-6 md:p-10 pt-28 space-y-12">
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/20 p-6 rounded-3xl flex items-center gap-4 text-red-500 animate-in slide-in-from-top duration-500">
+              <AlertCircle size={24} />
+              <div className="flex-1"><p className="font-black text-xs uppercase tracking-widest">{error}</p></div>
+              <button onClick={() => handleSourceSelect({ url: null })} className="px-6 py-2 bg-red-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-600 transition-all">
+                Voltar à Lista Local
+              </button>
+            </div>
+          )}
+
+          {isLoading && !channels.length && (
+            <div className="flex flex-col items-center justify-center py-40 space-y-6 animate-pulse">
+              <div className="w-16 h-16 border-4 border-[#F7941D]/20 border-t-[#F7941D] rounded-full animate-spin" />
+              <p className="text-[#F7941D] font-black uppercase tracking-[0.5em] text-[10px]">Sincronizando Metadados</p>
+            </div>
+          )}
+
+          {!error && (
+            <div className={isLoading ? 'opacity-60 pointer-events-none transition-opacity' : 'transition-opacity'}>
+              <ChannelGrid
+                channels={filteredChannels}
+                activeGroup={activeGroup}
+                activeCategory={activeCategory}
+                setActiveGroup={setActiveGroup}
+                groups={groups}
+                onPlay={setSelectedChannel}
+                search={search}
+                isPlayerOpen={!!selectedChannel}
+              />
+            </div>
+          )}
+        </div>
+      </main>
+
+      {selectedChannel && (
+        <VideoPlayer channel={selectedChannel} channels={filteredChannels} onClose={() => setSelectedChannel(null)} />
+      )}
+
+      {syncStatus && !isLoading && !error && (
+        <div className="fixed bottom-10 right-10 bg-emerald-500 text-white px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-4 animate-in slide-in-from-bottom duration-500 z-[200]">
+          <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+            <RefreshCw size={16} className="animate-spin" />
+          </div>
+          <p className="font-black uppercase tracking-widest text-xs">{syncStatus}</p>
+        </div>
+      )}
+    </div>
   );
 }
