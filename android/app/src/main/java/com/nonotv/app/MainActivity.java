@@ -1,4 +1,4 @@
-package com.example.app;
+package com.nonotv.app;
 
 import com.getcapacitor.BridgeActivity;
 

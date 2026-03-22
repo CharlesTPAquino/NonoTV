@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import ChannelCard from './ChannelCard';
 
-export default function ChannelCarousel({ title, channels, onPlay, validity, onViewAll }) {
+export default function ChannelCarousel({ title, channels, onPlay, validity, onViewAll, isPlayerOpen }) {
   const scrollRef = useRef(null);
   const [showLeft, setShowLeft] = useState(false);
   const [showRight, setShowRight] = useState(true);
@@ -28,15 +28,15 @@ export default function ChannelCarousel({ title, channels, onPlay, validity, onV
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-4">
-          <div className="w-1 h-6 bg-[#1B2838]/20 rounded-full" />
-          <h2 className="text-lg font-black text-[#1B2838] tracking-tight">{title}</h2>
-          <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest bg-[#1B2838]/5 px-2 py-0.5 rounded-full border border-[#1B2838]/10">
+          <div className="w-1 h-5 bg-[#F7941D]/50 rounded-full" />
+          <h2 className="text-base font-black text-white tracking-tight">{title}</h2>
+          <span className="text-[10px] text-white/40 font-bold uppercase tracking-widest bg-white/5 px-2 py-0.5 rounded-full border border-white/10">
             {channels.length} canais
           </span>
         </div>
         <button
           onClick={onViewAll}
-          className="text-[11px] text-[#F7941D] font-black uppercase tracking-[0.2em] hover:text-[#1B2838] transition-colors flex items-center gap-1"
+          className="text-[11px] text-[#F7941D] font-black uppercase tracking-[0.2em] hover:text-white transition-colors flex items-center gap-1"
         >
           Ver Todos <ChevronRight size={14} />
         </button>
@@ -69,7 +69,8 @@ export default function ChannelCarousel({ title, channels, onPlay, validity, onV
               <ChannelCard
                 channel={channel}
                 onPlay={onPlay}
-                isValid={validity[channel.url]}
+                isValid={validity ? validity[channel.id] : undefined}
+                isPlayerOpen={isPlayerOpen}
               />
             </div>
           ))}

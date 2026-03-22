@@ -1,26 +1,26 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import ChannelCard from './ChannelCard';
 import HeroSection from './HeroSection';
-import CategoryTiles from './CategoryTiles';
 import ChannelCarousel from './ChannelCarousel';
 import { ChevronDown, ArrowLeft } from 'lucide-react';
 
 const PREMIUM_KEYWORDS = ['premiere', 'hbo', 'sportv', 'espn', 'telecine', 'globo', 'record', 'sbt', 'cnn', 'tnt'];
 
-export default function ChannelGrid({ channels, onPlay, validity, activeGroup, setActiveGroup, groups, search }) {
+// Grid cols adapts to content type: posters (movies/series) need fewer cols
+const getGridClass = (type) => {
+  if (type === 'movie' || type === 'series') {
+    return 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-4';
+  }
+  return 'grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4';
+};
+
+export default function ChannelGrid({ channels, onPlay, validity, activeGroup, activeCategory, setActiveGroup, search, isPlayerOpen }) {
   const [limit, setLimit] = useState(100);
+  useEffect(() => { setLimit(100); }, [channels, activeGroup, activeCategory]);
 
-  useEffect(() => {
-    setLimit(100);
-  }, [channels, activeGroup]);
-
-  // === MODO BUSCA: resultado de pesquisa ===
   const isSearching = search && search.trim().length > 0;
+  const isHome = activeCategory === 'All' && activeGroup === 'All' && !isSearching;
 
-  // === MODO HOME: todos os canais, sem busca ===
-  const isHome = activeGroup === 'All' && !isSearching;
-
-  // == Canais premium e standard ==
   const { featured, standard } = useMemo(() => {
     const feat = [], std = [];
     channels.forEach(c => {
@@ -31,157 +31,115 @@ export default function ChannelGrid({ channels, onPlay, validity, activeGroup, s
     return { featured: feat, standard: std };
   }, [channels]);
 
-  // === Agrupamento por categoria (para carrosséis) ===
-  const groupedAll = useMemo(() => {
-    return channels.reduce((acc, channel) => {
-      const group = channel.group || 'Outros';
-      if (!acc[group]) acc[group] = [];
-      acc[group].push(channel);
-      return acc;
-    }, {});
-  }, [channels]);
-
-  // Contagem de canais por grupo (para os tiles)
-  const channelCounts = useMemo(() => {
-    const counts = {};
-    channels.forEach(c => {
-      const group = c.group || 'Outros';
-      counts[group] = (counts[group] || 0) + 1;
-    });
-    return counts;
-  }, [channels]);
-
-  // Para o grid normal (modo grupo específico ou busca)
-  const slicedChannels = channels.slice(0, limit);
-  const groupedGrid = useMemo(() => {
-    if (activeGroup !== 'All') return { [activeGroup]: slicedChannels };
-    return slicedChannels.reduce((acc, c) => {
-      const g = c.group || 'Outros';
+  const groupedAll = useMemo(() =>
+    channels.reduce((acc, ch) => {
+      const g = ch.group || 'Outros';
       if (!acc[g]) acc[g] = [];
-      acc[g].push(c);
+      acc[g].push(ch);
       return acc;
-    }, {});
-  }, [slicedChannels, activeGroup]);
+    }, {})
+  , [channels]);
 
-  // === MODO BUSCA ===
+  const displayChannels = channels.slice(0, limit);
+  const gridClass = getGridClass(activeCategory);
+
+  // ── Search Mode ──
   if (isSearching) {
-    if (channels.length === 0) {
-      return <div className="text-center py-20 text-gray-500">Nenhum canal encontrado para "{search}".</div>;
-    }
+    if (channels.length === 0) return <div className="text-center py-20 text-white/20 font-bold uppercase tracking-widest">Nenhum canal encontrado para "{search}"</div>;
     return (
-      <div className="space-y-6">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-1 h-6 bg-[#F7941D] rounded-full" />
-          <h2 className="text-lg font-black text-[#1D1D1F]">Resultados para "{search}"</h2>
-          <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full border border-gray-200">{channels.length} canais</span>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-5">
-          {channels.slice(0, 60).map(channel => (
-            <ChannelCard key={channel.url} channel={channel} onPlay={onPlay} isValid={validity[channel.url]} />
-          ))}
-        </div>
+      <div className={gridClass}>
+        {displayChannels.map(ch => (
+          <ChannelCard key={ch.url} channel={ch} onPlay={onPlay} isValid={validity[ch.id]} isPlayerOpen={isPlayerOpen} />
+        ))}
       </div>
     );
   }
 
-  // === MODO HOME (All + sem busca): Hero + Categories + Carrosséis ===
+  // ── Home Mode (Carousels) ──
   if (isHome) {
-    if (channels.length === 0) {
-      return <div className="text-center py-20 text-gray-500">Nenhum canal disponível.</div>;
-    }
-
+    if (channels.length === 0) return <div className="text-center py-20 text-gray-500/40 font-black uppercase tracking-[0.4em]">Sincronizando Sinal...</div>;
     const carouselGroups = Object.entries(groupedAll).slice(0, 10);
-
     return (
-      <div>
-        {/* Hero Banner */}
+      <div className="space-y-16 animate-in fade-in duration-700">
         <HeroSection channels={[...featured, ...standard]} onPlay={onPlay} />
-
-        {/* Category Tiles */}
-        {groups && groups.length > 1 && (
-          <CategoryTiles
-            groups={groups}
-            channelCounts={channelCounts}
-            setActiveGroup={setActiveGroup}
-          />
-        )}
-
-        {/* Canais Premium em Carrossel */}
+        
+        {/* Featured Section */}
         {featured.length > 0 && (
-          <div className="mb-12">
-            <div className="flex items-center gap-4 mb-5">
-              <div className="w-1 h-7 bg-[#F7941D] rounded-full shadow-[0_0_15px_rgba(229,9,20,0.5)]" />
-              <h2 className="text-xl font-black text-[#1B2838] uppercase tracking-[0.2em]">🌟 Canais Premium</h2>
+          <section className="space-y-6">
+            <div className="flex items-center gap-4">
+              <div className="w-1 h-6 bg-[#F7941D] rounded-full shadow-[0_0_15px_rgba(247,148,29,0.5)]" />
+              <h2 className="text-base font-black text-white uppercase tracking-[0.2em]">Canais Premium</h2>
             </div>
-            <div className="flex gap-4 overflow-x-auto pb-4" style={{ scrollbarWidth: 'none' }}>
-              {featured.slice(0, 20).map(channel => (
-                <div key={channel.url} className="flex-shrink-0 w-[200px] md:w-[220px]">
-                  <ChannelCard channel={channel} onPlay={onPlay} isValid={validity[channel.url]} />
+            <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar scroll-smooth">
+              {featured.slice(0, 24).map(ch => (
+                <div key={ch.id} className="flex-shrink-0 w-[240px] md:w-[280px]">
+                  <ChannelCard channel={ch} onPlay={onPlay} isValid={validity[ch.id]} isPlayerOpen={isPlayerOpen} />
                 </div>
               ))}
             </div>
-          </div>
+          </section>
         )}
 
-        {/* Carrosséis por categoria */}
+        {/* Dynamic Carousels per Group (Discovery Mode) */}
         {carouselGroups.map(([groupName, groupChannels]) => (
-          <ChannelCarousel
-            key={groupName}
-            title={groupName}
-            channels={groupChannels}
-            onPlay={onPlay}
-            validity={validity}
-            onViewAll={() => setActiveGroup(groupName)}
+          <ChannelCarousel 
+            key={groupName} 
+            title={groupName} 
+            channels={groupChannels} 
+            onPlay={onPlay} 
+            validity={validity} 
+            isPlayerOpen={isPlayerOpen} 
+            onViewAll={() => setActiveGroup(groupName)} 
           />
         ))}
       </div>
     );
   }
 
-  // === MODO GRUPO ESPECÍFICO: Grid completo ===
+  // ── Category / Group Mode (Grouped Sections - DDD Pattern) ──
+  const channelsByGroup = useMemo(() => {
+    const groups = {};
+    displayChannels.forEach(ch => {
+      const g = ch.group || 'Diversos';
+      if (!groups[g]) groups[g] = [];
+      groups[g].push(ch);
+    });
+    return Object.entries(groups);
+  }, [displayChannels]);
+
+  if (displayChannels.length === 0) return <div className="text-center py-32 text-white/10 font-black uppercase tracking-[0.5em]">Conteúdo Indisponível</div>;
+
   return (
-    <div>
-      {/* Back button */}
-      <button
-        onClick={() => setActiveGroup('All')}
-        className="flex items-center gap-2 text-gray-500 hover:text-[#1D1D1F] text-sm font-bold transition-colors mb-8 group"
-      >
-        <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
-        Voltar para Início
-      </button>
-
-      <div className="space-y-16">
-        {Object.entries(groupedGrid).map(([groupName, groupChannels]) => {
-          if (groupChannels.length === 0) return null;
-          return (
-            <section key={groupName} className="relative">
-              <div className="flex items-center gap-4 mb-8">
-              <div className="w-1 h-6 bg-[#1B2838]/20 rounded-full" />
-                <h2 className="text-xl font-bold text-[#1D1D1F] tracking-tight">{groupName}</h2>
-                <span className="text-[10px] text-gray-500 font-bold uppercase bg-gray-100 px-2 py-0.5 rounded-full border border-gray-200">
-                  {groupChannels.length} canais
-                </span>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-5">
-                {groupChannels.map(channel => (
-                  <ChannelCard key={channel.url} channel={channel} onPlay={onPlay} isValid={validity[channel.url]} />
-                ))}
-              </div>
-            </section>
-          );
-        })}
-
-        {activeGroup === 'All' && (
-          <div className="flex justify-center mt-20 pb-20">
-            <button
-              onClick={() => setLimit(prev => prev + 100)}
-              className="group flex items-center gap-3 px-10 py-4 bg-white hover:bg-[#F7941D] border border-gray-200 hover:border-[#F7941D] rounded-full transition-all duration-500 text-gray-500 hover:text-white font-black tracking-[0.2em] uppercase text-xs shadow-lg hover:shadow-[0_0_40px_rgba(229,9,20,0.2)]"
-            >
-              Explorar mais canais <ChevronDown size={18} className="group-hover:translate-y-1 transition-transform" />
-            </button>
+    <div className="space-y-20 animate-in slide-in-from-bottom-4 duration-700 pb-20">
+      {channelsByGroup.map(([groupName, groupList]) => (
+        <section key={groupName} className="space-y-8">
+          <div className="flex items-center justify-between border-b border-white/5 pb-4">
+            <div className="flex items-center gap-4">
+              <div className="w-1.5 h-6 bg-[#F7941D]/60 rounded-full" />
+              <h3 className="text-sm font-black text-white uppercase tracking-[0.25em]">{groupName}</h3>
+            </div>
+            <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">{groupList.length} itens</span>
           </div>
-        )}
-      </div>
+
+          <div className={gridClass}>
+            {groupList.map(ch => (
+              <ChannelCard key={ch.id} channel={ch} onPlay={onPlay} isValid={validity[ch.id]} isPlayerOpen={isPlayerOpen} />
+            ))}
+          </div>
+        </section>
+      ))}
+
+      {channels.length > limit && (
+        <div className="flex justify-center pt-10">
+          <button
+            onClick={() => setLimit(prev => prev + 100)}
+            className="group relative px-12 py-4 bg-white/5 hover:bg-[#F7941D] border border-white/10 hover:border-[#F7941D] rounded-2xl transition-all duration-500 text-white/40 hover:text-white font-black tracking-[0.3em] uppercase text-[10px] shadow-2xl hover:-translate-y-1 overflow-hidden"
+          >
+            <span className="relative z-10 flex items-center gap-3">Explorar Mais <ChevronDown size={14} className="group-hover:translate-y-1 transition-transform" /></span>
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-shimmer" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

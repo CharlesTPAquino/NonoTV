@@ -1,110 +1,54 @@
 import React from 'react';
-import { 
-  Home, Tv, Trophy, Film, Library, Newspaper, 
-  Baby, Music, Radio, Church, Sparkles, AlertCircle, 
-  Clapperboard, Monitor, Heart, Play, Star
-} from 'lucide-react';
+import { Home, Tv, Film, Clapperboard, Settings } from 'lucide-react';
 
-const getIconForGroup = (name) => {
-  const n = name.toUpperCase();
-  if (n === 'ALL' || n === 'INÍCIO' || n === 'TODOS') return Home;
-  if (n.includes('ESPORTE') || n.includes('SPORT') || n.includes('PREMIERE') || n.includes('DAZN')) return Trophy;
-  if (n.includes('FILME') || n.includes('VOD') || n.includes('CINEMA')) return Film;
-  if (n.includes('SERIE') || n.includes('SEASON') || n.includes('NETFLIX')) return Clapperboard;
-  if (n.includes('INFANTIL') || n.includes('KIDS') || n.includes('DESENHOS')) return Baby;
-  if (n.includes('NOTICIA') || n.includes('NEWS')) return Newspaper;
-  if (n.includes('DOCUMENTARIO') || n.includes('CURIOSIDADE')) return Library;
-  if (n.includes('MUSICA') || n.includes('MUSIC')) return Music;
-  if (n.includes('RADIO')) return Radio;
-  if (n.includes('RELIGIAO') || n.includes('GOSPEL') || n.includes('IGREJA')) return Church;
-  if (n.includes('4K') || n.includes('FHD') || n.includes('UHD')) return Sparkles;
-  if (n.includes('ADULTO') || n.includes('HOT') || n.includes('SEX')) return AlertCircle;
-  if (n.includes('ABERTO') || n.includes('GLOBO') || n.includes('CANAL')) return Monitor;
-  if (n.includes('FAVORITO')) return Heart;
-  if (n.includes('PLAY')) return Play;
-  if (n.includes('PREMIUM') || n.includes('VIP')) return Star;
-  return Tv;
-};
+const MAIN_CATEGORIES = [
+  { id: 'all',  name: 'Início',     type: 'All',   icon: Home },
+  { id: 'live', name: 'TV Ao Vivo', type: 'live',  icon: Tv },
+  { id: 'vod',  name: 'Filmes',     type: 'movie', icon: Film },
+  { id: 'ser',  name: 'Séries',     type: 'series',icon: Clapperboard }
+];
 
-const getDSColorForGroup = (name) => {
-  const n = name.toUpperCase();
-  if (n.includes('ESPORTE')) return 'bg-[#F59E0B]'; // Amber
-  if (n.includes('FILME')) return 'bg-[#F43F5E]';   // Rose
-  if (n.includes('SERIE')) return 'bg-[#6366F1]';   // Indigo
-  if (n.includes('INFANTIL')) return 'bg-[#0EA5E9]'; // Sky
-  if (n.includes('4K')) return 'bg-[#10B981]';      // Emerald
-  return 'bg-[#3F3F3F]'; // Default gray for others
-};
-
-export default function Sidebar({ groups, activeGroup, setActiveGroup }) {
-  // Adiciona a opção "Todos" se não houver
-  const allGroups = [
-    { id: 'all', name: 'All' },
-    ...groups.filter(g => g.name !== 'All')
-  ];
-
+export default function Sidebar({ activeCategory, setActiveCategory }) {
   return (
-    <aside className="fixed top-20 left-0 h-[calc(100vh-5rem)] w-20 hover:w-64 glass-sidebar py-6 transition-all duration-500 z-40 overflow-hidden flex flex-col group/sidebar cinematic-shadow border-r border-white/5">
-      <div className="space-y-3 px-3 flex-1 overflow-y-auto custom-scrollbar">
-        {allGroups.map(group => {
-          const Icon = getIconForGroup(group.name);
-          const iconColor = getDSColorForGroup(group.name);
-          const isActive = activeGroup === group.name;
-          
-          return (
-            <button
-              key={group.id || group.name}
-              onClick={() => setActiveGroup(group.name)}
-              className={`w-full flex items-center gap-4 px-3 py-3 rounded-2xl transition-all duration-500 whitespace-nowrap overflow-hidden group/item relative ${
-                isActive 
-                  ? 'bg-white/10' 
-                  : 'text-gray-400 hover:bg-white/5 hover:text-white'
-              }`}
-            >
-              {/* Active Indicator Line */}
-              {isActive && (
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-[#6366F1] rounded-r-full shadow-[0_0_15px_rgba(99,102,241,0.8)]" />
-              )}
+    // Mobile: Bottom Nav, Desktop/TV: Left Dock
+    <aside className="fixed bottom-0 left-0 w-full h-[72px] md:bottom-auto md:top-20 md:w-20 md:h-[calc(100vh-5rem)] bg-[#11141D]/95 backdrop-blur-3xl border-t md:border-t-0 md:border-r border-white/5 z-50 flex flex-row md:flex-col items-center justify-around md:justify-start md:py-10 shadow-2xl transition-all duration-700">
+      
+      {MAIN_CATEGORIES.map(cat => {
+        const Icon = cat.icon;
+        const isActive = activeCategory === cat.type;
+        
+        return (
+          <button
+            key={cat.id}
+            onClick={() => setActiveCategory(cat.type)}
+            className="group relative flex flex-col items-center justify-center w-12 h-12 md:mb-10 rounded-2xl transition-all duration-500 hover:scale-110 active:scale-90"
+          >
+            {/* Active Glow Background */}
+            <div className={`absolute inset-0 rounded-2xl transition-all duration-700 pointer-events-none ${isActive ? 'bg-[#F7941D]/10 opacity-100 scale-100' : 'opacity-0 scale-50 group-hover:opacity-5 group-hover:scale-100'}`} />
+            
+            {/* Direct Indicator */}
+            {isActive && (
+              <div className="absolute top-0 md:top-auto md:left-0 w-8 h-1 md:w-1 md:h-8 bg-[#F7941D] rounded-full shadow-[0_0_15px_#F7941D]" />
+            )}
 
-              {/* Icon Container */}
-              <div className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-500 ${
-                isActive 
-                  ? `${iconColor} text-white shadow-xl scale-110 rotate-0` 
-                  : 'bg-white/5 text-gray-400 group-hover/item:bg-white/10 group-hover/item:text-white group-hover/item:scale-110'
-              }`}>
-                <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
-              </div>
+            <Icon size={24} className={`relative z-10 transition-all duration-500 ${isActive ? 'text-[#F7941D] drop-shadow-[0_0_8px_rgba(247,148,29,0.4)]' : 'text-white/20 group-hover:text-white/60'}`} />
+            
+            <span className={`text-[8px] font-black uppercase tracking-[0.2em] mt-1 md:hidden transition-all duration-500 ${isActive ? 'text-[#F7941D]' : 'text-white/20'}`}>
+              {cat.name}
+            </span>
 
-              {/* Label */}
-              <span className={`text-[10px] uppercase font-black tracking-[0.2em] transition-all duration-500 ${
-                isActive 
-                  ? 'text-white opacity-100' 
-                  : 'opacity-0 scale-95 group-hover/sidebar:opacity-100 group-hover/sidebar:scale-100'
-              }`}>
-                {group.name === 'All' ? 'Início' : group.name}
-              </span>
+            {/* Desktop Label (Clean Overlay) */}
+            <div className="hidden md:flex absolute left-20 bg-[#11141D] border border-white/5 px-4 py-2 rounded-xl text-white text-[9px] uppercase font-black tracking-[0.3em] opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all shadow-[0_10px_40px_rgba(0,0,0,0.8)] pointer-events-none z-50">
+              {cat.name}
+            </div>
+          </button>
+        );
+      })}
 
-              {/* Active Dot for Closed View */}
-              {isActive && (
-                <div className="absolute right-4 w-1 h-1 bg-[#6366F1] rounded-full opacity-100 group-hover/sidebar:opacity-0 transition-opacity" />
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Footer Branding */}
-      <div className="mt-auto px-4 py-4 border-t border-white/5 flex items-center gap-4 group-hover/sidebar:justify-start justify-center transition-all">
-        <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#6366F1] to-[#10B981] flex items-center justify-center text-white text-[10px] font-black shrink-0 shadow-lg">
-          NT
-        </div>
-        <div className="hidden group-hover/sidebar:block overflow-hidden transition-all">
-          <p className="text-[9px] font-black text-white tracking-widest uppercase truncate">Premium Plan</p>
-          <div className="flex items-center gap-1 mt-0.5">
-            <div className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" />
-            <p className="text-[8px] font-bold text-gray-500 uppercase tracking-tighter">Server Online</p>
-          </div>
-        </div>
+      <div className="hidden md:flex flex-col items-center justify-end flex-1 w-full pb-6">
+        <button className="w-10 h-10 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center text-white/10 hover:text-[#F7941D] hover:bg-[#F7941D]/10 transition-all duration-500">
+            <Settings size={20} />
+        </button>
       </div>
     </aside>
   );
