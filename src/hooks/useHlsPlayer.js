@@ -37,22 +37,35 @@ export function useHlsPlayer(onFatalError) {
     update({ error: null, buffering: true, playing: false, qualities: [], quality: -1, pip: false });
 
     // Fallback para Modo Nativo caso não suporte HLS ou seja MP4 direto
-    const isDirect = /\.(mp4|mkv|avi|mov)$/i.test(url) || url.includes('movie/') || url.includes('series/');
+    const isDirect = /\.(mp4|mkv|avi|mov|ts|m4v)$/i.test(url) || 
+                   url.toLowerCase().includes('movie/') || 
+                   url.toLowerCase().includes('series/') || 
+                   (!url.includes('.m3u8') && !url.includes('m3u8')); // Se não tem m3u8, assume direct
 
     if (!Hls.isSupported() || isDirect) {
+        console.log("[Player] Usando Modo Nativo (Fast-Start):", url);
+        video.crossOrigin = "anonymous";
+        video.preload = "auto";
         video.src = url;
         video.load();
-        video.play().catch(() => {
-            if (!useProxy) onFatalError?.('native-failed');
-        });
+        
+        // Disparar play assim que os primeiros metadados chegarem
+        const onReady = () => { video.play().catch(() => {}); video.removeEventListener('loadedmetadata', onReady); };
+        video.addEventListener('loadedmetadata', onReady);
+        
+        update({ buffering: false }); 
         return;
     }
 
     const hls = new Hls({
       enableWorker:     true,
-      lowLatencyMode:   true,
+      lowLatencyMode:   false, // VOD não precisa de baixo delay, mas sim de buffer estável
+      startLevel:       -1,    // Auto-seleção de qualidade inicial baseada no tempo de resposta
+      fragLoadingMaxRetry: 5,
+      manifestLoadingMaxRetry: 5,
       backBufferLength: 30,
-      maxBufferLength:  60,
+      maxBufferLength:  30,     // Buffer curto para começar rápido
+      maxMaxBufferLength: 60,
       xhrSetup: (xhr) => { xhr.withCredentials = false; },
     });
 

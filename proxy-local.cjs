@@ -36,12 +36,13 @@ const server = http.createServer((req, res) => {
     const client = options.protocol === 'https:' ? https : http;
 
     const proxyReq = client.request(currentUrl, {
-      method: 'GET',
+      method: req.method,
       headers: {
         'User-Agent': 'VLC/3.0.18 LibVLC/3.0.18',
         'Referer': options.origin || options.host,
         'Accept': '*/*',
-        'Connection': 'keep-alive'
+        'Connection': 'keep-alive',
+        'Range': req.headers.range || '' // Passar o cabeçalho Range para suporte a seeking/VOD
       }
     }, (proxyRes) => {
       // TRATAMENTO DE REDIRECIONAMENTO (301, 302, 307, 308)
@@ -53,6 +54,10 @@ const server = http.createServer((req, res) => {
 
       const headers = { ...proxyRes.headers };
       headers['Access-Control-Allow-Origin'] = '*';
+      headers['Access-Control-Allow-Headers'] = '*';
+      headers['Access-Control-Expose-Headers'] = 'Content-Length, Content-Range, Accept-Ranges';
+      headers['Accept-Ranges'] = 'bytes'; // Forçar anúncio de suporte a range
+      
       delete headers['content-security-policy'];
       delete headers['x-frame-options'];
 

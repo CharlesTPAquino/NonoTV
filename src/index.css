@@ -3,48 +3,51 @@
 @tailwind utilities;
 
 :root {
-  --ds-indigo: #6366F1;
-  --ds-emerald: #10B981;
-  --ds-amber: #F59E0B;
-  --ds-rose: #F43F5E;
-  --ds-sky: #0EA5E9;
-  --ds-matte-black: #1A1A1A;
+  --nono-gold: #F7941D;
+  --nono-gold-glow: rgba(247, 148, 29, 0.4);
+  --ds-matte-black: #0F1115;
+  --ds-card-bg: #1A1C22;
 }
 
 @layer base {
   body {
-    @apply bg-[#E8E8E8] text-[#1B2838] antialiased selection:bg-[#6366F1] selection:text-white;
+    @apply bg-[#0F1115] text-white antialiased selection:bg-[#F7941D] selection:text-white;
     margin: 0;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    overflow-x: hidden;
   }
 }
 
 @layer components {
-  /* Header e Sidebar preto fosco SÓLIDO */
+  /* Premium Glass Effects */
   .glass-header {
-    @apply bg-[#1A1A1A] border-b border-white/10 shadow-lg;
+    @apply bg-[#0F1115]/80 backdrop-blur-3xl border-b border-white/5 shadow-2xl;
   }
   
   .glass-sidebar {
-    @apply bg-[#1A1A1A] border-r border-white/10;
+    @apply bg-[#121418]/90 backdrop-blur-3xl border-r border-white/5;
   }
   
   .cinematic-shadow {
-    @apply shadow-[0_8px_30px_-8px_rgba(27,40,56,0.2)];
+    @apply shadow-[0_20px_50px_rgba(0,0,0,0.5)];
   }
   
   .glow-orange {
-    @apply shadow-[0_0_20px_rgba(247,148,29,0.4)];
+    @apply shadow-[0_0_20px_var(--nono-gold-glow)];
   }
-  
-  /* Cards grafite escuro */
-  .card-nono {
-    @apply bg-[#121212] border border-white/10 hover:border-[#F7941D]/60 shadow-lg hover:shadow-xl rounded-2xl;
+
+  /* Shimmer Animation for Premium Buttons */
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+  .animate-shimmer {
+    animation: shimmer 2s infinite;
   }
 }
 
 .custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
@@ -52,10 +55,19 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #D1C7B8;
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 10px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #F7941D;
+  background: var(--nono-gold);
+}
+
+/* Scrollbar Hiding Utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
