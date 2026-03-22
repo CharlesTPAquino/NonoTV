@@ -1,13 +1,11 @@
 import { Search, Activity } from 'lucide-react';
 
 export default function Navbar({ search, setSearch, sources, onSelectSource }) {
-  const handleExit = async () => {
-    try {
-      const { App } = await import('@capacitor/app');
-      await App.exitApp();
-    } catch {
-      window.close();
-    }
+  const handleExit = () => {
+    // Capacitor/Cordova runtime (Mi Stick / APK)
+    if (navigator.app?.exitApp) { navigator.app.exitApp(); return; }
+    // Fallback navegador
+    window.close();
   };
 
   return (
