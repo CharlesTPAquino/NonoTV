@@ -1,178 +1,192 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import Navbar from './components/Layout/Navbar';
-import Sidebar from './components/Layout/Sidebar';
-import ChannelGrid from './components/Channels/ChannelGrid';
-import { parseM3U } from './utils/m3uParser';
-import VideoPlayer from './components/Player/VideoPlayer';
-import { CHANNELS as INITIAL_CHANNELS, GROUPS as INITIAL_GROUPS } from './data/channels';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { 
+  AlertCircle, RefreshCw, Search, 
+  Activity, Clock, LogOut, LayoutGrid, Globe, Server
+} from 'lucide-react';
 import { initSpatialNavigation } from './utils/spatialNavigation';
-import { AlertCircle, RefreshCw } from 'lucide-react';
+import Sidebar from './components/Layout/Sidebar';
+import Navbar from './components/Layout/Navbar';
+import ChannelGrid from './components/Channels/ChannelGrid';
+import VideoPlayer from './components/Player/VideoPlayer';
+import { usePlayer } from './context/PlayerContext';
+import { useSources } from './context/SourceContext';
+import { GROUPS as INITIAL_GROUPS } from './data/channels';
 
-const CACHE_VERSION = 'v2';
-const PROXY_URL = 'http://localhost:3131';
-
-function getCacheKey(url) { return `nono_${CACHE_VERSION}_${btoa(url).slice(0, 40)}`; }
-function readCache(url) {
-  try {
-    const raw = localStorage.getItem(getCacheKey(url));
-    if (!raw) return null;
-    const data = JSON.parse(raw);
-    if (data.length > 0 && data[0].type === undefined) { localStorage.removeItem(getCacheKey(url)); return null; }
-    return data;
-  } catch { return null; }
-}
-import { SOURCES } from './data/sources';
-
-function writeCache(url, data) {
-  try { localStorage.setItem(getCacheKey(url), JSON.stringify(data)); } catch {}
-}
-
+/**
+ * REFAZENDO O APP (NONO 3.1)
+ * Estratégia: Simplicidade Indestrutível + Design Premium
+ */
 export default function App() {
-  const [channels,        setChannels]       = useState(() => INITIAL_CHANNELS.map(c => ({ ...c, type: c.type || 'live' })));
-  const [activeCategory,  setActiveCategory] = useState('All');
-  const [activeGroup,     setActiveGroup]    = useState('All');
-  const [search,          setSearch]         = useState('');
-  const [selectedChannel, setSelectedChannel]= useState(null);
-  const [isLoading,       setIsLoading]      = useState(false);
-  const [error,           setError]          = useState(null);
-  const [syncStatus,      setSyncStatus]     = useState(null);
+  const [activeCategory,  setActiveCategory]  = useState('All');
+  const [activeGroup,     setActiveGroup]     = useState('All');
+  const [search,          setSearch]          = useState('');
 
-  useEffect(() => { initSpatialNavigation(); }, []);
+  const { activeChannel, showPlayer, playChannel, closePlayer } = usePlayer();
+  const { 
+    sources, 
+    activeSource, 
+    channels, 
+    isLoading, 
+    error, 
+    syncStatus, 
+    selectSource 
+  } = useSources();
 
-  const resetNav = useCallback(() => {
-    setActiveCategory('All');
-    setActiveGroup('All');
-    setSearch('');
+  // Inicializa Spatial Navigation para Android TV
+  useEffect(() => { 
+    initSpatialNavigation(); 
   }, []);
-
-  const handleSourceSelect = useCallback(async (source) => {
-    if (!source.url) {
-      setChannels(INITIAL_CHANNELS.map(c => ({ ...c, type: c.type || 'live' })));
-      resetNav(); setError(null); return;
-    }
-
-    setError(null); setIsLoading(true);
-    setSyncStatus(`Sincronizando ${source.name}...`);
-
-    const cached = readCache(source.url);
-    if (cached) { 
-      setChannels(cached); 
-      resetNav(); 
-    }
-
-    try {
-      // Tunela o fetch através do proxy local para evitar 503/403 (CORS e User-Agent VLC)
-      const response = await fetch(`${PROXY_URL}/${source.url}`);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const text = await response.text();
-      const parsed = parseM3U(text);
-      
-      if (!parsed || parsed.length === 0) throw new Error('Lista vazia ou inválida');
-
-      setChannels(parsed);
-      writeCache(source.url, parsed);
-      resetNav();
-      setSyncStatus('Lista Sincronizada!');
-      setTimeout(() => setSyncStatus(null), 3000);
-    } catch (err) {
-      console.error('[handleSourceSelect]', err.message);
-      if (!cached) {
-        setError(`Erro ao carregar "${source.name}": ${err.message}`);
-        setChannels(INITIAL_CHANNELS.map(c => ({ ...c, type: c.type || 'live' })));
-        resetNav();
-      } else {
-        setSyncStatus(null);
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  }, [resetNav]);
 
   const filteredChannels = useMemo(() => {
     if (!channels || channels.length === 0) return [];
     return channels.filter(c => {
+      // Proteção de Conteúdo
       if (/adulto|sexo|hot|xxx|18\+|porno/i.test(c.group || '')) return false;
-      const matchSearch   = !search || c.name.toLowerCase().includes(search.toLowerCase()) || (c.group || '').toLowerCase().includes(search.toLowerCase());
+      
+      const matchSearch   = !search || 
+        c.name.toLowerCase().includes(search.toLowerCase()) || 
+        (c.group || '').toLowerCase().includes(search.toLowerCase());
+        
       const matchCategory = activeCategory === 'All' || (c.type || 'live') === activeCategory;
       const matchGroup    = activeGroup === 'All' || c.group === activeGroup;
+      
       return matchSearch && matchCategory && matchGroup;
     });
   }, [channels, search, activeCategory, activeGroup]);
 
   const groups = useMemo(() => {
+    if (!channels || channels.length === 0) return INITIAL_GROUPS;
+    
     const base = channels.filter(c =>
       !(/adulto|sexo|hot|xxx|18\+|porno/i.test(c.group || '')) &&
       (activeCategory === 'All' || (c.type || 'live') === activeCategory)
     );
-    if (channels.length <= INITIAL_CHANNELS.length && activeCategory === 'All') return INITIAL_GROUPS;
+    
     const unique = [...new Set(base.map(c => c.group).filter(Boolean))];
-    return [{ id: 1, name: 'All', icon: 'home' }, ...unique.map((g, i) => ({ id: i + 2, name: g, icon: 'tv' }))];
+    return [
+      { id: 1, name: 'All', icon: 'home' }, 
+      ...unique.map((g, i) => ({ id: i + 2, name: g, icon: 'tv' }))
+    ];
   }, [channels, activeCategory]);
 
   return (
-    <div className="min-h-screen bg-[#0F1115] text-white selection:bg-[#F7941D]/30">
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-[#F7941D]/10 blur-[150px] rounded-full animate-pulse" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-500/5 blur-[120px] rounded-full" />
-        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/dark-matter.png')] opacity-[0.03] mix-blend-overlay" />
+    <div className="min-h-screen bg-[#0A0B0F] text-white selection:bg-[#F7941D]/30 font-inter">
+      {/* Background Dinâmico Premium */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] bg-[#F7941D]/15 blur-[120px] rounded-full mix-blend-screen opacity-40 animate-pulse" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-[#4F46E5]/10 blur-[150px] rounded-full mix-blend-screen" />
+        <div className="absolute inset-0 bg-black opacity-30" />
       </div>
 
-      <Sidebar activeCategory={activeCategory} setActiveCategory={(cat) => { setActiveCategory(cat); setActiveGroup('All'); }} />
+      {/* Sidebar de Navegação */}
+      <Sidebar 
+        activeCategory={activeCategory} 
+        setActiveCategory={(cat) => { 
+          setActiveCategory(cat); 
+          setActiveGroup('All'); 
+        }} 
+      />
 
-      <main className="md:pl-20 lg:pl-64 min-h-screen transition-all duration-700">
+      {/* Área Principal */}
+      <main className="md:pl-20 lg:pl-64 min-h-screen relative z-10">
         <Navbar 
-          search={search}
+          search={search} 
           setSearch={setSearch} 
-          sources={SOURCES}
-          onSourceSelect={handleSourceSelect} 
           syncStatus={syncStatus} 
         />
 
-        <div className="p-6 md:p-10 pt-28 space-y-12">
+        <div className="p-4 md:p-8 pt-24 md:pt-32 max-w-[1920px] mx-auto">
+          {/* Dashboard Info Area */}
+          <div className="flex flex-col md:flex-row items-start md:items-end justify-between mb-10 gap-6">
+            <div className="space-y-2">
+              <div className="flex items-center gap-3">
+                 <div className="w-1.5 h-6 bg-[#F7941D]" />
+                 <h1 className="text-4xl md:text-5xl font-black tracking-tighter uppercase font-outfit">
+                    Nono<span className="text-[#F7941D]">TV</span>
+                 </h1>
+                 <span className="text-[10px] font-black tracking-widest bg-white/5 border border-white/10 px-3 py-1 rounded text-white/40">ULTRA 4K v3.1</span>
+              </div>
+              <p className="text-white/30 font-bold uppercase tracking-widest text-[10px]">
+                {activeSource ? `Sintonizado em: ${activeSource.name}` : 'Navegando nos Canais Locais'}
+              </p>
+            </div>
+
+            {/* Quick Stats */}
+            <div className="flex items-center gap-8 text-[10px] font-black uppercase tracking-[0.2em] text-white/20">
+               <div className="flex items-center gap-3"><Globe size={14} className="text-blue-500" /> {activeCategory}</div>
+               <div className="flex items-center gap-3"><LayoutGrid size={14} className="text-emerald-500" /> {filteredChannels.length} Canais</div>
+               <div className="flex items-center gap-3"><Server size={14} className="text-orange-500" /> Online</div>
+            </div>
+          </div>
+
+          {/* Erro Banner (Moderno) */}
           {error && (
-            <div className="bg-red-500/10 border border-red-500/20 p-6 rounded-3xl flex items-center gap-4 text-red-500 animate-in slide-in-from-top duration-500">
-              <AlertCircle size={24} />
-              <div className="flex-1"><p className="font-black text-xs uppercase tracking-widest">{error}</p></div>
-              <button onClick={() => handleSourceSelect({ url: null })} className="px-6 py-2 bg-red-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-600 transition-all">
-                Voltar à Lista Local
-              </button>
+            <div className="group relative bg-[#1A1C22]/80 border border-red-500/20 p-8 rounded-[40px] mb-12 flex flex-col md:flex-row items-center gap-8 backdrop-blur-xl animate-in fade-in slide-in-from-top duration-700">
+               <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center text-red-500 shadow-[0_0_40px_rgba(239,68,68,0.2)]">
+                  <AlertCircle size={32} />
+               </div>
+               <div className="flex-1 text-center md:text-left">
+                 <h3 className="text-xl font-black uppercase tracking-tighter mb-2">Instabilidade no Satélite</h3>
+                 <p className="text-white/40 font-bold leading-relaxed">{error}</p>
+               </div>
+               <button 
+                 onClick={() => selectSource(null)} 
+                 className="px-8 py-4 bg-red-500 text-white font-black rounded-3xl uppercase tracking-widest text-xs shadow-xl active:scale-95 transition-all"
+               >
+                 Restaurar Canais Locais
+               </button>
             </div>
           )}
 
+          {/* Estado de Carregamento */}
           {isLoading && !channels.length && (
-            <div className="flex flex-col items-center justify-center py-40 space-y-6 animate-pulse">
-              <div className="w-16 h-16 border-4 border-[#F7941D]/20 border-t-[#F7941D] rounded-full animate-spin" />
-              <p className="text-[#F7941D] font-black uppercase tracking-[0.5em] text-[10px]">Sincronizando Metadados</p>
+            <div className="flex flex-col items-center justify-center py-40">
+              <div className="relative w-28 h-28 mb-10">
+                <div className="absolute inset-0 border-[6px] border-[#F7941D]/10 rounded-full" />
+                <div className="absolute inset-0 border-[6px] border-t-[#F7941D] rounded-full animate-spin shadow-[0_0_30px_#F7941D]" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                   <div className="w-4 h-4 bg-[#F7941D] rounded-full animate-pulse" />
+                </div>
+              </div>
+              <p className="text-[#F7941D] font-black uppercase tracking-[0.8em] text-xs animate-pulse">Estabelecendo Conexão Premium</p>
             </div>
           )}
 
-          {!error && (
-            <div className={isLoading ? 'opacity-60 pointer-events-none transition-opacity' : 'transition-opacity'}>
-              <ChannelGrid
-                channels={filteredChannels}
-                activeGroup={activeGroup}
-                activeCategory={activeCategory}
-                setActiveGroup={setActiveGroup}
-                groups={groups}
-                onPlay={setSelectedChannel}
-                search={search}
-                isPlayerOpen={!!selectedChannel}
-              />
-            </div>
-          )}
+          {/* Grid Principal */}
+          <div className={(isLoading && !channels.length) ? 'hidden' : 'animate-in fade-in duration-1000'}>
+            <ChannelGrid
+              channels={filteredChannels}
+              activeGroup={activeGroup}
+              activeCategory={activeCategory}
+              setActiveGroup={setActiveGroup}
+              groups={groups}
+              onPlay={playChannel}
+              search={search}
+              isPlayerOpen={showPlayer}
+            />
+          </div>
         </div>
       </main>
 
-      {selectedChannel && (
-        <VideoPlayer channel={selectedChannel} channels={filteredChannels} onClose={() => setSelectedChannel(null)} />
+      {/* Video Player (Overlay de Cinema) */}
+      {showPlayer && activeChannel && (
+        <VideoPlayer 
+          channel={activeChannel} 
+          channels={filteredChannels} 
+          onClose={closePlayer} 
+        />
       )}
 
+      {/* Status de Sincronização (Discreto e Premium) */}
       {syncStatus && !isLoading && !error && (
-        <div className="fixed bottom-10 right-10 bg-emerald-500 text-white px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-4 animate-in slide-in-from-bottom duration-500 z-[200]">
-          <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-            <RefreshCw size={16} className="animate-spin" />
+        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-[#1A1C22]/90 border border-white/5 backdrop-blur-3xl px-8 py-4 rounded-3xl shadow-[0_30px_60px_rgba(0,0,0,0.6)] flex items-center gap-5 z-[200] animate-in slide-in-from-bottom duration-700">
+          <div className="w-10 h-10 rounded-2xl bg-[#F7941D]/10 flex items-center justify-center text-[#F7941D]">
+            <RefreshCw size={18} className="animate-spin" />
           </div>
-          <p className="font-black uppercase tracking-widest text-xs">{syncStatus}</p>
+          <div className="flex flex-col">
+            <span className="text-[9px] font-black text-white/30 uppercase tracking-widest">Sinal Digital</span>
+            <span className="text-[11px] font-black uppercase tracking-[0.1em]">{syncStatus}</span>
+          </div>
         </div>
       )}
     </div>

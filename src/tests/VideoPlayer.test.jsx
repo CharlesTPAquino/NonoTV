@@ -3,12 +3,24 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import VideoPlayer from '../components/Player/VideoPlayer';
 
+import { PlayerProvider } from '../context/PlayerContext';
+
 // Mock do hook useHlsPlayer para evitar erro de mídia no JSDOM durante build
 vi.mock('../hooks/useHlsPlayer', () => ({
-  useHlsPlayer: vi.fn(() => ({
-    playerState: { playing: true, buffering: false, error: null },
+  default: vi.fn(() => ({
+    playerState: { 
+      playing: true, 
+      buffering: false, 
+      error: null,
+      audioTracks: [],
+      subtitles: [],
+      activeAudio: -1,
+      activeSubtitle: -1
+    },
     togglePlay: vi.fn(),
-    changeQuality: vi.fn()
+    changeQuality: vi.fn(),
+    changeAudio: vi.fn(),
+    changeSubtitle: vi.fn()
   }))
 }));
 
@@ -32,22 +44,21 @@ describe('VideoPlayer', () => {
     const handleClose = vi.fn();
 
     render(
-      <VideoPlayer
-        channel={mockChannel}
-        channels={mockChannels}
-        onClose={handleClose}
-      />
+      <PlayerProvider>
+        <VideoPlayer
+          channel={mockChannel}
+          channels={mockChannels}
+          onClose={handleClose}
+        />
+      </PlayerProvider>
     );
 
-    // Usa getAllByText porque o nome aparece no header E na lista de canais (sidebar)
     const elements = screen.getAllByText('Globo HD');
     expect(elements.length).toBeGreaterThan(0);
 
-    // Verifica especificamente o título principal (h2)
     const title = elements.find(el => el.tagName === 'H2');
     expect(title).toBeInTheDocument();
 
-    // Botão fechar existe (pode haver mais de um dependendo do estado do player)
     const closeButtons = screen.getAllByLabelText('Fechar');
     expect(closeButtons.length).toBeGreaterThan(0);
   });
@@ -56,11 +67,13 @@ describe('VideoPlayer', () => {
     const handleClose = vi.fn();
 
     render(
-      <VideoPlayer
-        channel={mockChannel}
-        channels={mockChannels}
-        onClose={handleClose}
-      />
+      <PlayerProvider>
+        <VideoPlayer
+          channel={mockChannel}
+          channels={mockChannels}
+          onClose={handleClose}
+        />
+      </PlayerProvider>
     );
 
     const closeButtons = screen.getAllByLabelText('Fechar');
