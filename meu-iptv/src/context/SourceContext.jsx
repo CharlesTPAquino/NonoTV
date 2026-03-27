@@ -1,8 +1,10 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { fetchSource } from '../services/SyncService';
 import { SOURCES as INITIAL_SOURCES } from '../data/sources';
 import { parseM3U } from '../utils/m3uParser';
 import { CHANNELS as LOCAL_CHANNELS } from '../data/channels';
+
+const SOURCE_KEY = 'nono_last_source';
 
 const SourceContext = createContext();
 
@@ -27,25 +29,38 @@ export const SourceProvider = ({ children }) => {
     setError(null);
 
     try {
-      setSyncStatus(`Conectando: ${source.name}...`);
+      localStorage.setItem(SOURCE_KEY, JSON.stringify(source));
+      
       const text = await fetchSource(source.url);
       const parsed = parseM3U(text);
       
       if (!parsed || parsed.length === 0) {
         setChannels(LOCAL_CHANNELS);
-        setSyncStatus(null);
         return;
       }
 
       setChannels(parsed);
-      setSyncStatus(`✓ ${source.name} - ${parsed.length} canais`);
-      setTimeout(() => setSyncStatus(null), 3000);
     } catch (err) {
-      console.error('[Source] Falha:', err.message);
       setChannels(LOCAL_CHANNELS);
-      setSyncStatus(null);
     } finally {
       setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const saved = localStorage.getItem(SOURCE_KEY);
+    if (saved) {
+      try {
+        const lastSource = JSON.parse(saved);
+        const found = sources.find(s => s.id === lastSource.id);
+        if (found) {
+          selectSource(found);
+        }
+      } catch (e) {
+        selectSource(sources[0]);
+      }
+    } else if (sources.length > 0) {
+      selectSource(sources[0]);
     }
   }, []);
 

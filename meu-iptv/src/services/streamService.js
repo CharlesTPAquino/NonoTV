@@ -37,40 +37,29 @@ export function detectStreamType(url, groupTitle = '', channelName = '') {
   
   const lower = url.toLowerCase();
   const path = lower.split('?')[0];
-  const group = (groupTitle || '').toUpperCase();
-  const name = (channelName || '').toUpperCase();
+  const group = (groupTitle || '').toLowerCase();
+  const name = (channelName || '').toLowerCase();
 
-  // Prioridade 1: group-title indica VOD (antes da extensão)
-  if (group.includes('FILME') || group.includes('VOD') || group.includes('CINEMA')) {
-    return 'movie';
-  }
-
-  // Prioridade 2: group-title indica Série
-  if (group.includes('SERIE') || group.includes('SÉRIE')) {
+  if (group.includes('serie') || group.includes('série') || group.includes('episodio') || group.includes('episódio')) {
     return 'series';
   }
   
-  // Prioridade 3: Nome do canal indica Série
-  if (name.includes('EPISODIO') || name.includes('EPISÓDIO') || name.includes('EP ') || /S\d{1,2}/.test(name)) {
+  if (name.includes('serie') || name.includes('série') || name.includes('episodio') || name.includes('episódio') || name.includes('temporada') || /s\d{2}e\d{2}/i.test(name)) {
+    return 'series';
+  }
+  
+  if (path.includes('/series/') || path.includes('/episodes/') || path.includes('/episodio/') || path.includes('/temporada/')) {
     return 'series';
   }
 
-  // Prioridade 4: Extensão de arquivo direta (VOD) - só se não tiver grupo definido
-  if (!group && /\.(mp4|mkv|avi|mov|m4v|webm|flv)(\?|$)/i.test(path)) {
+  if (group.includes('filme') || group.includes('vod') || group.includes('cinema') || group.includes('movie')) {
+    return 'movie';
+  }
+  
+  if (name.includes('filme') || /\.(mp4|mkv|avi|mov|m4v|webm|flv)$/i.test(path)) {
     return 'movie';
   }
 
-  // Prioridade 5: URL pattern para series
-  if (path.includes('/series/') || path.includes('/episodes/') || path.includes('/episodio/')) {
-    return 'series';
-  }
-
-  // Prioridade 6: URL pattern para movies
-  if (path.includes('/movie/') || path.includes('/filme/') || path.includes('/vod/')) {
-    return 'movie';
-  }
-
-  // Default: Live TV (HLS)
   return 'live';
 }
 

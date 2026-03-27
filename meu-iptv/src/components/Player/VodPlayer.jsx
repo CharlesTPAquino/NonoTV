@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
-  X, Play, Pause, Volume2, VolumeX, Settings, 
-  Maximize, SkipBack, SkipForward, List
+  X, Play, Pause, Volume2, VolumeX, 
+  Maximize, SkipBack, SkipForward, List, AlertTriangle
 } from 'lucide-react';
 
 const VOD_CONFIG = {
   bufferTime: 30,
   seekStep: 10,
-  controlsTimeout: 5000
+  controlsTimeout: 5000,
+  loadTimeout: 15000
 };
 
 /**
@@ -26,6 +27,7 @@ export default function VodPlayer({ channel, channels, onClose }) {
   const [isMuted, setIsMuted] = useState(false);
   const [error, setError] = useState(null);
   const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const [hasAttemptedPlay, setHasAttemptedPlay] = useState(false);
 
   const controlsTimerRef = useRef(null);
 
@@ -41,33 +43,48 @@ export default function VodPlayer({ channel, channels, onClose }) {
     const video = videoRef.current;
     if (!video) return;
 
-    const handleLoadStart = () => setIsBuffering(true);
+    const handleLoadStart = () => {
+      setIsBuffering(true);
+      setError(null);
+    };
     const handleCanPlay = () => setIsBuffering(false);
-    const handlePlay = () => { setIsPlaying(true); setIsBuffering(false); };
+    const handlePlay = () => { 
+      setIsPlaying(true); 
+      setIsBuffering(false); 
+    };
     const handlePause = () => setIsPlaying(false);
     const handleTimeUpdate = () => setCurrentTime(video.currentTime);
-    const handleDurationChange = () => setDuration(video.duration);
+    const handleDurationChange = () => setDuration(video.duration || 0);
     const handleWaiting = () => setIsBuffering(true);
-    const handleError = () => setError('Erro ao reproduzir o vídeo');
+    const handleError = () => {
+      console.error('[VodPlayer] Error event:', video.error);
+      setError('Vídeo não disponível ou formato não suportado');
+      setIsBuffering(false);
+    };
+    const handleStalled = () => setIsBuffering(true);
 
     video.addEventListener('loadstart', handleLoadStart);
     video.addEventListener('canplay', handleCanPlay);
+    video.addEventListener('canplaythrough', handleCanPlay);
     video.addEventListener('play', handlePlay);
     video.addEventListener('pause', handlePause);
     video.addEventListener('timeupdate', handleTimeUpdate);
     video.addEventListener('durationchange', handleDurationChange);
     video.addEventListener('waiting', handleWaiting);
     video.addEventListener('error', handleError);
+    video.addEventListener('stalled', handleStalled);
 
     return () => {
       video.removeEventListener('loadstart', handleLoadStart);
       video.removeEventListener('canplay', handleCanPlay);
+      video.removeEventListener('canplaythrough', handleCanPlay);
       video.removeEventListener('play', handlePlay);
       video.removeEventListener('pause', handlePause);
       video.removeEventListener('timeupdate', handleTimeUpdate);
       video.removeEventListener('durationchange', handleDurationChange);
       video.removeEventListener('waiting', handleWaiting);
       video.removeEventListener('error', handleError);
+      video.removeEventListener('stalled', handleStalled);
     };
   }, []);
 
@@ -76,10 +93,25 @@ export default function VodPlayer({ channel, channels, onClose }) {
     if (!video) return;
     
     if (video.paused) {
-      video.play().catch(() => {});
+      video.play().catch(e => {
+        console.error('[VodPlayer] Play error:', e);
+        setError('Não foi possível reproduzir');
+      });
     } else {
       video.pause();
     }
+  }, []);
+
+  const changeChannel = useCallback((newChannel) => {
+    const video = videoRef.current;
+    if (!video || !newChannel) return;
+    
+    setError(null);
+    setIsBuffering(true);
+    setHasAttemptedPlay(false);
+    
+    video.src = newChannel.url;
+    video.load();
   }, []);
 
   const seek = useCallback((seconds) => {
@@ -114,7 +146,6 @@ export default function VodPlayer({ channel, channels, onClose }) {
       : `${m}:${s.toString().padStart(2, '0')}`;
   };
 
-  // Keyboard controls
   useEffect(() => {
     const handleKey = (e) => {
       resetControlsTimer();
@@ -162,7 +193,6 @@ export default function VodPlayer({ channel, channels, onClose }) {
     return () => window.removeEventListener('keydown', handleKey);
   }, [seek, togglePlay, toggleMute, onClose, resetControlsTimer]);
 
-  // Update video volume when state changes
   useEffect(() => {
     if (videoRef.current) {
       videoRef.current.volume = volume;
@@ -174,7 +204,7 @@ export default function VodPlayer({ channel, channels, onClose }) {
       <div className="fixed inset-0 z-[200] bg-bg-primary flex items-center justify-center p-10 font-display">
         <div className="max-w-md text-center">
           <div className="w-20 h-20 bg-state-error/20 border border-state-error/50 rounded-full flex items-center justify-center mx-auto mb-6 text-state-error shadow-glow-sm">
-            <X size={40} />
+            <AlertTriangle size={40} />
           </div>
           <h2 className="text-3xl font-black text-content-primary uppercase tracking-tighter mb-4">Erro de Reprodução</h2>
           <p className="text-content-tertiary font-bold mb-10 leading-relaxed">{error}</p>
@@ -346,11 +376,7 @@ export default function VodPlayer({ channel, channels, onClose }) {
           {channels?.filter(c => c.type === 'movie' || c.type === 'series').map((ch, idx) => (
             <button 
               key={ch.id} 
-              onClick={() => {
-                videoRef.current?.pause();
-                videoRef.current.src = ch.url;
-                videoRef.current.play();
-              }}
+              onClick={() => changeChannel(ch)}
               className={`w-full group p-5 rounded-[24px] border flex items-center gap-5 transition-all duration-500 ${ch.id === channel?.id ? 'bg-primary border-primary text-white shadow-glow-md scale-[1.02]' : 'bg-white/[0.03] border-border hover:bg-surface-hover hover:border-border-hover'}`}
             >
               <div className="w-12 h-12 rounded-2xl bg-black/40 flex items-center justify-center text-[11px] font-black group-hover:scale-110 transition-transform">

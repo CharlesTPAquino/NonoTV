@@ -42,12 +42,22 @@ export default function App() {
     return channels.filter(c => {
       if (ADULT_CONTENT_REGEX.test(c.group || '')) return false;
       
-      const matchSearch   = !search || 
+      const matchSearch = !search || 
         c.name.toLowerCase().includes(search.toLowerCase()) || 
         (c.group || '').toLowerCase().includes(search.toLowerCase());
-        
-      const matchCategory = activeCategory === 'All' || (c.type || 'live') === activeCategory;
-      const matchGroup    = activeGroup === 'All' || c.group === activeGroup;
+      
+      const type = c.type || 'live';
+      let matchCategory = true;
+      
+      if (activeCategory === 'live') {
+        matchCategory = type === 'live';
+      } else if (activeCategory === 'movie') {
+        matchCategory = type === 'movie' || type === 'series';
+      } else if (activeCategory === 'series') {
+        matchCategory = type === 'series';
+      }
+      
+      const matchGroup = activeGroup === 'All' || c.group === activeGroup;
       
       return matchSearch && matchCategory && matchGroup;
     });
@@ -56,10 +66,14 @@ export default function App() {
   const groups = useMemo(() => {
     if (!channels || channels.length === 0) return INITIAL_GROUPS;
     
-    const base = channels.filter(c =>
-      !ADULT_CONTENT_REGEX.test(c.group || '') &&
-      (activeCategory === 'All' || (c.type || 'live') === activeCategory)
-    );
+    const categoryMap = { 'All': null, 'live': 'live', 'movie': 'movie', 'series': 'series' };
+    const targetType = categoryMap[activeCategory];
+    
+    const base = channels.filter(c => {
+      if (ADULT_CONTENT_REGEX.test(c.group || '')) return false;
+      if (targetType && (c.type || 'live') !== targetType) return false;
+      return true;
+    });
     
     const unique = [...new Set(base.map(c => c.group).filter(Boolean))];
     return [
@@ -91,7 +105,6 @@ export default function App() {
         <Navbar 
           search={search} 
           setSearch={setSearch} 
-          syncStatus={syncStatus} 
         />
 
         <div className="p-4 md:p-8 pt-24 md:pt-32 max-w-[1920px] mx-auto">

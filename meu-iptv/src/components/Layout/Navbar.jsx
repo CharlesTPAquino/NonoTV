@@ -2,7 +2,7 @@ import React from 'react';
 import { Search, Activity, LogOut, LayoutGrid, Globe, Server } from 'lucide-react';
 import ServerSelector from './ServerSelector';
 
-export default function Navbar({ search, setSearch, syncStatus }) {
+export default function Navbar({ search, setSearch }) {
   const handleExit = () => {
     if (window.Capacitor?.Plugins?.App) {
       window.Capacitor.Plugins.App.exitApp();

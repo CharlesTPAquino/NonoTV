@@ -1,26 +1,19 @@
 import { Capacitor } from '@capacitor/core';
 
-/**
- * SyncService: Conexão com servidores IPTV
- * Implementação simplificada que funciona no Android
- */
+const FETCH_TIMEOUT = 8000;
 
 export const fetchSource = async (url) => {
-  console.log('[SyncService] Fetching:', url);
-
   const isNative = Capacitor.isNativePlatform();
-  console.log('[SyncService] Platform:', isNative ? 'Android' : 'Web');
-
-  // Timeout de 30 segundos
+  
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 30000);
+  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
 
   try {
     const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Accept': '*/*',
-        'User-Agent': 'NonoTV/3.1'
+        'User-Agent': 'NonoTV/3.0'
       },
       signal: controller.signal
     });
@@ -34,7 +27,6 @@ export const fetchSource = async (url) => {
     throw new Error(`HTTP ${response.status}`);
   } catch (error) {
     clearTimeout(timeout);
-    console.error('[SyncService] Error:', error.message);
     throw error;
   }
 };
