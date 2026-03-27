@@ -1,111 +1,67 @@
 import React from 'react';
-import { 
-  Home, Tv, Trophy, Film, Library, Newspaper, 
-  Baby, Music, Radio, Church, Sparkles, AlertCircle, 
-  Clapperboard, Monitor, Heart, Play, Star
-} from 'lucide-react';
+import { Home, Tv, Film, Clapperboard, Settings, Sparkles } from 'lucide-react';
+import Badge from '../UI/Badge';
 
-const getIconForGroup = (name) => {
-  const n = name.toUpperCase();
-  if (n === 'ALL' || n === 'INÍCIO' || n === 'TODOS') return Home;
-  if (n.includes('ESPORTE') || n.includes('SPORT') || n.includes('PREMIERE') || n.includes('DAZN')) return Trophy;
-  if (n.includes('FILME') || n.includes('VOD') || n.includes('CINEMA')) return Film;
-  if (n.includes('SERIE') || n.includes('SEASON') || n.includes('NETFLIX')) return Clapperboard;
-  if (n.includes('INFANTIL') || n.includes('KIDS') || n.includes('DESENHOS')) return Baby;
-  if (n.includes('NOTICIA') || n.includes('NEWS')) return Newspaper;
-  if (n.includes('DOCUMENTARIO') || n.includes('CURIOSIDADE')) return Library;
-  if (n.includes('MUSICA') || n.includes('MUSIC')) return Music;
-  if (n.includes('RADIO')) return Radio;
-  if (n.includes('RELIGIAO') || n.includes('GOSPEL') || n.includes('IGREJA')) return Church;
-  if (n.includes('4K') || n.includes('FHD') || n.includes('UHD')) return Sparkles;
-  if (n.includes('ADULTO') || n.includes('HOT') || n.includes('SEX')) return AlertCircle;
-  if (n.includes('ABERTO') || n.includes('GLOBO') || n.includes('CANAL')) return Monitor;
-  if (n.includes('FAVORITO')) return Heart;
-  if (n.includes('PLAY')) return Play;
-  if (n.includes('PREMIUM') || n.includes('VIP')) return Star;
-  return Tv;
-};
+const MAIN_CATEGORIES = [
+  { id: 'all',  name: 'Início',     type: 'All',   icon: Home },
+  { id: 'live', name: 'TV Ao Vivo', type: 'live',  icon: Tv },
+  { id: 'vod',  name: 'Filmes',     type: 'movie', icon: Film },
+  { id: 'ser',  name: 'Séries',     type: 'series',icon: Clapperboard }
+];
 
-const getDSColorForGroup = (name) => {
-  const n = name.toUpperCase();
-  if (n.includes('ESPORTE')) return 'bg-[#F59E0B]'; // Amber
-  if (n.includes('FILME')) return 'bg-[#F43F5E]';   // Rose
-  if (n.includes('SERIE')) return 'bg-[#6366F1]';   // Indigo
-  if (n.includes('INFANTIL')) return 'bg-[#0EA5E9]'; // Sky
-  if (n.includes('4K')) return 'bg-[#10B981]';      // Emerald
-  return 'bg-[#3F3F3F]'; // Default gray for others
-};
-
-export default function Sidebar({ groups, activeGroup, setActiveGroup }) {
-  // Adiciona a opção "Todos" se não houver
-  const allGroups = [
-    { id: 'all', name: 'All' },
-    ...groups.filter(g => g.name !== 'All')
-  ];
-
+export default function Sidebar({ activeCategory, setActiveCategory }) {
   return (
-    <aside className="fixed top-20 left-0 h-[calc(100vh-5rem)] w-20 hover:w-64 glass-sidebar py-6 transition-all duration-500 z-40 overflow-hidden flex flex-col group/sidebar cinematic-shadow border-r border-white/5">
-      <div className="space-y-3 px-3 flex-1 overflow-y-auto custom-scrollbar">
-        {allGroups.map(group => {
-          const Icon = getIconForGroup(group.name);
-          const iconColor = getDSColorForGroup(group.name);
-          const isActive = activeGroup === group.name;
-          
-          return (
-            <button
-              key={group.id || group.name}
-              onClick={() => setActiveGroup(group.name)}
-              className={`w-full flex items-center gap-4 px-3 py-3 rounded-2xl transition-all duration-500 whitespace-nowrap overflow-hidden group/item relative ${
-                isActive 
-                  ? 'bg-white/10' 
-                  : 'text-gray-400 hover:bg-white/5 hover:text-white'
-              }`}
-            >
-              {/* Active Indicator Line */}
-              {isActive && (
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-[#6366F1] rounded-r-full shadow-[0_0_15px_rgba(99,102,241,0.8)]" />
-              )}
-
-              {/* Icon Container */}
-              <div className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-500 ${
-                isActive 
-                  ? `${iconColor} text-white shadow-xl scale-110 rotate-0` 
-                  : 'bg-white/5 text-gray-400 group-hover/item:bg-white/10 group-hover/item:text-white group-hover/item:scale-110'
-              }`}>
-                <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
-              </div>
-
-              {/* Label */}
-              <span className={`text-[10px] uppercase font-black tracking-[0.2em] transition-all duration-500 ${
-                isActive 
-                  ? 'text-white opacity-100' 
-                  : 'opacity-0 scale-95 group-hover/sidebar:opacity-100 group-hover/sidebar:scale-100'
-              }`}>
-                {group.name === 'All' ? 'Início' : group.name}
-              </span>
-
-              {/* Active Dot for Closed View */}
-              {isActive && (
-                <div className="absolute right-4 w-1 h-1 bg-[#6366F1] rounded-full opacity-100 group-hover/sidebar:opacity-0 transition-opacity" />
-              )}
-            </button>
-          );
-        })}
+    <aside className="fixed left-0 top-0 w-20 md:w-20 lg:w-64 h-full glass-sidebar z-50 flex flex-col items-center justify-start py-8 md:py-10 shadow-elevation-xl transition-all duration-700">
+      
+      {/* Logo */}
+      <div className="flex items-center gap-2 mb-8 lg:mb-10">
+        <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
+          <Sparkles size={20} className="text-primary" />
+        </div>
+        <span className="hidden lg:block font-display font-black text-lg tracking-tight text-content-primary">
+          Nono<span className="text-primary">TV</span>
+        </span>
       </div>
 
-      {/* Footer Branding */}
-      <div className="mt-auto px-4 py-4 border-t border-white/5 flex items-center gap-4 group-hover/sidebar:justify-start justify-center transition-all">
-        <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#6366F1] to-[#10B981] flex items-center justify-center text-white text-[10px] font-black shrink-0 shadow-lg">
-          NT
-        </div>
-        <div className="hidden group-hover/sidebar:block overflow-hidden transition-all">
-          <p className="text-[9px] font-black text-white tracking-widest uppercase truncate">Premium Plan</p>
-          <div className="flex items-center gap-1 mt-0.5">
-            <div className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" />
-            <p className="text-[8px] font-bold text-gray-500 uppercase tracking-tighter">Server Online</p>
-          </div>
-        </div>
+      {MAIN_CATEGORIES.map(cat => {
+        const Icon = cat.icon;
+        const isActive = activeCategory === cat.type;
+        
+        return (
+          <button
+            key={cat.id}
+            onClick={() => setActiveCategory(cat.type)}
+            className="group relative flex items-center justify-center w-12 h-12 lg:w-16 lg:h-16 mb-6 md:mb-10 rounded-2xl transition-all duration-500 focus:scale-125 focus:bg-primary/10 outline-none hover:scale-110 active:scale-90"
+          >
+            {/* Active Glow Background */}
+            <div className={`absolute inset-0 rounded-2xl transition-all duration-700 pointer-events-none ${isActive ? 'bg-primary/15 opacity-100 scale-100' : 'opacity-0 scale-50 group-hover:opacity-10 group-focus:opacity-20 group-hover:scale-100 group-focus:scale-105'}`} />
+            
+            {/* Active Indicator */}
+            {isActive && (
+              <div className="absolute left-0 w-1 h-8 bg-primary rounded-full shadow-glow-sm" />
+            )}
+
+            <Icon size={24} className={`relative z-10 transition-all duration-500 ${isActive ? 'text-primary drop-shadow-[0_0_12px_rgba(247,148,29,0.6)] scale-110' : 'text-content-muted group-hover:text-content-secondary group-focus:text-content-primary'}`} />
+            
+            {/* Tooltip */}
+            <div className="hidden lg:flex absolute left-24 bg-bg-secondary border border-border px-6 py-3 rounded-2xl text-content-primary text-[10px] font-display font-bold uppercase tracking-[0.4em] opacity-0 -translate-x-6 group-hover:opacity-100 group-focus:opacity-100 group-hover:translate-x-0 group-focus:translate-x-0 transition-all shadow-elevation-xl pointer-events-none z-50 min-w-max">
+              {cat.name}
+            </div>
+          </button>
+        );
+      })}
+
+      {/* Settings */}
+      <div className="hidden md:flex flex-col items-center justify-end flex-1 w-full pb-6">
+        <button className="w-10 h-10 rounded-2xl bg-white/5 border border-border flex items-center justify-center text-content-muted hover:text-primary hover:bg-primary/10 transition-all duration-500">
+            <Settings size={20} />
+        </button>
       </div>
+
+      {/* Version Badge */}
+      <Badge variant="primary" size="sm" className="hidden lg:flex mb-4">
+        v3.1
+      </Badge>
     </aside>
   );
 }
