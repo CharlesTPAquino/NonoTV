@@ -91,11 +91,16 @@ export default function ChannelGrid({ channels, activeGroup, activeCategory, set
                 <button
                   key={g.id}
                   onClick={() => setActiveGroup(g.name)}
-                  className={`px-6 py-2.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap border ${
-                    activeGroup === g.name ? 'bg-white text-black border-white shadow-xl' : 'bg-white/5 text-white/40 border-white/5 hover:bg-white/10'
+                  className={`relative px-6 py-2.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap border ${
+                    activeGroup === g.name 
+                      ? 'bg-[#F7941D] text-black border-[#F7941D] shadow-[0_0_30px_rgba(247,148,29,0.4)] scale-105' 
+                      : 'bg-white/5 text-white/40 border-white/5 hover:bg-white/10 hover:border-white/20'
                   }`}
                 >
                   {g.name}
+                  {activeGroup === g.name && (
+                    <div className="absolute inset-0 rounded-full bg-gradient-to-r from-white/20 to-transparent animate-pulse" />
+                  )}
                 </button>
               ))}
             </div>

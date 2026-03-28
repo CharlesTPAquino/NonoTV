@@ -1,8 +1,15 @@
 import React from 'react';
-import { Search, Activity, LogOut, LayoutGrid, Globe, Server } from 'lucide-react';
+import { Search, LogOut, Satellite, Settings } from 'lucide-react';
 import ServerSelector from './ServerSelector';
 
-export default function Navbar({ search, setSearch, syncStatus }) {
+const TABS = [
+  { type: 'All',    label: 'Recomendado' },
+  { type: 'movie',  label: 'Filmes E Séries' },
+  { type: 'live',   label: 'Canais Ao Vivo' },
+  { type: 'series', label: 'Séries' },
+];
+
+export default function Navbar({ search, setSearch, syncStatus, activeCategory, setActiveCategory, onOpenSettings }) {
   const handleExit = () => {
     if (window.Capacitor?.Plugins?.App) {
       window.Capacitor.Plugins.App.exitApp();
@@ -12,36 +19,65 @@ export default function Navbar({ search, setSearch, syncStatus }) {
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 md:left-20 lg:left-64 h-24 bg-[#0A0B0F]/90 backdrop-blur-3xl border-b border-white/5 z-50 px-6 md:px-12 flex items-center justify-between cinematic-shadow">
-      
-      {/* Search Bar Premium */}
-      <div className="relative flex-1 max-w-xl group">
-        <div className="absolute inset-0 bg-[#F7941D]/5 rounded-3xl blur-2xl opacity-0 group-focus-within:opacity-100 transition-all duration-700" />
-        <div className="relative z-10 flex items-center bg-white/[0.03] border border-white/5 rounded-3xl focus-within:border-[#F7941D]/30 focus-within:bg-white/5 transition-all duration-500 overflow-hidden shadow-inner">
-           <Search className="ml-6 text-white/20 transition-colors group-focus-within:text-[#F7941D]" size={20} />
-           <input 
-             type="text" 
-             placeholder="BUSCAR CANAIS OU FILMES..." 
-             value={search}
-             onChange={(e) => setSearch(e.target.value)}
-             className="w-full h-14 pl-4 pr-8 bg-transparent outline-none text-sm font-black uppercase tracking-widest placeholder:text-white/5 focus:ring-0"
-           />
+    <nav className="shrink-0 h-auto bg-black/40 backdrop-blur-[30px] border-b border-white/[0.04] z-40 px-6 md:px-10 pt-5 pb-0">
+      {/* Top Row: Search + Actions */}
+      <div className="flex items-center justify-between gap-4 mb-4">
+        {/* Search */}
+        <div className="relative flex-1 max-w-lg group">
+          <div className="relative flex items-center bg-white/[0.04] border border-white/[0.04] rounded-2xl focus-within:border-[#F7941D]/20 focus-within:bg-white/[0.06] transition-all duration-500 overflow-hidden">
+             <Search className="ml-5 text-white/15 group-focus-within:text-[#F7941D] transition-colors" size={18} />
+             <input 
+               type="text" 
+               placeholder="Buscar..." 
+               value={search}
+               onChange={(e) => setSearch(e.target.value)}
+               className="w-full h-11 pl-3 pr-6 bg-transparent outline-none text-sm font-bold tracking-wide placeholder:text-white/10 focus:ring-0"
+             />
+          </div>
+        </div>
+        
+        {/* Actions */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onOpenSettings}
+            className="w-11 h-11 rounded-xl bg-white/[0.04] border border-white/[0.04] flex items-center justify-center text-white/10 hover:text-[#F7941D] hover:bg-[#F7941D]/10 hover:border-[#F7941D]/30 transition-all duration-500"
+            title="Configurações"
+          >
+            <Settings size={18} />
+          </button>
+          <ServerSelector />
+          <button
+            onClick={handleExit}
+            className="w-11 h-11 rounded-xl bg-white/[0.04] border border-white/[0.04] flex items-center justify-center text-white/10 hover:bg-red-500/20 hover:border-red-500/20 hover:text-red-400 transition-all duration-500 focus:ring-2 focus:ring-red-500/30"
+            title="Sair"
+          >
+            <LogOut size={18} />
+          </button>
         </div>
       </div>
-      
-      {/* Action Deck */}
-      <div className="flex items-center gap-6 ml-8">
-        <ServerSelector />
 
-        <div className="w-px h-8 bg-white/10 hidden md:block mx-2" />
-
-        <button
-          onClick={handleExit}
-          className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white/10 hover:bg-red-500 hover:border-red-500 hover:text-white transition-all duration-500 group shadow-lg"
-          title="Sair"
-        >
-          <LogOut size={20} className="group-hover:translate-x-1 transition-transform" />
-        </button>
+      {/* Bottom Row: Category Tabs (Netflix-style) */}
+      <div className="flex items-end gap-1 overflow-x-auto no-scrollbar -mb-px">
+        {TABS.map(tab => {
+          const isActive = activeCategory === tab.type;
+          return (
+            <button
+              key={tab.type}
+              onClick={() => setActiveCategory(tab.type)}
+              className={`relative px-5 py-3 text-[11px] font-bold uppercase tracking-widest transition-all duration-300 whitespace-nowrap rounded-t-xl outline-none
+                focus:ring-2 focus:ring-[#F7941D]/30
+                ${isActive 
+                  ? 'text-white bg-white/[0.06]' 
+                  : 'text-white/25 hover:text-white/50'
+                }`}
+            >
+              {tab.label}
+              {isActive && (
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-[2px] bg-[#F7941D] rounded-full shadow-[0_0_10px_#F7941D]" />
+              )}
+            </button>
+          );
+        })}
       </div>
     </nav>
   );

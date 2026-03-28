@@ -64,7 +64,9 @@ export default function ChannelCard({ channel, onPlay, isValid, isPlayerOpen }) 
       onMouseLeave={() => setIsHovered(false)}
       onFocus={() => !isPlayerOpen && setIsHovered(true)}
       onBlur={() => setIsHovered(false)}
-      className={`group relative flex flex-col w-full text-left outline-none focus:ring-2 focus:ring-[#F7941D] focus-visible:ring-2 rounded-2xl overflow-hidden transition-all duration-500 active:scale-95 bg-[#1A1C22] shadow-xl hover:-translate-y-1.5 hover:shadow-[0_20px_60px_rgba(0,0,0,0.4)] ${config.ratio}`}
+      className={`group relative flex flex-col w-full text-left outline-none focus:ring-2 focus:ring-[#F7941D] rounded-2xl overflow-hidden transition-all duration-500 active:scale-95 bg-[#1A1C22] shadow-xl hover:-translate-y-1.5 hover:shadow-[0_20px_60px_rgba(0,0,0,0.4)] ${config.ratio} ${
+        isHovered ? 'ring-2 ring-[#F7941D] ring-offset-2 ring-offset-[#050505] scale-[1.03]' : ''
+      }`}
     >
       {/* ─── Image Area ─── */}
       <div className="absolute inset-0">

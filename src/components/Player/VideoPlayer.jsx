@@ -2,22 +2,26 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   X, Play, Pause, Settings, Volume2, VolumeX, List, 
   Activity, Clock, Wand2, ChevronUp, ChevronDown, Check,
-  Languages, Type
+  Languages, Type, Heart, RotateCcw, Tv, Info, Maximize2,
+  ChevronLeft, ChevronRight
 } from 'lucide-react';
 import useHlsPlayer from '../../hooks/useHlsPlayer';
 import { usePlayer } from '../../context/PlayerContext';
+import { formatTime as formatEPGTime, formatDuration } from '../../services/EPGService';
+import EPGOverlay from './EPGOverlay';
 
 export default function VideoPlayer({ channel, channels, onClose }) {
   const videoRef = useRef(null);
-  const { playChannel } = usePlayer();
+  const { playChannel, currentProgram, nextProgram, epgData } = usePlayer();
   
   const [showControls, setShowControls] = useState(true);
   const [volume, setVolume] = useState(1);
   const [isSidebarOpen, setSidebarOpen] = useState(false);
-  const [isAiSharpEnabled, setAiSharpEnabled] = useState(true); // Default on for "Wow" factor
+  const [isAiSharpEnabled, setAiSharpEnabled] = useState(true);
   const [qualities, setQualities] = useState([]);
   const [activeQuality, setActiveQuality] = useState(-1);
   const [playTime, setPlayTime] = useState(0);
+  const [showEPG, setShowEPG] = useState(false);
 
   const { 
     playerState, 
@@ -175,24 +179,126 @@ export default function VideoPlayer({ channel, channels, onClose }) {
         </div>
       </div>
 
-      {/* --- Bottom Controls --- */}
+      {/* --- EPG Info Bar (Imagem 8 style) --- */}
+      <div className={`absolute bottom-32 left-0 right-0 px-8 md:px-12 transition-all duration-700 z-40 ${showControls ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'}`}>
+        <div className="max-w-6xl mx-auto reflective-glass !rounded-2xl p-5">
+          <div className="flex items-center gap-8">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                <span className="text-white/40 text-[10px] font-black uppercase tracking-widest">Agora</span>
+              </div>
+              <h3 className="text-white font-black text-lg md:text-xl uppercase tracking-tight truncate">
+                {currentProgram?.title || channel?.name || 'Sem Informação'}
+              </h3>
+              {currentProgram?.description && (
+                <p className="text-white/40 text-xs mt-1 truncate">{currentProgram.description}</p>
+              )}
+            </div>
+            
+            <div className="hidden md:block w-px h-16 bg-white/10" />
+            
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-white/40 text-[10px] font-black uppercase tracking-widest">Próximo</span>
+              </div>
+              <h3 className="text-white/60 font-black text-base md:text-lg uppercase tracking-tight truncate">
+                {nextProgram?.title || 'Sem Programação'}
+              </h3>
+              {nextProgram && (
+                <p className="text-white/30 text-xs mt-1">
+                  {formatEPGTime(nextProgram.start)} - {formatEPGTime(nextProgram.stop)} • {formatDuration(nextProgram.start, nextProgram.stop)}
+                </p>
+              )}
+            </div>
+
+            <button 
+              onClick={() => setShowEPG(!showEPG)}
+              className="flex items-center gap-2 px-4 py-2 bg-[#F7941D]/10 border border-[#F7941D]/30 rounded-xl text-[#F7941D] text-xs font-black uppercase tracking-wider hover:bg-[#F7941D]/20 transition-all"
+            >
+              <Tv size={16} />
+              Guia
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* --- Bottom Controls (Imagem 3 style) --- */}
       <div className={`absolute bottom-0 left-0 right-0 p-8 md:p-12 bg-gradient-to-t from-black/95 via-black/40 to-transparent transition-all duration-700 z-50 ${showControls ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'}`}>
         <div className="max-w-6xl mx-auto flex items-end justify-between">
-          <div className="flex items-center gap-8">
-            <button 
-              onClick={togglePlay}
-              className="w-20 h-20 rounded-[32px] bg-white text-black flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-500 shadow-[0_0_50px_rgba(255,255,255,0.2)]"
-            >
-              {playing ? <Pause size={34} fill="currentColor" /> : <Play size={34} fill="currentColor" className="ml-1" />}
-            </button>
+          <div className="flex items-center gap-4">
+            {/* Circular Control Buttons (Imagem 3 style) */}
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => {
+                  const idx = channels.findIndex(ch => ch.id === channel?.id);
+                  if (idx > 0) playChannel(channels[idx - 1]);
+                }}
+                className="w-14 h-14 rounded-full reflective-glass flex items-center justify-center text-white/60 hover:text-white hover:scale-110 transition-all"
+              >
+                <ChevronLeft size={20} />
+              </button>
+              
+              <button 
+                className="w-16 h-16 rounded-full reflective-glass flex items-center justify-center text-white/80 hover:text-[#F7941D] hover:scale-110 transition-all"
+              >
+                <Heart size={20} />
+              </button>
+              
+              <button 
+                onClick={() => window.location.reload()}
+                className="w-14 h-14 rounded-full reflective-glass flex items-center justify-center text-white/60 hover:text-white hover:scale-110 transition-all"
+              >
+                <RotateCcw size={18} />
+              </button>
+              
+              <button 
+                onClick={togglePlay}
+                className="w-20 h-20 rounded-full bg-white text-black flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-500 shadow-[0_0_50px_rgba(255,255,255,0.2)]"
+              >
+                {playing ? <Pause size={36} fill="currentColor" /> : <Play size={36} fill="currentColor" className="ml-1" />}
+              </button>
 
+              <button 
+                onClick={() => setShowEPG(!showEPG)}
+                className="w-14 h-14 rounded-full reflective-glass flex items-center justify-center text-white/60 hover:text-white hover:scale-110 transition-all"
+              >
+                <Tv size={20} />
+              </button>
+              
+              <button 
+                className="w-14 h-14 rounded-full reflective-glass flex items-center justify-center text-white/60 hover:text-white hover:scale-110 transition-all"
+              >
+                <Info size={20} />
+              </button>
+              
+              <button 
+                onClick={() => videoRef.current?.requestFullscreen?.()}
+                className="w-14 h-14 rounded-full reflective-glass flex items-center justify-center text-white/60 hover:text-white hover:scale-110 transition-all"
+              >
+                <Maximize2 size={18} />
+              </button>
+
+              <button 
+                onClick={() => {
+                  const idx = channels.findIndex(ch => ch.id === channel?.id);
+                  if (idx < channels.length - 1) playChannel(channels[idx + 1]);
+                }}
+                className="w-14 h-14 rounded-full reflective-glass flex items-center justify-center text-white/60 hover:text-white hover:scale-110 transition-all"
+              >
+                <ChevronRight size={20} />
+              </button>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
             <div className="flex flex-col gap-3 group/volume">
               <div className="flex items-center justify-between text-[10px] font-black text-white/20 uppercase tracking-[0.2em] group-hover/volume:text-white/60 transition-colors">
-                 <span>Áudio</span>
+                 <span>Vol</span>
                  <span>{Math.round(volume * 100)}%</span>
               </div>
-              <div className="flex items-center gap-4">
-                {volume === 0 ? <VolumeX className="text-red-500" /> : <Volume2 className="text-white/40" />}
+              <div className="flex items-center gap-2">
+                {volume === 0 ? <VolumeX size={16} className="text-red-500" /> : <Volume2 size={16} className="text-white/40" />}
                 <input 
                   type="range" min="0" max="1" step="0.01" value={volume}
                   onChange={(e) => {
@@ -200,68 +306,24 @@ export default function VideoPlayer({ channel, channels, onClose }) {
                     setVolume(v);
                     if (videoRef.current) videoRef.current.volume = v;
                   }}
-                  className="w-40 h-1.5 bg-white/10 rounded-full appearance-none cursor-pointer accent-[#F7941D]"
+                  className="w-24 h-1 bg-white/10 rounded-full appearance-none cursor-pointer accent-[#F7941D]"
                 />
               </div>
             </div>
-          </div>
 
-          <div className="flex items-center gap-4">
             {/* AI SHARP TOGGLE */}
             <button 
               onClick={() => setAiSharpEnabled(!isAiSharpEnabled)}
-              className={`flex items-center gap-3 px-6 py-4 rounded-[20px] font-black text-[11px] uppercase tracking-widest transition-all duration-500 border ${isAiSharpEnabled ? 'bg-cyan-500/10 border-cyan-500 text-cyan-400 shadow-[0_0_30px_rgba(6,182,212,0.2)]' : 'bg-white/5 border-white/10 text-white/30 hover:border-white/50'}`}
+              className={`flex items-center gap-2 px-4 py-3 rounded-xl font-black text-[10px] uppercase tracking-wider transition-all duration-500 border ${isAiSharpEnabled ? 'bg-cyan-500/10 border-cyan-500 text-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.2)]' : 'bg-white/5 border-white/10 text-white/30 hover:border-white/50'}`}
             >
-              <Wand2 size={16} className={isAiSharpEnabled ? 'animate-pulse' : ''} />
-              <span>AI Sharp 4K</span>
-              {isAiSharpEnabled && <Check size={14} />}
+              <Wand2 size={14} className={isAiSharpEnabled ? 'animate-pulse' : ''} />
+              <span>AI</span>
             </button>
 
-            {/* AUDIO SELECTOR */}
-            {audioTracks?.length > 1 && (
-              <div className="relative group/audio">
-                <div className="flex items-center gap-4 px-6 py-4 bg-white/5 border border-white/10 rounded-[20px] hover:border-white/50 transition-all duration-500">
-                  <Languages size={18} className="text-white/30" />
-                  <select 
-                    value={activeAudio}
-                    onChange={(e) => changeAudio(parseInt(e.target.value))}
-                    className="bg-transparent text-white font-black text-[11px] uppercase tracking-widest outline-none cursor-pointer appearance-none"
-                  >
-                    {audioTracks.map((track, i) => (
-                      <option key={i} value={track.id} className="bg-[#121212]">
-                        {track.name || `Áudio ${i + 1}`}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            )}
-
-            {/* SUBTITLE SELECTOR */}
-            {subtitles?.length > 0 && (
-              <div className="relative group/subs">
-                <div className="flex items-center gap-4 px-6 py-4 bg-white/5 border border-white/10 rounded-[20px] hover:border-white/50 transition-all duration-500">
-                  <Type size={18} className="text-white/30" />
-                  <select 
-                    value={activeSubtitle}
-                    onChange={(e) => changeSubtitle(parseInt(e.target.value))}
-                    className="bg-transparent text-white font-black text-[11px] uppercase tracking-widest outline-none cursor-pointer appearance-none"
-                  >
-                    <option value="-1" className="bg-[#121212]">Off</option>
-                    {subtitles.map((track, i) => (
-                      <option key={i} value={track.id} className="bg-[#121212]">
-                        {track.name || `Legenda ${i + 1}`}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            )}
-
-            {/* QUALITY SELECTOR */}
+            {/* QUALITY */}
             <div className="relative group/quality">
-              <div className="flex items-center gap-4 px-6 py-4 bg-white/5 border border-white/10 rounded-[20px] hover:border-white/50 transition-all duration-500">
-                <Settings size={18} className="text-white/30" />
+              <div className="flex items-center gap-2 px-4 py-3 bg-white/5 border border-white/10 rounded-xl hover:border-white/50 transition-all duration-500">
+                <Settings size={14} className="text-white/30" />
                 <select 
                   value={activeQuality}
                   onChange={(e) => {
@@ -269,11 +331,11 @@ export default function VideoPlayer({ channel, channels, onClose }) {
                     setActiveQuality(idx);
                     changeQuality(idx);
                   }}
-                  className="bg-transparent text-white font-black text-[11px] uppercase tracking-widest outline-none cursor-pointer appearance-none"
+                  className="bg-transparent text-white font-black text-[10px] uppercase tracking-wider outline-none cursor-pointer appearance-none w-16"
                 >
-                  <option value="-1" className="bg-[#121212]">Auto Resolution</option>
+                  <option value="-1" className="bg-[#121212]">AUTO</option>
                   {qualities?.map((q, i) => (
-                    <option key={i} value={i} className="bg-[#121212]">{q.height}p Studio</option>
+                    <option key={i} value={i} className="bg-[#121212]">{q.height}p</option>
                   ))}
                 </select>
               </div>
@@ -315,6 +377,17 @@ export default function VideoPlayer({ channel, channels, onClose }) {
           ))}
         </div>
       </div>
+
+      {/* EPG Overlay */}
+      {showEPG && (
+        <EPGOverlay 
+          channel={channel}
+          epgData={epgData}
+          onClose={() => setShowEPG(false)}
+          onPlayChannel={playChannel}
+          allChannels={channels}
+        />
+      )}
     </div>
   );
 }

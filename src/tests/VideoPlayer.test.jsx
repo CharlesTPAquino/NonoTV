@@ -5,6 +5,16 @@ import VideoPlayer from '../components/Player/VideoPlayer';
 
 import { PlayerProvider } from '../context/PlayerContext';
 
+vi.mock('../context/SourceContext', () => ({
+  useSources: () => ({ activeSource: { url: 'http://test.com/stream' } })
+}));
+
+vi.mock('../services/EPGService', () => ({
+  fetchEPG: vi.fn(),
+  getCurrentProgram: vi.fn(),
+  getNextProgram: vi.fn(),
+}));
+
 // Mock do hook useHlsPlayer para evitar erro de mídia no JSDOM durante build
 vi.mock('../hooks/useHlsPlayer', () => ({
   default: vi.fn(() => ({
