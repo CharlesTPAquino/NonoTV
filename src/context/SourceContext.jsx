@@ -2,13 +2,12 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { SOURCES as INITIAL_SOURCES } from '../data/sources';
 import { parseM3U } from '../utils/m3uParser';
 import { CHANNELS as LOCAL_CHANNELS } from '../data/channels';
+import { SyncManager } from '../services/SyncManager';
+import { retryService } from '../services/RetryService';
+import { prefetchService } from '../services/PrefetchService';
 
 const SourceContext = createContext();
 
-/**
- * REFAZENDO CONTEXTO (NONO 3.1)
- * Foco: Resiliência absoluta e Fallback garantido.
- */
 export const SourceProvider = ({ children }) => {
   const [sources] = useState(INITIAL_SOURCES);
   const [activeSource, setActiveSource] = useState(null);
@@ -16,12 +15,19 @@ export const SourceProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [syncStatus, setSyncStatus] = useState(null);
+  const [favorites, setFavorites] = useState([]);
+  const [history, setHistory] = useState([]);
+  const [sourceHealth, setSourceHealth] = useState({});
 
   const abortControllerRef = useRef(null);
 
-  // Função interna de Fetch simplificada
+  useEffect(() => {
+    setFavorites(SyncManager.getFavorites());
+    setHistory(SyncManager.getHistory());
+    setSourceHealth(SyncManager.getSourceHealth());
+  }, []);
+
   const getList = async (url) => {
-    // Detecção direta de Proxy/Native
     const isNative = !!(window.Capacitor);
     let target = url;
     
@@ -35,7 +41,6 @@ export const SourceProvider = ({ children }) => {
   };
 
   const selectSource = useCallback(async (source) => {
-    // Aborta anterior
     if (abortControllerRef.current) abortControllerRef.current.abort();
     abortControllerRef.current = new AbortController();
 
@@ -51,7 +56,6 @@ export const SourceProvider = ({ children }) => {
     setActiveSource(source);
     localStorage.setItem('activeSourceUrl', source.url);
 
-    // 1. Tenta carregar Cache
     const cacheKey = `nono_v3_${btoa(source.url).slice(0,32)}`;
     const cached = localStorage.getItem(cacheKey);
     if (cached) {
@@ -61,10 +65,15 @@ export const SourceProvider = ({ children }) => {
       } catch {}
     }
 
-    // 2. Busca Online
     try {
       setSyncStatus(`Conectando: ${source.name}...`);
-      const text = await getList(source.url);
+      
+      const text = await retryService.executeWithRetry(
+        () => getList(source.url),
+        source.id,
+        source.name
+      );
+      
       const parsed = parseM3U(text);
       
       if (!parsed || parsed.length === 0) throw new Error('Lista vazia');
@@ -74,22 +83,129 @@ export const SourceProvider = ({ children }) => {
       setError(null);
       setSyncStatus('Sincronizado!');
       setTimeout(() => setSyncStatus(null), 2000);
+      
+      SyncManager.updateSourceHealth(source.id, { 
+        lastSuccess: Date.now(), 
+        channelCount: parsed.length,
+        failures: 0
+      });
+      SyncManager.unblockSource(source.id);
+      setSourceHealth(SyncManager.getSourceHealth());
+      
     } catch (err) {
       if (err.name === 'AbortError') return;
-      
-      console.error('[Source] Falha:', err.message);
-      if (!cached) {
-        setError(`Não foi possível conectar ao servidor ${source.name}. Verifique sua internet.`);
-        setChannels(LOCAL_CHANNELS);
+      if (err.message === 'SOURCE_BLOCKED') {
+        setError(`Fonte temporariamente bloqueada devido a muitas falhas. Aguarde 2 minutos ou tente outra fonte.`);
+      } else if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
+        console.error('[Source] Falha de rede:', err.message);
+        if (!cached) {
+          setError(`Sem conexão com a internet ou servidor offline. Verifique sua rede.`);
+          setChannels(LOCAL_CHANNELS);
+        } else {
+          setSyncStatus('Modo Offline (Cache)');
+        }
       } else {
-        setSyncStatus('Modo Offline (Cache)');
+        console.error('[Source] Falha:', err.message);
+        if (!cached) {
+          setError(`Não foi possível conectar ao servidor ${source.name}. Verifique sua internet ou tente outra fonte.`);
+          setChannels(LOCAL_CHANNELS);
+        } else {
+          setSyncStatus('Modo Offline (Cache)');
+        }
       }
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  // Auto-boot
+  const addFavorite = useCallback((channel) => {
+    const updated = SyncManager.addFavorite(channel);
+    setFavorites(updated);
+    return updated;
+  }, []);
+
+  const removeFavorite = useCallback((channelId) => {
+    const updated = SyncManager.removeFavorite(channelId);
+    setFavorites(updated);
+    return updated;
+  }, []);
+
+  const isFavorite = useCallback((channelId) => {
+    return SyncManager.isFavorite(channelId);
+  }, []);
+
+  const toggleFavorite = useCallback((channel) => {
+    if (isFavorite(channel.id)) {
+      return removeFavorite(channel.id);
+    } else {
+      return addFavorite(channel);
+    }
+  }, [addFavorite, removeFavorite, isFavorite]);
+
+  const addToHistory = useCallback((channel, watchTime = 0) => {
+    const updated = SyncManager.addToHistory(channel, watchTime);
+    setHistory(updated);
+    return updated;
+  }, []);
+
+  const clearHistory = useCallback(() => {
+    const updated = SyncManager.clearHistory();
+    setHistory(updated);
+    return updated;
+  }, []);
+
+  const importChannels = useCallback((m3uContent) => {
+    const imported = SyncManager.parseM3U(m3uContent);
+    if (imported.length > 0) {
+      const newSource = {
+        id: `custom_${Date.now()}`,
+        name: 'Lista Importada',
+        url: 'imported',
+        category: 'Importado',
+        channels: imported
+      };
+      setChannels(prev => [...imported, ...prev]);
+      return { success: true, count: imported.length };
+    }
+    return { success: false, count: 0 };
+  }, []);
+
+  const exportChannels = useCallback(() => {
+    return SyncManager.exportToM3U(channels);
+  }, [channels]);
+
+  const exportAllData = useCallback(() => {
+    return SyncManager.exportData();
+  }, []);
+
+  const importAllData = useCallback((data) => {
+    SyncManager.importData(data);
+    setFavorites(SyncManager.getFavorites());
+    setHistory(SyncManager.getHistory());
+    return true;
+  }, []);
+
+  const prefetchNext = useCallback((currentChannel) => {
+    return prefetchService.prefetchNextChannels(currentChannel, channels);
+  }, [channels]);
+
+  const getSourceStatus = useCallback((sourceId) => {
+    return retryService.getCircuitBreakerStatus(sourceId);
+  }, []);
+
+  const resetSourceStatus = useCallback((sourceId) => {
+    retryService.resetCircuitBreaker(sourceId);
+    setSourceHealth(SyncManager.getSourceHealth());
+  }, []);
+
+  const getSettings = useCallback(() => {
+    return SyncManager.getSettings();
+  }, []);
+
+  const updateSettings = useCallback((newSettings) => {
+    return SyncManager.updateSettings(newSettings);
+  }, []);
+
   useEffect(() => {
     const saved = localStorage.getItem('activeSourceUrl');
     const source = sources.find(s => s.url === saved);
@@ -98,7 +214,31 @@ export const SourceProvider = ({ children }) => {
 
   return (
     <SourceContext.Provider value={{
-      sources, activeSource, channels, isLoading, error, syncStatus, selectSource
+      sources,
+      activeSource,
+      channels,
+      isLoading,
+      error,
+      syncStatus,
+      selectSource,
+      favorites,
+      history,
+      sourceHealth,
+      addFavorite,
+      removeFavorite,
+      isFavorite,
+      toggleFavorite,
+      addToHistory,
+      clearHistory,
+      importChannels,
+      exportChannels,
+      exportAllData,
+      importAllData,
+      prefetchNext,
+      getSourceStatus,
+      resetSourceStatus,
+      getSettings,
+      updateSettings
     }}>
       {children}
     </SourceContext.Provider>

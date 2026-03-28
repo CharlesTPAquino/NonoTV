@@ -1,7 +1,17 @@
 import React from 'react';
 import { render, screen, act } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { PlayerProvider, usePlayer } from '../context/PlayerContext';
+
+vi.mock('../context/SourceContext', () => ({
+  useSources: () => ({ activeSource: { url: 'http://test.com/stream' } })
+}));
+
+vi.mock('../services/EPGService', () => ({
+  fetchEPG: vi.fn(),
+  getCurrentProgram: vi.fn(),
+  getNextProgram: vi.fn(),
+}));
 
 const TestComponent = () => {
   const { activeChannel, showPlayer, playChannel, closePlayer } = usePlayer();

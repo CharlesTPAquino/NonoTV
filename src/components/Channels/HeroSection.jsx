@@ -50,7 +50,7 @@ export default function HeroSection({ channels, onPlay }) {
   const backdropUrl = current.logo && current.type !== 'live' ? current.logo : '/hero-bg.png';
 
   return (
-    <div className="relative w-full h-[50vh] min-h-[420px] rounded-[40px] md:rounded-[56px] overflow-hidden mb-16 group shadow-[0_40px_100px_rgba(0,0,0,0.4)] border border-white/5 mx-auto max-w-[1700px] bg-[#1A1C22]">
+    <div className="relative w-full h-[45vh] min-h-[380px] rounded-3xl overflow-hidden mb-14 group shadow-[0_40px_100px_rgba(0,0,0,0.5)] border border-white/[0.06] mx-auto bg-[#0a0a0a]">
       {/* Background Layer */}
       <div className="absolute inset-0 overflow-hidden">
         <img 

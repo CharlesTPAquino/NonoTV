@@ -68,8 +68,8 @@ export function parseM3U(content) {
 }
 
 function detectType(c) {
-  const group = c.group.toUpperCase();
-  const name  = c.name.toUpperCase();
+  const group = c.group.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "");
+  const name  = c.name.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "");
   const url   = c.url.toLowerCase();
 
   if (group.includes('SERIE') || name.includes('S0') || url.includes('/series/')) return 'series';

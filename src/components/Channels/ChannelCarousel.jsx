@@ -25,13 +25,12 @@ export default function ChannelCarousel({ title, channels, onPlay, validity, onV
 
   return (
     <div className="mb-12 group/carousel">
-      {/* Header */}
+      {/* Header - Estilo Imagem 6: Borda lateral grossa em laranja */}
       <div className="flex items-center justify-between mb-5">
-        <div className="flex items-center gap-4">
-          <div className="w-1 h-5 bg-[#F7941D]/50 rounded-full" />
+        <div className="flex items-center gap-4 pl-4 border-l-4 border-[#F7941D]">
           <h2 className="text-base font-black text-white tracking-tight">{title}</h2>
           <span className="text-[10px] text-white/40 font-bold uppercase tracking-widest bg-white/5 px-2 py-0.5 rounded-full border border-white/10">
-            {channels.length} canais
+            {channels.length} itens
           </span>
         </div>
         <button

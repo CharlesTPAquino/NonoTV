@@ -118,33 +118,56 @@ echo -e "   📦 Arquivo: ${GREEN}$APK_NAME${NC} (${APK_SIZE})"
 echo ""
 echo -e "${YELLOW}[4/4] Distribuindo o APK...${NC}"
 
+# Define o nome das versões (Latest + Histórico Data/Hora)
+TIMESTAMP=$(date '+%Y-%m-%d_%H-%M')
+VERSIONED_NAME="NonoTV_v$TIMESTAMP.apk"
+LATEST_NAME="NonoTV_latest.apk"
+
+# Prepara as cópias temporárias
+cp "$APK_SOURCE" "/tmp/$VERSIONED_NAME"
+cp "$APK_SOURCE" "/tmp/$LATEST_NAME"
+
 # -- Cópia Local (Desktop) --
-mkdir -p "$LOCAL_DEST"
-cp "$APK_SOURCE" "$LOCAL_DEST/$APK_NAME"
-echo -e "   ${GREEN}✅ Desktop:${NC}   $LOCAL_DEST/$APK_NAME"
+mkdir -p "$LOCAL_DEST/Historico"
+cp "/tmp/$LATEST_NAME" "$LOCAL_DEST/$LATEST_NAME"
+cp "/tmp/$VERSIONED_NAME" "$LOCAL_DEST/Historico/$VERSIONED_NAME"
+echo -e "   ${GREEN}✅ Desktop:${NC}   $LOCAL_DEST/$LATEST_NAME"
+echo -e "               ${GREEN}Histórico em:${NC} $LOCAL_DEST/Historico/"
 
 # -- Google Drive via GVFS --
 if [ -n "$GDRIVE_PATH" ]; then
-  mkdir -p "$GDRIVE_PATH" 2>/dev/null
-  if cp "$APK_SOURCE" "$GDRIVE_PATH/$APK_NAME" 2>/dev/null; then
-    echo -e "   ${GREEN}✅ Google Drive:${NC} $GDRIVE_PATH/$APK_NAME"
-  else
-    echo -e "   ${YELLOW}⚠️  Google Drive (GVFS) não acessível.${NC}"
+  mkdir -p "$GDRIVE_PATH/Historico" 2>/dev/null
+  if cp "/tmp/$LATEST_NAME" "$GDRIVE_PATH/$LATEST_NAME" 2>/dev/null && cp "/tmp/$VERSIONED_NAME" "$GDRIVE_PATH/Historico/$VERSIONED_NAME" 2>/dev/null; then
+    echo -e "   ${GREEN}✅ Google Drive (GVFS):${NC} $GDRIVE_PATH/$LATEST_NAME"
   fi
 fi
 
 # -- Google Drive via rclone (alternativa profissional) --
 if $USE_RCLONE; then
   echo -e "   ${YELLOW}📤 Enviando para Google Drive via rclone...${NC}"
-  # Configure o nome do remote no rclone. Padrão: 'gdrive'
+  
+  # Usando o ID da pasta específica que você enviou: 1Xd5pLMdsikeEYGOTXEa0NTDzlreaseuv
   RCLONE_REMOTE="gdrive"
-  RCLONE_FOLDER="NonoTV-APK"
-  if rclone copy "$APK_SOURCE" "$RCLONE_REMOTE:$RCLONE_FOLDER/" --progress 2>/dev/null; then
-    echo -e "   ${GREEN}✅ Google Drive (rclone):${NC} $RCLONE_REMOTE:/$RCLONE_FOLDER/$APK_NAME"
+  GDRIVE_FOLDER_ID="1Xd5pLMdsikeEYGOTXEa0NTDzlreaseuv"
+  
+  # Verifica se o remote gdrive existe
+  if rclone listremotes | grep -q "^${RCLONE_REMOTE}:"; then
+    echo -e "   🔄 Atualizando NonoTV_latest.apk..."
+    rclone copy "/tmp/$LATEST_NAME" "${RCLONE_REMOTE}:" --drive-root-folder-id "$GDRIVE_FOLDER_ID" 2>/dev/null
+    
+    echo -e "   📦 Salvando backup $VERSIONED_NAME no histórico..."
+    if rclone copy "/tmp/$VERSIONED_NAME" "${RCLONE_REMOTE}:Historico/" --drive-root-folder-id "$GDRIVE_FOLDER_ID" --progress 2>/dev/null; then
+      echo -e "   ${GREEN}✅ Google Drive (rclone):${NC} Arquivos versionados enviados com sucesso!"
+    else
+      echo -e "   ${RED}❌ Falha ao enviar histórico para o Google Drive.${NC}"
+    fi
   else
-    echo -e "   ${YELLOW}⚠️  rclone: configure o remote 'gdrive' com: rclone config${NC}"
+    echo -e "   ${YELLOW}⚠️  Acesso rclone não configurado. Rode: ${NC}rclone config"
   fi
 fi
+
+# Cleanup temporários
+rm -f "/tmp/$VERSIONED_NAME" "/tmp/$LATEST_NAME"
 
 # === Resultado Final ===
 BUILD_DATE=$(date '+%d/%m/%Y às %H:%M')
@@ -152,11 +175,14 @@ echo ""
 echo -e "${GREEN}╔══════════════════════════════════════════╗${NC}"
 echo -e "${GREEN}║   🚀 Deploy Concluído!  $BUILD_DATE   ║${NC}"
 echo -e "${GREEN}╠══════════════════════════════════════════╣${NC}"
-echo -e "${GREEN}║  APK disponível em:                      ║${NC}"
-echo -e "${GREEN}║  🖥️  Desktop/NonoTV/NonoTV-debug.apk     ║${NC}"
+echo -e "${GREEN}║  Versão Principal:                       ║${NC}"
+echo -e "${GREEN}║  ⭐️ NonoTV_latest.apk                    ║${NC}"
+echo -e "${GREEN}║                                          ║${NC}"
+echo -e "${GREEN}║  Nuvem: Salvo no Google Drive (Nono+)    ║${NC}"
+echo -e "${GREEN}║  Local: Desktop/NonoTV/                  ║${NC}"
 echo -e "${GREEN}╚══════════════════════════════════════════╝${NC}"
 echo ""
 echo -e "  Instale no Mi Stick / Tablet via:"
-echo -e "  ${BLUE}📁 Gerenciador de arquivos → NonoTV-debug.apk → Instalar${NC}"
+echo -e "  ${BLUE}📁 Gerenciador de arquivos → NonoTV_latest.apk → Instalar${NC}"
 echo -e "  ${BLUE}📲 Compartilhe via 'Send Files to TV' ou Google Drive${NC}"
 echo ""
