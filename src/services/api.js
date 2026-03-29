@@ -32,12 +32,29 @@ export async function syncSource(url) {
   }
 
   // 2. MODO NATIVO (APK real)
-  const IS_NATIVE = !!(window.Capacitor?.isNativePlatform?.());
+  // Check mais robusto para Android Nativo (Capacitor)
+  const isAndroidApp = /Android/i.test(navigator.userAgent) && (window.Capacitor || window.android);
+  const IS_NATIVE = !!(window.Capacitor?.isNativePlatform?.()) || isAndroidApp;
+
   if (IS_NATIVE) {
     console.log('[APK] Túnel nativo para:', url);
-    const res = await CapacitorHttp.get({ url, headers, connectTimeout: 30000, readTimeout: 30000 });
-    if (res.status === 200 && res.data) return res.data;
-    throw new Error(`Servidor IPTV recusou (Status ${res.status})`);
+    try {
+      const res = await CapacitorHttp.get({ 
+        url, 
+        headers, 
+        responseType: 'text', // ESSENCIAL para ler listas M3U e XMLTV sem corromper
+        connectTimeout: 60000, // 60s
+        readTimeout: 60000 
+      });
+      // Verifica se a resposta do CDN foi HTTP 200
+      if (res.status === 200) {
+        return typeof res.data === 'string' ? res.data : JSON.stringify(res.data);
+      }
+      throw new Error(`Servidor RECUSOU conexão direta (Status ${res.status})`);
+    } catch (err) {
+      console.error('[APK] Erro fatal no CapacitorHttp:', err);
+      throw new Error(err.message || 'Falha de rede (Capacitor)');
+    }
   }
 
   // 3. PRODUÇÃO WEB — fetch direto
