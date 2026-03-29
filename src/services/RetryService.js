@@ -2,7 +2,7 @@ import { SyncManager } from './SyncManager';
 
 const DEFAULT_CONFIG = {
   maxRetries: 3,
-  baseDelay: 1500,
+  baseDelay: 2000,
   maxDelay: 15000,
   backoffMultiplier: 2,
   circuitBreakerThreshold: 10,
@@ -100,6 +100,34 @@ export class RetryService {
     }
 
     throw new Error('ALL_SOURCES_FAILED');
+  }
+
+  async executeSmartFallback(urls, fetchFn, onAttempt) {
+    const errors = [];
+    
+    for (let i = 0; i < urls.length; i++) {
+      const url = urls[i];
+      
+      if (onAttempt) {
+        onAttempt(i + 1, urls.length, url);
+      }
+      
+      try {
+        console.log(`[RetryService] Tentando URL ${i + 1}/${urls.length}: ${url.substring(0, 50)}...`);
+        const result = await fetchFn(url);
+        console.log(`[RetryService] Sucesso na URL ${i + 1}`);
+        return { result, urlIndex: i, errors };
+      } catch (error) {
+        console.log(`[RetryService] URL ${i + 1} falhou:`, error.message);
+        errors.push({ url, error: error.message });
+        
+        if (i < urls.length - 1) {
+          await this.sleep(1000);
+        }
+      }
+    }
+    
+    throw new Error(`ALL_URLS_FAILED: ${errors.map(e => e.error).join(', ')}`);
   }
 
   getCircuitBreakerStatus(sourceId) {

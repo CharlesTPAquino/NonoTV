@@ -1,17 +1,39 @@
 /**
  * Server Health Check Service
- * Testa automaticamente servidores IPTV e remove os.offline
+ * Testa automaticamente servidores IPTV e remove os offline
  */
 
 const HEALTH_CACHE_KEY = 'nono_server_health';
-const TEST_TIMEOUT = 8000;
+const TEST_TIMEOUT = 10000;
+
+const PUBLIC_PROXIES = [
+  'https://api.allorigins.win/raw?url=',
+  'https://corsproxy.io/?'
+];
+
+function isNativePlatform() {
+  if (typeof window === 'undefined') return false;
+  
+  if (window.Capacitor?.isNativePlatform?.()) {
+    return true;
+  }
+  
+  if (window.Capacitor?.platform === 'android' || window.Capacitor?.platform === 'ios') {
+    return true;
+  }
+  
+  if (typeof android !== 'undefined') {
+    return true;
+  }
+  
+  return false;
+}
 
 function getCachedHealth() {
   try {
     const cached = localStorage.getItem(HEALTH_CACHE_KEY);
     if (!cached) return {};
     const data = JSON.parse(cached);
-    // Cache válido por 1 hora
     if (Date.now() - data.timestamp > 3600000) {
       return {};
     }
@@ -28,7 +50,7 @@ function setCachedHealth(health) {
       timestamp: Date.now()
     }));
   } catch {
-    // Silent fail for localStorage
+    // Silent fail
   }
 }
 
@@ -43,59 +65,118 @@ export function buildSourceUrl(source) {
   return source.url;
 }
 
-function getProxyUrl(targetUrl) {
-  if (typeof window === 'undefined') return targetUrl;
+async function tryFetchWithCapacitorHttp(url) {
+  const { CapacitorHttp } = await import('@capacitor/core');
   
-  const isNative = !!(window.Capacitor?.isNativePlatform?.());
-  const isDev = import.meta?.env?.DEV;
-  
-  // Em app nativo ou produção, usa URL direta
-  if (isNative || !isDev) {
-    return targetUrl;
+  try {
+    const res = await CapacitorHttp.get({
+      url,
+      headers: {
+        'User-Agent': 'VLC/3.0.18',
+        'Accept': '*/*'
+      },
+      connectTimeout: TEST_TIMEOUT,
+      readTimeout: TEST_TIMEOUT
+    });
+    
+    if (res.status === 200) {
+      return { success: true, data: res.data };
+    }
+    
+    return { success: false, status: res.status };
+  } catch (error) {
+    return { success: false, error: error.message };
   }
-  
-  // Em desenvolvimento, usa proxy local
-  return `http://localhost:3131/?url=${encodeURIComponent(targetUrl)}`;
+}
+
+async function tryFetchWithProxy(url) {
+  for (const proxy of PUBLIC_PROXIES) {
+    try {
+      const proxyUrl = proxy + encodeURIComponent(url);
+      const res = await fetch(proxyUrl, {
+        headers: { 'User-Agent': 'VLC/3.0.18' },
+        signal: AbortSignal.timeout(TEST_TIMEOUT)
+      });
+      
+      if (res.ok) {
+        return { success: true };
+      }
+    } catch {
+      continue;
+    }
+  }
+  return { success: false };
+}
+
+async function tryDirectFetch(url) {
+  try {
+    const res = await fetch(url, {
+      headers: { 'User-Agent': 'VLC/3.0.18' },
+      mode: 'cors',
+      signal: AbortSignal.timeout(TEST_TIMEOUT)
+    });
+    
+    if (res.ok) {
+      return { success: true };
+    }
+    
+    return { success: false, status: res.status };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
 }
 
 async function testServer(source) {
   const url = buildSourceUrl(source);
-  const testUrl = getProxyUrl(url);
+  const isNative = isNativePlatform();
   
-  console.log(`[HealthCheck] Testando ${source.name}: ${testUrl}`);
+  console.log(`[HealthCheck] Testando ${source.name} (Native: ${isNative})`);
+  console.log(`[HealthCheck] URL: ${url}`);
   
-  try {
-    const response = await fetch(testUrl, {
-      method: 'GET',
-      mode: 'cors'
-    });
-    
-    if (response.ok || response.status === 302 || response.status === 0) {
-      return { online: true, status: response.status || 200 };
+  if (isNative) {
+    const result = await tryFetchWithCapacitorHttp(url);
+    if (result.success) {
+      console.log(`[HealthCheck] ${source.name}: ONLINE (CapacitorHttp)`);
+      return { online: true, status: 200, method: 'capacitor' };
     }
     
-    return { online: false, status: response.status };
-  } catch (error) {
-    // Se falhar com proxy, tenta URL direta como fallback
-    if (testUrl !== url) {
-      console.log(`[HealthCheck] Proxy falhou, tentando URL direta: ${url}`);
-      try {
-        const response = await fetch(url, {
-          method: 'GET',
-          mode: 'no-cors'
-        });
-        
-        return { online: true, status: 200 };
-      } catch {
-        // Fallback também falhou
-      }
+    console.log(`[HealthCheck] CapacitorHttp falhou, tentando proxy...`);
+    const proxyResult = await tryFetchWithProxy(url);
+    if (proxyResult.success) {
+      console.log(`[HealthCheck] ${source.name}: ONLINE (Proxy)`);
+      return { online: true, status: 200, method: 'proxy' };
     }
     
-    if (error.name === 'AbortError') {
-      return { online: false, status: 'timeout' };
-    }
-    return { online: false, status: error.message };
+    console.log(`[HealthCheck] ${source.name}: OFFLINE`);
+    return { online: false, status: 'failed', method: 'native' };
   }
+  
+  const devUrl = window.location?.hostname === 'localhost';
+  if (devUrl) {
+    try {
+      const res = await fetch(`http://localhost:3131/?url=${encodeURIComponent(url)}`, {
+        signal: AbortSignal.timeout(TEST_TIMEOUT)
+      });
+      
+      if (res.ok) {
+        return { online: true, status: 200, method: 'dev-proxy' };
+      }
+    } catch {
+      // Fall through
+    }
+  }
+  
+  const directResult = await tryDirectFetch(url);
+  if (directResult.success) {
+    return { online: true, status: 200, method: 'direct' };
+  }
+  
+  const proxyResult = await tryFetchWithProxy(url);
+  if (proxyResult.success) {
+    return { online: true, status: 200, method: 'proxy' };
+  }
+  
+  return { online: false, status: 'failed', method: 'none' };
 }
 
 export async function testAllSources(sources, onProgress) {
@@ -109,10 +190,9 @@ export async function testAllSources(sources, onProgress) {
       onProgress(i + 1, sources.length, source.name);
     }
     
-    // Usar cache se disponível e recente
     if (cached[source.id]?.online && cached[source.id]?.testedAt) {
       const cacheAge = Date.now() - cached[source.id].testedAt;
-      if (cacheAge < 3600000) { // 1 hora
+      if (cacheAge < 3600000) {
         results[source.id] = cached[source.id];
         continue;
       }
@@ -124,8 +204,7 @@ export async function testAllSources(sources, onProgress) {
       testedAt: Date.now()
     };
     
-    // Pequeno delay entre testes para não sobrecarregar
-    await new Promise(r => setTimeout(r, 500));
+    await new Promise(r => setTimeout(r, 300));
   }
   
   setCachedHealth(results);
@@ -143,7 +222,6 @@ export function getBestSource(sources, health) {
   const working = getWorkingSources(sources, health);
   if (working.length === 0) return null;
   
-  // Priorizar por priority se disponível
   return working.sort((a, b) => (a.priority || 999) - (b.priority || 999))[0];
 }
 

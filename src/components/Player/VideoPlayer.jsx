@@ -9,6 +9,7 @@ import useHlsPlayer from '../../hooks/useHlsPlayer';
 import { usePlayer } from '../../context/PlayerContext';
 import { formatTime as formatEPGTime, formatDuration } from '../../services/EPGService';
 import EPGOverlay from './EPGOverlay';
+import EPGGrid from './EPGGrid';
 
 export default function VideoPlayer({ channel, channels, onClose }) {
   const videoRef = useRef(null);
@@ -22,6 +23,7 @@ export default function VideoPlayer({ channel, channels, onClose }) {
   const [activeQuality, setActiveQuality] = useState(-1);
   const [playTime, setPlayTime] = useState(0);
   const [showEPG, setShowEPG] = useState(false);
+  const [epgMode, setEpgMode] = useState('list');
 
   const { 
     playerState, 
@@ -219,6 +221,14 @@ export default function VideoPlayer({ channel, channels, onClose }) {
               <Tv size={16} />
               Guia
             </button>
+            {showEPG && (
+              <button 
+                onClick={() => setEpgMode(epgMode === 'list' ? 'grid' : 'list')}
+                className="flex items-center gap-1 px-3 py-2 bg-white/5 border border-white/20 rounded-xl text-white/60 text-[10px] font-black uppercase tracking-wider hover:bg-white/10 transition-all"
+              >
+                {epgMode === 'list' ? 'Grade' : 'Lista'}
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -379,8 +389,18 @@ export default function VideoPlayer({ channel, channels, onClose }) {
       </div>
 
       {/* EPG Overlay */}
-      {showEPG && (
+      {showEPG && epgMode === 'list' && (
         <EPGOverlay 
+          channel={channel}
+          epgData={epgData}
+          onClose={() => setShowEPG(false)}
+          onPlayChannel={playChannel}
+          allChannels={channels}
+        />
+      )}
+      
+      {showEPG && epgMode === 'grid' && (
+        <EPGGrid 
           channel={channel}
           epgData={epgData}
           onClose={() => setShowEPG(false)}
