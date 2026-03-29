@@ -1,9 +1,9 @@
 import { SyncManager } from './SyncManager';
 
 const DEFAULT_CONFIG = {
-  maxRetries: 3,
-  baseDelay: 2000,
-  maxDelay: 15000,
+  maxRetries: 2,
+  baseDelay: 1500,
+  maxDelay: 10000,
   backoffMultiplier: 2,
   circuitBreakerThreshold: 10,
   circuitBreakerDuration: 2 * 60 * 1000

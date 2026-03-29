@@ -17,6 +17,8 @@ export const SourceProvider = ({ children }) => {
   const [syncStatus, setSyncStatus] = useState(null);
 
   const selectSource = useCallback(async (source) => {
+    console.log('[SourceContext] selectSource chamada para:', source?.name);
+    
     if (!source) {
       setActiveSource(null);
       setChannels(LOCAL_CHANNELS);
@@ -27,20 +29,32 @@ export const SourceProvider = ({ children }) => {
     setIsLoading(true);
     setActiveSource(source);
     setError(null);
+    setSyncStatus(`Conectando: ${source.name}...`);
 
     try {
       localStorage.setItem(SOURCE_KEY, JSON.stringify(source));
       
+      console.log('[SourceContext] Buscando fonte:', source.url);
       const text = await fetchSource(source.url);
+      console.log('[SourceContext] Recebeu resposta, tamanho:', text?.length);
+      
       const parsed = parseM3U(text);
+      console.log('[SourceContext] Canais parseados:', parsed?.length);
       
       if (!parsed || parsed.length === 0) {
+        console.warn('[SourceContext] Lista vazia, usando canais locais');
         setChannels(LOCAL_CHANNELS);
+        setSyncStatus('Lista vazia - usando cache local');
         return;
       }
 
       setChannels(parsed);
+      setSyncStatus(`Carregados ${parsed.length} canais!`);
+      setTimeout(() => setSyncStatus(null), 3000);
     } catch (err) {
+      console.error('[SourceContext] Erro ao buscar fonte:', err.message);
+      setError(err.message);
+      setSyncStatus('Erro - usando canais locais');
       setChannels(LOCAL_CHANNELS);
     } finally {
       setIsLoading(false);
