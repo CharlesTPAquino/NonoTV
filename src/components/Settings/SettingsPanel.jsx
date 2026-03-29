@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
-import { X, Server, Wifi, Heart, History, Upload, Download, RefreshCw, Settings, ChevronRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Server, Wifi, Heart, History, Upload, Download, RefreshCw, Settings, ChevronRight, Activity, Cloud } from 'lucide-react';
+import ServerHealthDashboard from './ServerHealthDashboard';
+import SyncTab from './SyncTab';
 
 export default function SettingsPanel({
   isOpen,
@@ -52,6 +54,8 @@ export default function SettingsPanel({
 
   const tabs = [
     { id: 'sources', label: 'Fontes', icon: Server },
+    { id: 'status', label: 'Status', icon: Activity },
+    { id: 'sync', label: 'Sync', icon: Cloud },
     { id: 'favorites', label: 'Favoritos', icon: Heart },
     { id: 'history', label: 'Histórico', icon: History },
     { id: 'settings', label: 'Ajustes', icon: Settings },
@@ -140,6 +144,13 @@ export default function SettingsPanel({
                 })}
               </div>
 
+              <div className="mt-4 pt-4 border-t border-white/10">
+                <ServerHealthDashboard 
+                  sources={sources} 
+                  onSelectSource={onSelectSource}
+                />
+              </div>
+
               <button
                 onClick={handleExportM3U}
                 className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#27272A] rounded-xl text-[#A1A1AA] text-sm hover:text-white transition-colors"
@@ -148,6 +159,20 @@ export default function SettingsPanel({
                 Exportar Lista M3U
               </button>
             </div>
+          )}
+
+          {activeTab === 'status' && (
+            <ServerHealthDashboard 
+              sources={sources} 
+              onSelectSource={onSelectSource}
+            />
+          )}
+
+          {activeTab === 'sync' && (
+            <SyncTab 
+              favorites={favorites} 
+              history={history}
+            />
           )}
 
           {activeTab === 'favorites' && (

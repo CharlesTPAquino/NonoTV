@@ -76,6 +76,19 @@ export default function App() {
     initSpatialNavigation(); 
   }, []);
 
+  // Atalhos de teclado para TV
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // открыть lista de canais com tecla Guide ou OK+ESQ
+      if (e.key === 'Guide' || (e.key === 'Enter' && e.shiftKey)) {
+        e.preventDefault();
+        setChannelListOpen(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const filteredChannels = useMemo(() => {
     if (!channels || channels.length === 0) return [];
     return channels.filter(c => {
@@ -221,11 +234,13 @@ export default function App() {
       )}
 
       {/* Sync Status */}
-      {syncStatus && !isLoading && !error && (
-        <div className="fixed bottom-10 right-10 reflective-glass !rounded-2xl px-6 py-4 flex items-center gap-5 z-[200] animate-in slide-in-from-right duration-700">
-          <RefreshCw size={18} className="text-[#F7941D] animate-spin" />
+      {syncStatus && !error && (
+        <div className="fixed bottom-10 right-10 reflective-glass !rounded-2xl px-6 py-4 flex items-center gap-5 z-[200] animate-in flex-row slide-in-from-right duration-700">
+          <RefreshCw size={18} className={`text-[#F7941D] ${isLoading || syncStatus.includes('Conectando') ? 'animate-spin' : ''}`} />
           <div className="flex flex-col">
-            <span className="text-[9px] font-black text-white/30 uppercase tracking-[0.4em]">Sinal Ativo</span>
+            <span className="text-[9px] font-black text-white/30 uppercase tracking-[0.4em]">
+              {isLoading ? 'Sincronizando' : 'Status do Sinal'}
+            </span>
             <span className="text-[11px] font-black uppercase tracking-widest">{syncStatus}</span>
           </div>
         </div>

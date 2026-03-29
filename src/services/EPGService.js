@@ -258,6 +258,52 @@ export function getAllChannelsWithEPG(epgData) {
   );
 }
 
+export function buildCatchupUrl(sourceUrl, streamId, date, durationMinutes = 120) {
+  const xtream = extractXtreamCredentials(sourceUrl);
+  if (!xtream) return null;
+  
+  const startDate = new Date(date);
+  const endDate = new Date(startDate.getTime() + durationMinutes * 60 * 1000);
+  
+  const formatTimestamp = (d) => {
+    return d.toISOString().replace(/[-:T]/g, '').split('.')[0] + '00';
+  };
+  
+  const timeshiftUrl = `${xtream.baseUrl}/timeshift/${xtream.username}/${xtream.password}/${formatTimestamp(startDate)}-${formatTimestamp(endDate)}/${streamId}.ts`;
+  
+  return {
+    timeshiftUrl,
+    apiUrl: `${xtream.baseUrl}/timeshift.php?username=${xtream.username}&password=${xtream.password}&stream=${streamId}&start=${formatTimestamp(startDate)}&end=${formatTimestamp(endDate)}`
+  };
+}
+
+export function buildCatchupUrlByTime(sourceUrl, streamId, timestamp) {
+  const xtream = extractXtreamCredentials(sourceUrl);
+  if (!xtream) return null;
+  
+  const targetDate = new Date(timestamp * 1000);
+  const startTimestamp = formatTimestampForApi(targetDate);
+  
+  return `${xtream.baseUrl}/timeshift/${xtream.username}/${xtream.password}/${startTimestamp}/${streamId}.ts`;
+}
+
+function formatTimestampForApi(date) {
+  return date.toISOString().replace(/[-:T]/g, '').split('.')[0] + '00';
+}
+
+export function getCatchupDaysAvailable(sourceUrl) {
+  const xtream = extractXtreamCredentials(sourceUrl);
+  if (!xtream) return 0;
+  
+  return 7;
+}
+
+export function getProgramCatchupUrl(sourceUrl, program, streamId) {
+  if (!program?.start) return null;
+  
+  return buildCatchupUrl(sourceUrl, streamId, program.start, 120);
+}
+
 export async function refreshEPG(sourceUrl, force = false) {
   const epgInfo = detectEPGUrl(sourceUrl);
   if (!epgInfo) return null;
@@ -300,5 +346,9 @@ export default {
   formatTime,
   formatDuration,
   detectEPGUrl,
-  extractXtreamCredentials
+  extractXtreamCredentials,
+  buildCatchupUrl,
+  buildCatchupUrlByTime,
+  getCatchupDaysAvailable,
+  getProgramCatchupUrl
 };

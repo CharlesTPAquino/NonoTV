@@ -5,6 +5,7 @@ import { CHANNELS as LOCAL_CHANNELS } from '../data/channels';
 import { SyncManager } from '../services/SyncManager';
 import { retryService } from '../services/RetryService';
 import { prefetchService } from '../services/PrefetchService';
+import { testAllSources, clearHealthCache } from '../services/ServerHealthService';
 
 const SourceContext = createContext();
 
@@ -27,9 +28,40 @@ export const SourceProvider = ({ children }) => {
     setSourceHealth(SyncManager.getSourceHealth());
   }, []);
 
+  // Health check automático em background a cada 5 minutos
+  useEffect(() => {
+    const runHealthCheck = async () => {
+      console.log('[SourceContext] Iniciando health check automático...');
+      try {
+        const healthResults = await testAllSources(INITIAL_SOURCES, (current, total, name) => {
+          console.log(`[HealthCheck] ${current}/${total}: ${name}`);
+        });
+        setSourceHealth(healthResults);
+        SyncManager.saveSourceHealth(healthResults);
+        console.log('[SourceContext] Health check concluído', healthResults);
+      } catch (err) {
+        console.error('[SourceContext] Erro no health check:', err);
+      }
+    };
+
+    // Executa após 10 segundos do carregamento inicial
+    const initialTimer = setTimeout(runHealthCheck, 10000);
+
+    // Repete a cada 5 minutos
+    const intervalId = setInterval(runHealthCheck, 300000);
+
+    return () => {
+      clearTimeout(initialTimer);
+      clearInterval(intervalId);
+    };
+  }, []);
+
   const getList = async (url) => {
+    console.log('[SourceContext] getList chamada para:', url);
     const { syncSource } = await import('../services/api');
-    return await syncSource(url);
+    const result = await syncSource(url);
+    console.log('[SourceContext] getList retornou:', result?.substring(0, 100), '...');
+    return result;
   };
 
   const selectSource = useCallback(async (source) => {
@@ -103,24 +135,22 @@ export const SourceProvider = ({ children }) => {
       
     } catch (err) {
       if (err.name === 'AbortError') return;
-      if (err.message === 'SOURCE_BLOCKED') {
-        setError(`Fonte temporariamente bloqueada devido a muitas falhas. Aguarde 2 minutos ou tente outra fonte.`);
-      } else if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
-        console.error('[Source] Falha de rede:', err.message);
-        if (!cached) {
-          setError(`Sem conexão com a internet ou servidor offline. Verifique sua rede.`);
-          setChannels(LOCAL_CHANNELS);
-        } else {
-          setSyncStatus('Modo Offline (Cache)');
-        }
+      
+      const erroReal = err.message || 'Erro Desconhecido';
+      console.error('[Source] Falha na Sincronização:', erroReal);
+      
+      if (erroReal === 'SOURCE_BLOCKED') {
+        setError(`Fonte bloqueada devido a muitas falhas contínuas. Aguarde 2 minutos.`);
+      } else if (erroReal.includes('Failed to fetch') || erroReal.includes('NetworkError')) {
+        setError(`Sem conexão com a internet ou servidor offline (Falha de Rede). ${erroReal}`);
       } else {
-        console.error('[Source] Falha:', err.message);
-        if (!cached) {
-          setError(`Não foi possível conectar ao servidor ${source.name}. Verifique sua internet ou tente outra fonte.`);
-          setChannels(LOCAL_CHANNELS);
-        } else {
-          setSyncStatus('Modo Offline (Cache)');
-        }
+        setError(`O servidor ${source.name} recusou a conexão: ${erroReal}`);
+      }
+      
+      if (cached) {
+         setSyncStatus('Falha - Canais do Cache');
+      } else {
+         setChannels(LOCAL_CHANNELS);
       }
     } finally {
       setIsLoading(false);

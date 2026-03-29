@@ -127,6 +127,10 @@ export const SyncManager = {
     }
   },
 
+  saveSourceHealth(healthData) {
+    localStorage.setItem(STORAGE_KEYS.SOURCE_HEALTH, JSON.stringify(healthData));
+  },
+
   updateSourceHealth(sourceId, health) {
     const healthData = this.getSourceHealth();
     healthData[sourceId] = {

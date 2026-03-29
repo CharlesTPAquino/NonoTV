@@ -1,6 +1,12 @@
-import { CapacitorHttp } from '@capacitor/core';
+import { Capacitor } from '@capacitor/core';
 
 const PROXY_URL = 'http://localhost:3131';
+
+const PUBLIC_PROXIES = [
+  'https://api.allorigins.win/raw?url=',
+  'https://corsproxy.io/?',
+  'https://cors-anywhere.herokuapp.com/'
+];
 
 const headers = {
   'User-Agent': 'VLC/3.0.18 LibVLC/3.0.18',
@@ -9,56 +15,172 @@ const headers = {
   'Connection': 'keep-alive'
 };
 
-/**
- * Universal Master Fetcher
- * Ordem: DEV (proxy) → NATIVO (APK) → DIRETO (fallback)
- */
-export async function syncSource(url) {
-  // 1. MODO DEV — sempre usa o proxy local para evitar CORS
-  // Tem prioridade absoluta sobre qualquer check de ambiente nativo
-  if (import.meta.env.DEV) {
-    console.log('[DEV] Usando proxy local para:', url);
-    try {
-      const proxyRes = await fetch(`${PROXY_URL}/?url=${encodeURIComponent(url)}`, { headers });
-      if (proxyRes.ok) return await proxyRes.text();
-      console.warn('[DEV] Proxy retornou status', proxyRes.status, '— tentando direto...');
-    } catch (e) {
-      console.warn('[DEV] Proxy offline — tentando fetch direto (instale o proxy!)');
-    }
-    // Fallback direto (só funciona se CORS extension estiver ativa)
-    const directRes = await fetch(url, { headers });
-    if (!directRes.ok) throw new Error(`HTTP ${directRes.status}`);
-    return await directRes.text();
+function isNativePlatform() {
+  if (typeof window === 'undefined') return false;
+  
+  if (window.Capacitor?.isNativePlatform?.()) {
+    return true;
   }
-
-  // 2. MODO NATIVO (APK real)
-  // Check mais robusto para Android Nativo (Capacitor)
-  const isAndroidApp = /Android/i.test(navigator.userAgent) && (window.Capacitor || window.android);
-  const IS_NATIVE = !!(window.Capacitor?.isNativePlatform?.()) || isAndroidApp;
-
-  if (IS_NATIVE) {
-    console.log('[APK] Túnel nativo para:', url);
-    try {
-      const res = await CapacitorHttp.get({ 
-        url, 
-        headers, 
-        responseType: 'text', // ESSENCIAL para ler listas M3U e XMLTV sem corromper
-        connectTimeout: 60000, // 60s
-        readTimeout: 60000 
-      });
-      // Verifica se a resposta do CDN foi HTTP 200
-      if (res.status === 200) {
-        return typeof res.data === 'string' ? res.data : JSON.stringify(res.data);
-      }
-      throw new Error(`Servidor RECUSOU conexão direta (Status ${res.status})`);
-    } catch (err) {
-      console.error('[APK] Erro fatal no CapacitorHttp:', err);
-      throw new Error(err.message || 'Falha de rede (Capacitor)');
-    }
+  
+  if (window.Capacitor?.platform === 'android' || window.Capacitor?.platform === 'ios') {
+    return true;
   }
-
-  // 3. PRODUÇÃO WEB — fetch direto
-  const res = await fetch(url, { headers });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return await res.text();
+  
+  if (typeof android !== 'undefined') {
+    return true;
+  }
+  
+  return false;
 }
+
+function isDevMode() {
+  return import.meta?.env?.DEV === true && window.location?.hostname === 'localhost';
+}
+
+async function tryPublicProxy(url, proxyIndex = 0) {
+  if (proxyIndex >= PUBLIC_PROXIES.length) {
+    throw new Error('All public proxies failed');
+  }
+  
+  const proxy = PUBLIC_PROXIES[proxyIndex];
+  console.log(`[API] Tentando proxy público ${proxyIndex + 1}: ${proxy}`);
+  
+  try {
+    const proxyUrl = proxy + encodeURIComponent(url);
+    const response = await fetch(proxyUrl, {
+      headers,
+      mode: 'cors'
+    });
+    
+    if (response.ok) {
+      console.log(`[API] Proxy público ${proxyIndex + 1} funcionou!`);
+      return await response.text();
+    }
+    
+    console.warn(`[API] Proxy público ${proxyIndex + 1} falhou com status ${response.status}`);
+    return await tryPublicProxy(url, proxyIndex + 1);
+  } catch (error) {
+    console.warn(`[API] Proxy público ${proxyIndex + 1} erro:`, error.message);
+    return await tryPublicProxy(url, proxyIndex + 1);
+  }
+}
+
+async function tryCapacitorHttp(url) {
+  const { CapacitorHttp } = await import('@capacitor/core');
+  
+  console.log('[APK] Tentando CapacitorHttp para:', url);
+  
+  try {
+    const res = await CapacitorHttp.get({ 
+      url, 
+      headers,
+      responseType: 'text',
+      connectTimeout: 30000,
+      readTimeout: 30000
+    });
+    
+    console.log('[APK] CapacitorHttp status:', res.status);
+    
+    if (res.status === 200) {
+      return typeof res.data === 'string' ? res.data : JSON.stringify(res.data);
+    }
+    
+    throw new Error(`HTTP ${res.status}`);
+  } catch (error) {
+    console.error('[APK] CapacitorHttp erro:', error.message);
+    throw error;
+  }
+}
+
+async function tryDirectFetch(url) {
+  console.log('[API] Tentando fetch direto para:', url);
+  
+  try {
+    const res = await fetch(url, { 
+      headers,
+      mode: 'cors'
+    });
+    
+    if (res.ok) {
+      return await res.text();
+    }
+    
+    throw new Error(`HTTP ${res.status}`);
+  } catch (error) {
+    console.error('[API] Fetch direto erro:', error.message);
+    throw error;
+  }
+}
+
+export async function syncSource(url) {
+  console.log('[API] syncSource chamada para:', url);
+  console.log('[API] isNativePlatform():', isNativePlatform());
+  console.log('[API] isDevMode():', isDevMode());
+  
+  const IS_NATIVE = isNativePlatform();
+  const IS_DEV = isDevMode();
+  
+  if (IS_DEV && !IS_NATIVE) {
+    console.log('[DEV] Modo desenvolvimento detectado - usando proxy local');
+    try {
+      const proxyRes = await fetch(`${PROXY_URL}/?url=${encodeURIComponent(url)}`, { 
+        headers,
+        signal: AbortSignal.timeout(15000)
+      });
+      
+      if (proxyRes.ok) {
+        console.log('[DEV] Proxy local funcionou!');
+        return await proxyRes.text();
+      }
+      
+      console.warn('[DEV] Proxy local falhou, tentando fallback...');
+    } catch (e) {
+      console.warn('[DEV] Proxy local erro:', e.message);
+    }
+    
+    try {
+      console.log('[DEV] Tentando fetch direto...');
+      return await tryDirectFetch(url);
+    } catch {
+      console.log('[DEV] Tentando proxies públicos...');
+      return await tryPublicProxy(url);
+    }
+  }
+  
+  if (IS_NATIVE) {
+    console.log('[APK] Modo nativo detectado');
+    
+    try {
+      const result = await tryCapacitorHttp(url);
+      console.log('[APK] CapacitorHttp funcionou!');
+      return result;
+    } catch (capacitorError) {
+      console.warn('[APK] CapacitorHttp falhou:', capacitorError.message);
+      console.log('[APK] Tentando proxies públicos como fallback...');
+      
+      try {
+        return await tryPublicProxy(url);
+      } catch (proxyError) {
+        console.warn('[APK] Proxies públicos falharam:', proxyError.message);
+        console.log('[APK] Tentando fetch nativo direto...');
+        
+        try {
+          return await tryDirectFetch(url);
+        } catch (directError) {
+          console.error('[APK] Todas as opções falharam!');
+          throw new Error(`Falha ao conectar: ${capacitorError.message}`);
+        }
+      }
+    }
+  }
+  
+  console.log('[WEB] Modo produção web detectado');
+  try {
+    return await tryDirectFetch(url);
+  } catch {
+    console.log('[WEB] Fetch direto falhou, tentando proxies públicos...');
+    return await tryPublicProxy(url);
+  }
+}
+
+export default { syncSource };

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, ChevronLeft, ChevronRight, Clock, Tv, RefreshCw, Play } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Clock, Tv, RefreshCw, Play, Calendar, ArrowLeft, ArrowRight } from 'lucide-react';
 import { 
   getProgramsForChannel, 
   getProgramProgress, 
@@ -8,12 +8,16 @@ import {
   formatTime,
   formatDuration,
   getChannelByName,
-  refreshEPG
+  refreshEPG,
+  buildCatchupUrl,
+  getCatchupDaysAvailable
 } from '../../services/EPGService';
 
 export default function EPGOverlay({ channel, epgData, onClose, onPlayChannel, allChannels }) {
   const [selectedChannelId, setSelectedChannelId] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [catchupDays, setCatchupDays] = useState(0);
 
   useEffect(() => {
     if (epgData && channel && !selectedChannelId) {
@@ -26,6 +30,13 @@ export default function EPGOverlay({ channel, epgData, onClose, onPlayChannel, a
       }
     }
   }, [epgData, channel, selectedChannelId]);
+
+  useEffect(() => {
+    if (channel?.url) {
+      const days = getCatchupDaysAvailable(channel.url);
+      setCatchupDays(days);
+    }
+  }, [channel]);
 
   const handleRefresh = async () => {
     if (!channel?.url) return;
@@ -52,6 +63,39 @@ export default function EPGOverlay({ channel, epgData, onClose, onPlayChannel, a
     
     setSelectedChannelId(channelIds[newIdx]);
   };
+
+  const navigateDate = (direction) => {
+    const newDate = new Date(selectedDate);
+    newDate.setDate(newDate.getDate() + direction);
+    
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    
+    if (newDate > today) return;
+    if (catchupDays > 0) {
+      const minDate = new Date();
+      minDate.setDate(minDate.getDate() - catchupDays);
+      if (newDate < minDate) return;
+    }
+    
+    setSelectedDate(newDate);
+  };
+
+  const playCatchup = (program) => {
+    if (!channel?.url || !channel?.streamId) return;
+    
+    const catchupUrl = buildCatchupUrl(channel.url, channel.streamId, program.start, 120);
+    if (catchupUrl) {
+      onPlayChannel({
+        ...channel,
+        url: catchupUrl.timeshiftUrl,
+        isCatchup: true,
+        programTitle: program.title
+      });
+    }
+  };
+
+  const isToday = selectedDate.toDateString() === new Date().toDateString();
 
   if (!epgData) {
     return (
@@ -88,15 +132,48 @@ export default function EPGOverlay({ channel, epgData, onClose, onPlayChannel, a
             </p>
           </div>
         </div>
-        <button 
-          onClick={handleRefresh}
-          disabled={isRefreshing}
-          className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white/60 text-xs font-black uppercase tracking-wider hover:bg-white/10 transition-all disabled:opacity-50"
-        >
-          <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
-          Atualizar
-        </button>
+        <div className="flex items-center gap-2">
+          {catchupDays > 0 && (
+            <div className="flex items-center gap-1 mr-4 px-3 py-1 bg-[#F7941D]/10 border border-[#F7941D]/20 rounded-full">
+              <Calendar size={12} className="text-[#F7941D]" />
+              <span className="text-[#F7941D] text-[10px] font-black uppercase">{catchupDays} dias</span>
+            </div>
+          )}
+          <button 
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white/60 text-xs font-black uppercase tracking-wider hover:bg-white/10 transition-all disabled:opacity-50"
+          >
+            <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
+            Atualizar
+          </button>
+        </div>
       </div>
+
+      {/* Date Navigation */}
+      {catchupDays > 0 && (
+        <div className="flex items-center justify-center gap-4 py-3 bg-white/5 border-b border-white/5">
+          <button 
+            onClick={() => navigateDate(-1)}
+            className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-all"
+          >
+            <ArrowLeft size={16} />
+          </button>
+          <div className="flex items-center gap-2 px-4 py-1 bg-white/5 rounded-xl">
+            <Calendar size={14} className="text-[#F7941D]" />
+            <span className="text-white font-black text-sm">
+              {selectedDate.toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' })}
+            </span>
+          </div>
+          <button 
+            onClick={() => navigateDate(1)}
+            disabled={isToday}
+            className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            <ArrowRight size={16} />
+          </button>
+        </div>
+      )}
 
       {/* Channel Navigation */}
       <div className="flex items-center justify-between px-6 py-3 bg-white/5 border-b border-white/5">
@@ -192,12 +269,20 @@ export default function EPGOverlay({ channel, epgData, onClose, onPlayChannel, a
                     </div>
 
                     {/* Play Button */}
-                    {isLive && (
+                    {isLive ? (
                       <button 
                         onClick={() => onPlayChannel && onPlayChannel(channel)}
                         className="shrink-0 w-12 h-12 rounded-full bg-[#F7941D] flex items-center justify-center text-black hover:scale-110 transition-all shadow-[0_0_20px_rgba(247,148,29,0.4)]"
                       >
                         <Play size={18} fill="currentColor" className="ml-0.5" />
+                      </button>
+                    ) : catchupDays > 0 && !isUpcoming && (
+                      <button 
+                        onClick={() => playCatchup(program)}
+                        className="shrink-0 flex items-center gap-1 px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white/60 text-[10px] font-black uppercase tracking-wider hover:bg-[#F7941D] hover:text-black hover:border-[#F7941D] transition-all"
+                      >
+                        <Clock size={12} />
+                        Rewind
                       </button>
                     )}
                   </div>
