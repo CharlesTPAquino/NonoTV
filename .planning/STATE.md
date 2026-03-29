@@ -3,9 +3,17 @@
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 29/03/2026)
+See: .memoria/IMPLEMENTACAO.md (histórico completo)
+See: .memoria/CHARLES.md (perfil do dono)
 
 **Core value:** Fornecer acesso confiável a streams IPTV com experiência premium
 **Current focus:** Phase 1 - Infraestrutura & Correções
+
+---
+
+## Dono do Projeto
+
+**Nome:** Charles
 
 ---
 

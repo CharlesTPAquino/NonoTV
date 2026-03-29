@@ -107,6 +107,15 @@ export const SOURCES = [
     category: 'Premium',
     expires: ['28/03/2026', '10/03/2027'][i]
   })),
+
+  // === BRAZILZÃO TV ===
+  ...CREDENTIALS.brazilzao.accounts.map((acc, i) => ({
+    id: `brazilzao-${i + 1}`,
+    name: `Brazilzão (${acc.user})`,
+    url: buildUrl(CREDENTIALS.brazilzao.host, acc.user, acc.pass),
+    category: 'Premium',
+    expires: '16/04/2026'
+  })),
 ];
 
 export default SOURCES;

@@ -72,9 +72,31 @@ function detectType(c) {
   const name  = c.name.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "");
   const url   = c.url.toLowerCase();
 
-  if (group.includes('SERIE') || name.includes('S0') || url.includes('/series/')) return 'series';
-  if (group.includes('FILME') || group.includes('VOD') || url.includes('/movie/')) return 'movie';
-  if (/\.(mp4|mkv|avi|mov|m4v)(\?|$)/i.test(url)) return 'movie';
+  // Séries: devem ter padrão claro de episódio (S01E01, 1x01, Season, Episode, Temporada)
+  const seriesPatterns = [
+    /S\d{1,2}E\d{1,2}/i,        // S01E01, S1E1
+    /\d{1,2}X\d{1,2}/i,          // 1x01
+    /\bSEASON\s*\d+/i,           // Season 1
+    /\bEPISODE\s*\d+/i,          // Episode 1
+    /\bTEMPORADA\s*\d+/i,        // Temporada 1
+    /\bEP\s*\d+/i,               // EP 1
+    /\bE\d{2}\b/i,               // E01 (mas não no início)
+  ];
+  const hasSeriesPattern = seriesPatterns.some(p => p.test(c.name));
+  
+  if (group.includes('SERIE') || hasSeriesPattern || url.includes('/series/')) return 'series';
+  
+  // Filmes: apenas extensões de vídeo conhecidas ou padrão claro de filme no nome
+  const moviePatterns = [
+    /\.(mp4|mkv|avi|mov|m4v|wmv|flv|webm)(\?|$)/i,
+    /\bFILME\b/i,
+    /\bMOVIE\b/i,
+    /\bVOD\b/i,
+  ];
+  const hasMoviePattern = moviePatterns.some(p => p.test(c.url + c.name));
+  const isMovieGroup = /^\s*(FILME|MOVIE|VOD)\s*$/i.test(c.group);
+  
+  if (isMovieGroup || (hasMoviePattern && !group.includes('CANAL'))) return 'movie';
   
   return 'live';
 }

@@ -2,8 +2,7 @@ const PROXY_URL = 'http://localhost:3131';
 
 const PUBLIC_PROXIES = [
   'https://corsproxy.io/?',
-  'https://api.allorigins.win/raw?url=',
-  'https://cors-anywhere.herokuapp.com/'
+  'https://api.allorigins.win/raw?url='
 ];
 
 const headers = {
@@ -25,35 +24,6 @@ function isNativePlatform() {
   return false;
 }
 
-async function tryPublicProxy(url, proxyIndex = 0) {
-  if (proxyIndex >= PUBLIC_PROXIES.length) {
-    throw new Error('Todos os proxies públicos falharam');
-  }
-  
-  const proxy = PUBLIC_PROXIES[proxyIndex];
-  console.log(`[API] Proxy ${proxyIndex + 1}/${PUBLIC_PROXIES.length}: ${proxy}`);
-  
-  try {
-    const proxyUrl = proxy + encodeURIComponent(url);
-    const response = await fetch(proxyUrl, {
-      headers,
-      mode: 'cors',
-      signal: AbortSignal.timeout(10000)
-    });
-    
-    if (response.ok) {
-      console.log(`[API] Sucesso via proxy ${proxyIndex + 1}`);
-      return await response.text();
-    }
-    
-    console.warn(`[API] Proxy ${proxyIndex + 1} falhou (${response.status})`);
-    return await tryPublicProxy(url, proxyIndex + 1);
-  } catch (error) {
-    console.warn(`[API] Proxy ${proxyIndex + 1} erro: ${error.message}`);
-    return await tryPublicProxy(url, proxyIndex + 1);
-  }
-}
-
 async function tryDirectFetch(url) {
   console.log('[API] Tentando fetch direto...');
   
@@ -61,17 +31,46 @@ async function tryDirectFetch(url) {
     const res = await fetch(url, { 
       headers,
       mode: 'cors',
-      signal: AbortSignal.timeout(10000)
+      signal: AbortSignal.timeout(20000)
     });
     
     if (res.ok) {
+      console.log('[API] Sucesso direto!');
       return await res.text();
     }
     
     throw new Error(`HTTP ${res.status}`);
   } catch (error) {
-    console.error('[API] Fetch direto erro:', error.message);
+    console.warn('[API] Direto falhou:', error.message);
     throw error;
+  }
+}
+
+async function tryPublicProxy(url, proxyIndex = 0) {
+  if (proxyIndex >= PUBLIC_PROXIES.length) {
+    throw new Error('Proxies públicos falharam');
+  }
+  
+  const proxy = PUBLIC_PROXIES[proxyIndex];
+  console.log(`[API] Tentando proxy ${proxyIndex + 1}...`);
+  
+  try {
+    const proxyUrl = proxy + encodeURIComponent(url);
+    const response = await fetch(proxyUrl, {
+      headers,
+      mode: 'cors',
+      signal: AbortSignal.timeout(20000)
+    });
+    
+    if (response.ok) {
+      console.log(`[API] Sucesso via proxy ${proxyIndex + 1}`);
+      return await response.text();
+    }
+    
+    return await tryPublicProxy(url, proxyIndex + 1);
+  } catch (error) {
+    console.warn(`[API] Proxy ${proxyIndex + 1} erro:`, error.message);
+    return await tryPublicProxy(url, proxyIndex + 1);
   }
 }
 
@@ -86,7 +85,7 @@ export async function syncSource(url) {
     try {
       const proxyRes = await fetch(`${PROXY_URL}/?url=${encodeURIComponent(url)}`, { 
         headers,
-        signal: AbortSignal.timeout(10000)
+        signal: AbortSignal.timeout(15000)
       });
       if (proxyRes.ok) return await proxyRes.text();
     } catch (e) {
@@ -94,15 +93,15 @@ export async function syncSource(url) {
     }
   }
   
-  console.log('[API] Tentando proxies públicos...');
+  console.log('[API] Tentando conexão direta...');
   try {
-    return await tryPublicProxy(url);
-  } catch (proxyError) {
-    console.warn('[API] Proxies falharam, tentando fetch direto...');
+    return await tryDirectFetch(url);
+  } catch (directError) {
+    console.warn('[API] Direto falhou, tentando proxies...');
     try {
-      return await tryDirectFetch(url);
+      return await tryPublicProxy(url);
     } catch {
-      throw new Error('Falha ao conectar: nenhuma opção funcionou');
+      throw new Error('Falha ao conectar: servidor inacessível');
     }
   }
 }

@@ -8,6 +8,7 @@ import { ThemeProvider, useTheme, getKidsChannels } from './context/ThemeContext
 import Sidebar from './components/Layout/Sidebar';
 import Navbar from './components/Layout/Navbar';
 import ChannelGrid from './components/Channels/ChannelGrid';
+import SeriesGroup from './components/Channels/SeriesGroup';
 import ChannelListOverlay from './components/Channels/ChannelListOverlay';
 import VideoPlayer from './components/Player/VideoPlayerMinimal';
 import SettingsPanel from './components/Settings/SettingsPanel';
@@ -101,9 +102,11 @@ export default function App() {
         
       const matchCategory = activeCategory === 'All' || (c.type || 'live') === activeCategory;
       
-      return matchSearch && matchCategory;
+      const matchGroup = activeGroup === 'All' || activeGroup === 'Todos' || c.group === activeGroup;
+      
+      return matchSearch && matchCategory && matchGroup;
     });
-  }, [channels, search, activeCategory]);
+  }, [channels, search, activeCategory, activeGroup]);
 
   const groups = useMemo(() => {
     const uniqueGroups = [...new Set(filteredChannels.map(c => c.group).filter(Boolean))];
@@ -194,18 +197,26 @@ export default function App() {
 
             {/* Main Content */}
             <div className={(isLoading && !channels.length) ? 'hidden' : 'animate-in fade-in duration-1000'}>
-              <ChannelGrid
-                channels={filteredChannels}
-                activeGroup={activeGroup}
-                activeCategory={activeCategory}
-                setActiveGroup={setActiveGroup}
-                groups={groups}
-                onPlay={playChannel}
-                search={search}
-                isPlayerOpen={showPlayer}
-                channelValidity={validity}
-                isValidating={isValidating}
-              />
+              {activeCategory === 'series' ? (
+                <SeriesGroup 
+                  channels={filteredChannels.filter(c => c.type === 'series')} 
+                  onPlay={playChannel}
+                  isPlayerOpen={showPlayer}
+                />
+              ) : (
+                <ChannelGrid
+                  channels={filteredChannels}
+                  activeGroup={activeGroup}
+                  activeCategory={activeCategory}
+                  setActiveGroup={setActiveGroup}
+                  groups={groups}
+                  onPlay={playChannel}
+                  search={search}
+                  isPlayerOpen={showPlayer}
+                  channelValidity={validity}
+                  isValidating={isValidating}
+                />
+              )}
             </div>
 
             {/* Loading State */}
