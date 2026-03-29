@@ -150,10 +150,13 @@ export default function App() {
             <header className="mb-8 mt-4 flex items-center justify-between">
               <div>
                 <h1 className="text-2xl font-bold text-white">
-                  Descobrir
+                  {activeCategory === 'All' ? 'Descobrir' : 
+                   activeCategory === 'live' ? 'Ao Vivo' :
+                   activeCategory === 'movie' ? 'Filmes' :
+                   activeCategory === 'series' ? 'Séries' : 'Descobrir'}
                 </h1>
                 <p className="text-[#71717A] text-sm mt-1">
-                  {filteredChannels.length} canais disponíveis
+                  {filteredChannels.length} {filteredChannels.length === 1 ? 'canal' : 'canais'} disponível{filteredChannels.length !== 1 ? 'is' : ''}
                 </p>
               </div>
             </header>
