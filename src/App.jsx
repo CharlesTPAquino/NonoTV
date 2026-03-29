@@ -4,6 +4,7 @@ import {
   Globe, Server
 } from 'lucide-react';
 import { initSpatialNavigation } from './utils/spatialNavigation';
+import { ThemeProvider, useTheme, getKidsChannels } from './context/ThemeContext';
 import Sidebar from './components/Layout/Sidebar';
 import Navbar from './components/Layout/Navbar';
 import ChannelGrid from './components/Channels/ChannelGrid';

@@ -1,8 +1,9 @@
 import { CapacitorHttp } from '@capacitor/core';
+import { fetchWithProxyRotation } from './EPGProxyManager';
 
 const PROXY_URL = 'http://localhost:3131';
 const CACHE_KEY = 'nono_epg_cache';
-const CACHE_DURATION = 1000 * 60 * 60;
+const CACHE_DURATION = 1000 * 60 * 60 * 12;
 
 function getProxyUrl(url) {
   if (import.meta.env.DEV) {
@@ -47,8 +48,20 @@ export function detectEPGUrl(sourceUrl) {
   return null;
 }
 
-async function fetchWithProxy(url) {
+async function fetchWithProxy(url, options = {}) {
   const isNative = !!(window.Capacitor?.isNativePlatform?.());
+  
+  if (isNative || !import.meta.env.DEV) {
+    try {
+      return await fetchWithProxyRotation(url, {
+        maxRetries: 3,
+        timeout: 15000,
+        ...options
+      });
+    } catch (error) {
+      console.log('[EPGService] Proxy rotation failed, trying direct:', error.message);
+    }
+  }
   
   if (isNative) {
     const response = await CapacitorHttp.get({
