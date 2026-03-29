@@ -9,6 +9,17 @@ export default defineConfig({
     globals: true,
     setupFiles: './src/tests/setup.js'
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'hls': ['hls.js'],
+          'lucide': ['lucide-react'],
+          'react-vendor': ['react', 'react-dom'],
+        }
+      }
+    }
+  },
   server: {
     host: true,
     proxy: {

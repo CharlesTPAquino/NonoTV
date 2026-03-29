@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Tv, Film, Clapperboard, Radio, Settings } from 'lucide-react';
+import { Home, Tv, Film, Clapperboard, Radio, Settings, List } from 'lucide-react';
 
 const CATEGORIES = [
   { id: 'all',  name: 'Início',     type: 'All',    icon: Home },
@@ -8,18 +8,18 @@ const CATEGORIES = [
   { id: 'ser',  name: 'Séries',     type: 'series', icon: Clapperboard },
 ];
 
-export default function Sidebar({ activeCategory, setActiveCategory }) {
+export default function Sidebar({ activeCategory, setActiveCategory, onOpenSettings, onOpenChannelList }) {
   return (
     <>
-      {/* DESKTOP / TV — Ultra-thin left dock */}
-      <aside className="hidden md:flex fixed left-0 top-0 w-[72px] h-full bg-black/60 backdrop-blur-[30px] border-r border-white/[0.04] z-50 flex-col items-center pt-8 pb-6">
+      {/* DESKTOP / TV — Expands on focus */}
+      <aside className="tv-sidebar hidden md:flex flex-col items-center pt-8 pb-6 group">
         {/* Logo Mark */}
-        <div className="w-10 h-10 rounded-xl bg-[#F7941D]/10 border border-[#F7941D]/20 flex items-center justify-center mb-10">
+        <div className="w-10 h-10 rounded-xl bg-[#F7941D]/10 border border-[#F7941D]/20 flex items-center justify-center mb-10 shrink-0">
           <span className="text-[#F7941D] font-black text-sm font-outfit">N</span>
         </div>
 
         {/* Navigation */}
-        <nav className="flex flex-col items-center gap-2 flex-1">
+        <nav className="flex flex-col items-center gap-2 flex-1 w-full px-2">
           {CATEGORIES.map(cat => {
             const Icon = cat.icon;
             const isActive = activeCategory === cat.type;
@@ -27,31 +27,46 @@ export default function Sidebar({ activeCategory, setActiveCategory }) {
               <button
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.type)}
-                className={`group relative w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 outline-none
-                  focus:ring-2 focus:ring-[#F7941D]/50 focus:scale-110
+                className={`group relative w-full h-12 rounded-2xl flex items-center justify-center transition-all duration-500 outline-none
+                  focus:ring-2 focus:ring-[#F7941D]/50
                   ${isActive 
                     ? 'bg-[#F7941D]/15 text-[#F7941D]' 
-                    : 'text-white/15 hover:text-white/50 hover:bg-white/5'
+                    : 'text-white/30 hover:text-white hover:bg-white/5'
                   }`}
                 title={cat.name}
               >
                 {/* Active pill indicator */}
                 {isActive && (
-                  <div className="absolute -left-[2px] w-1 h-6 bg-[#F7941D] rounded-full shadow-[0_0_12px_#F7941D]" />
+                  <div className="absolute left-0 w-1 h-8 bg-[#F7941D] rounded-full shadow-[0_0_12px_#F7941D]" />
                 )}
-                <Icon size={20} className={`transition-all duration-300 ${isActive ? 'drop-shadow-[0_0_8px_rgba(247,148,29,0.5)]' : ''}`} />
+                <Icon size={22} className="shrink-0" />
                 
-                {/* Tooltip */}
-                <div className="absolute left-[60px] bg-black/90 border border-white/10 backdrop-blur-xl px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-[0.3em] text-white opacity-0 pointer-events-none -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 group-focus:opacity-100 group-focus:translate-x-0 transition-all duration-300 whitespace-nowrap z-[60]">
+                {/* Label - shows on hover/focus */}
+                <span className="absolute left-14 bg-black/90 border border-white/10 backdrop-blur-xl px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest text-white opacity-0 pointer-events-none group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity whitespace-nowrap z-50">
                   {cat.name}
-                </div>
+                </span>
               </button>
             );
           })}
         </nav>
 
+        {/* Channel List Button */}
+        {onOpenChannelList && (
+          <button 
+            onClick={onOpenChannelList}
+            className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/[0.04] flex items-center justify-center text-white/20 hover:text-[#F7941D] hover:bg-[#F7941D]/5 transition-all duration-500 my-2"
+            title="Lista de Canais"
+          >
+            <List size={18} />
+          </button>
+        )}
+
         {/* Settings at bottom */}
-        <button className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/[0.04] flex items-center justify-center text-white/10 hover:text-[#F7941D] hover:bg-[#F7941D]/5 transition-all duration-500 focus:ring-2 focus:ring-[#F7941D]/30">
+        <button 
+          onClick={onOpenSettings}
+          className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/[0.04] flex items-center justify-center text-white/20 hover:text-[#F7941D] hover:bg-[#F7941D]/5 transition-all duration-500"
+          title="Configurações"
+        >
           <Settings size={18} />
         </button>
       </aside>
@@ -65,10 +80,10 @@ export default function Sidebar({ activeCategory, setActiveCategory }) {
             <button
               key={cat.id}
               onClick={() => setActiveCategory(cat.type)}
-              className={`flex flex-col items-center gap-1 py-2 px-3 rounded-xl transition-all duration-300
+              className={`flex flex-col items-center gap-1 py-2 px-3 rounded-xl transition-all duration-300 relative
                 ${isActive 
                   ? 'text-[#F7941D]' 
-                  : 'text-white/20'
+                  : 'text-white/30'
                 }`}
             >
               {isActive && (

@@ -22,7 +22,7 @@ const getCategoryQuery = (name, group) => {
     return 'nebula space cinematic';
 };
 
-export default function HeroSection({ channels, onPlay }) {
+export default function HeroSection({ channels, onPlay, validity = {}, isPlayerOpen = false }) {
   const [featuredIndex, setFeaturedIndex] = useState(0);
 
   const featured = useMemo(() => {

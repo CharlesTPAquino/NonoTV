@@ -9,6 +9,15 @@
   --ds-card-bg: rgba(26, 28, 34, 0.4);
   --reflection-angle: 135deg;
   --glass-border: rgba(255, 255, 255, 0.08);
+  
+  /* TV UI / 10-foot Experience Variables */
+  --tv-bg-primary: #000000;
+  --tv-bg-secondary: rgba(20, 20, 20, 0.85);
+  --tv-text-primary: #FFFFFF;
+  --tv-text-secondary: #B3B3B3;
+  --tv-focus-border: 3px solid #FFFFFF;
+  --tv-focus-bg: rgba(255, 255, 255, 0.2);
+  --tv-accent: #E50914;
 }
 
 @layer base {
@@ -39,56 +48,184 @@
   /* Light flare on the edge */
   .reflective-glass::before {
     content: '';
-    @apply absolute inset-0 pointer-events-none opacity-30;
-    background: linear-gradient(45deg, transparent 45%, rgba(255,255,255,0.1) 48%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.1) 52%, transparent 55%);
-    background-size: 200% 200%;
-    animation: reflection-shimmer 8s ease-in-out infinite;
+    @apply absolute inset-0 pointer-events-none;
+    background: linear-gradient(
+      135deg,
+      rgba(255,255,255,0.15) 0%,
+      rgba(255,255,255,0.05) 30%,
+      transparent 60%
+    );
+    border-radius: inherit;
   }
 
-  @keyframes reflection-shimmer {
-    0% { background-position: -100% -100%; }
-    100% { background-position: 100% 100%; }
-  }
-
-  /* Fallback for devices without backdrop-filter support */
-  @supports not (backdrop-filter: blur(1px)) {
-    .reflective-glass {
-      @apply bg-black/90 border-[rgba(255,255,255,0.15)];
-      backdrop-filter: none;
-    }
-    .premium-blur {
-      @apply bg-black/80;
-      backdrop-filter: none;
-    }
-  }
-
-  .cinematic-shadow {
-    @apply shadow-[0_30px_60px_rgba(0,0,0,0.8)];
-  }
-  
+  /* Glow Effect */
   .glow-orange {
-    @apply shadow-[0_0_30px_var(--nono-gold-glow)];
+    box-shadow: 0 0 20px var(--nono-gold-glow), 0 0 40px var(--nono-gold-glow);
   }
 
-  /* Interactive Elements */
-  .clickable-card {
-    @apply transition-all duration-500 hover:scale-[1.03] active:scale-95 cursor-pointer;
+  /* Custom Scrollbar */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(255,255,255,0.05);
+    border-radius: 3px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.2);
+    border-radius: 3px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,0.3);
   }
 
-  .premium-blur {
-    @apply backdrop-blur-[40px] bg-black/40;
+  /* TV Focus State */
+  .tv-focus {
+    @apply outline-none;
+    border: var(--tv-focus-border);
+    background: var(--tv-focus-bg);
+    transform: scale(1.02);
+  }
+
+  /* Channel Card Hover Effect */
+  .channel-card {
+    @apply transition-all duration-300;
+  }
+  .channel-card:hover, .channel-card:focus {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 3px white, 0 20px 40px rgba(0,0,0,0.5);
+    z-index: 10;
+  }
+
+  /* Pill Button (Netflix Style) */
+  .pill-button {
+    @apply px-5 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all duration-300;
+  }
+  .pill-button-active {
+    @apply bg-[#F7941D] text-black;
+    box-shadow: 0 0 20px rgba(247, 148, 29, 0.5);
+  }
+  .pill-button-inactive {
+    @apply bg-white/5 text-white/40 border border-white/5 hover:bg-white/10 hover:border-white/20;
+  }
+
+  /* Hero Section */
+  .hero-gradient {
+    background: linear-gradient(
+      to right,
+      rgba(0,0,0,0.9) 0%,
+      rgba(0,0,0,0.6) 50%,
+      transparent 100%
+    );
+  }
+
+  /* Sidebar TV Expands on Focus */
+  .tv-sidebar {
+    @apply fixed left-0 top-0 h-full bg-black/80 backdrop-blur-xl border-r border-white/[0.05] z-50 transition-all duration-500;
+    width: 72px;
+  }
+  .tv-sidebar:focus-within, .tv-sidebar:hover {
+    width: 256px;
+  }
+
+  /* EPG Grid */
+  .epg-row {
+    @apply flex items-center py-3 border-b border-white/5 transition-colors;
+  }
+  .epg-row:hover, .epg-row:focus {
+    @apply bg-white/5;
+  }
+  .epg-row-active {
+    @apply bg-[#F7941D]/10 border-l-4 border-l-[#F7941D];
+  }
+
+  /* Player Controls Circular */
+  .player-control {
+    @apply w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300;
+    @apply bg-white/10 hover:bg-white/20 text-white/70 hover:text-white;
+  }
+  .player-control:focus {
+    @apply bg-white text-black scale-110;
+    box-shadow: 0 0 20px rgba(255,255,255,0.5);
+  }
+
+  /* Channel List Overlay */
+  .channel-list-overlay {
+    @apply fixed inset-y-0 left-0 w-[400px] bg-black/90 backdrop-blur-xl border-r border-white/10 z-50;
+    @apply transform transition-transform duration-300;
+  }
+  .channel-list-overlay-closed {
+    @apply -translate-x-full;
+  }
+
+  /* Glassmorphism Panel */
+  .glass-panel {
+    @apply bg-black/60 backdrop-blur-xl border border-white/[0.08] rounded-2xl;
+  }
+
+  /* Animated gradient background */
+  .animated-gradient {
+    background: linear-gradient(
+      -45deg,
+      #050505,
+      #1a1a1a,
+      #0a0a0a,
+      #151515
+    );
+    background-size: 400% 400%;
+    animation: gradient 15s ease infinite;
+  }
+
+  @keyframes gradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
   }
 }
 
-.custom-scrollbar::-webkit-scrollbar {
-  width: 4px;
-}
-.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--nono-gold); }
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
 
-.no-scrollbar::-webkit-scrollbar { display: none; }
-.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  .touch-target-sm {
+    @apply min-h-[36px] min-w-[36px];
+  }
+
+  .skeleton {
+    @apply animate-pulse bg-white/10 rounded;
+  }
+
+  .skeleton-text {
+    @apply h-4 rounded skeleton;
+  }
+
+  .skeleton-box {
+    @apply rounded-2xl skeleton;
+  }
+
+  .skeleton-avatar {
+    @apply rounded-full skeleton;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top, 0);
+  }
+}

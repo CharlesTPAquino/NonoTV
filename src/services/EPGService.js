@@ -72,9 +72,9 @@ function parseXMLTV(xmlString) {
     const parser = new DOMParser();
     const doc = parser.parseFromString(xmlString, 'text/xml');
     
-    const节目 = doc.querySelectorAll('programme');
+    const programs = doc.querySelectorAll('programme');
     
-   节目.forEach(el => {
+   programs.forEach(el => {
       const channelId = el.getAttribute('channel');
       const start = el.getAttribute('start');
       const stop = el.getAttribute('stop');
@@ -139,7 +139,9 @@ function setCache(key, data) {
       data,
       timestamp: Date.now()
     }));
-  } catch {}
+  } catch {
+    // Silent fail for localStorage
+  }
 }
 
 export async function fetchEPG(sourceUrl) {

@@ -80,7 +80,9 @@ class PrefetchService {
     try {
       const stored = JSON.parse(localStorage.getItem('nono_settings'));
       if (stored) Object.assign(settings, stored);
-    } catch {}
+    } catch {
+      // Silent fail for settings parse
+    }
 
     if (!settings.enablePrefetch || !settings.prefetchNext) {
       return [];
