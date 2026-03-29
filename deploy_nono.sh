@@ -43,10 +43,19 @@ if [ $? -ne 0 ]; then echo -e "${RED}❌ Falha na geração do APK!${NC}"; exit 
 
 # FINALIZAÇÃO E ORGANIZAÇÃO
 cd ..
-APK_SOURCE="android/app/build/outputs/apk/debug/app-debug.apk"
+# O seu projeto gera o APK com o nome customizado NonoTV-debug.apk
+APK_SOURCE="android/app/build/outputs/apk/debug/NonoTV-debug.apk"
 TIMESTAMP=$(date '+%Y-%m-%d_%H-%M')
 LATEST_NAME="NonoTV_latest.apk"
 VERSIONED_NAME="NonoTV_v${TIMESTAMP}.apk"
+
+# Verifica se o APK realmente existe antes de copiar
+if [ ! -f "$APK_SOURCE" ]; then
+    echo -e "${RED}❌ ERRO: APK não encontrado em $APK_SOURCE${NC}"
+    # Tenta o nome padrão se o customizado falhar
+    APK_SOURCE="android/app/build/outputs/apk/debug/app-debug.apk"
+    if [ ! -f "$APK_SOURCE" ]; then exit 1; fi
+fi
 
 # Configuração de Destino Local (Desktop/Nono+)
 NONO_DEST="$HOME/Desktop/Nono+"
