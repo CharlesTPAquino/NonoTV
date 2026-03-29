@@ -10,7 +10,7 @@ export default function ChannelCarousel({ title, channels, onPlay, validity, onV
   const scroll = (direction) => {
     const container = scrollRef.current;
     if (!container) return;
-    const amount = direction === 'left' ? -600 : 600;
+    const amount = direction === 'left' ? -400 : 400;
     container.scrollBy({ left: amount, behavior: 'smooth' });
   };
 
@@ -24,47 +24,39 @@ export default function ChannelCarousel({ title, channels, onPlay, validity, onV
   if (!channels || channels.length === 0) return null;
 
   return (
-    <div className="mb-12 group/carousel">
-      {/* Header - Estilo Imagem 6: Borda lateral grossa em laranja */}
-      <div className="flex items-center justify-between mb-5">
-        <div className="flex items-center gap-4 pl-4 border-l-4 border-[#F7941D]">
-          <h2 className="text-base font-black text-white tracking-tight">{title}</h2>
-          <span className="text-[10px] text-white/40 font-bold uppercase tracking-widest bg-white/5 px-2 py-0.5 rounded-full border border-white/10">
-            {channels.length} itens
-          </span>
-        </div>
-        <button
-          onClick={onViewAll}
-          className="text-[11px] text-[#F7941D] font-black uppercase tracking-[0.2em] hover:text-white transition-colors flex items-center gap-1"
-        >
-          Ver Todos <ChevronRight size={14} />
-        </button>
+    <div className="mb-10">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold text-white">{title}</h2>
+        {onViewAll && (
+          <button
+            onClick={onViewAll}
+            className="text-sm text-[#F7941D] hover:text-[#FB923C] font-medium transition-colors"
+          >
+            Ver todos
+          </button>
+        )}
       </div>
 
-      {/* Carousel container */}
-      <div className="relative">
-        {/* Left scroll button */}
+      {/* Carousel */}
+      <div className="relative group/carousel">
         {showLeft && (
           <button
             onClick={() => scroll('left')}
-            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 z-20 w-10 h-10 rounded-full bg-[#121212]/90 border border-white/20 backdrop-blur-md flex items-center justify-center text-white hover:bg-[#F7941D] transition-all duration-200 shadow-2xl"
+            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 z-20 w-9 h-14 bg-[#18181B]/90 border border-[#3F3F46] rounded-lg flex items-center justify-center text-[#A1A1AA] hover:text-white hover:bg-[#27272A] transition-all opacity-0 group-hover/carousel:opacity-100"
           >
             <ChevronLeft size={20} />
           </button>
         )}
 
-        {/* Scrollable row */}
         <div
           ref={scrollRef}
           onScroll={handleScroll}
-          className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar"
+          className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {channels.slice(0, 20).map((channel) => (
-            <div
-              key={channel.url}
-              className="flex-shrink-0 w-[200px] md:w-[220px]"
-            >
+            <div key={channel.url} className="flex-shrink-0 w-[180px]">
               <ChannelCard
                 channel={channel}
                 onPlay={onPlay}
@@ -75,11 +67,10 @@ export default function ChannelCarousel({ title, channels, onPlay, validity, onV
           ))}
         </div>
 
-        {/* Right scroll button */}
         {showRight && channels.length > 4 && (
           <button
             onClick={() => scroll('right')}
-            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-3 z-20 w-10 h-10 rounded-full bg-[#121212]/90 border border-white/20 backdrop-blur-md flex items-center justify-center text-white hover:bg-[#F7941D] transition-all duration-200 shadow-2xl"
+            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 z-20 w-9 h-14 bg-[#18181B]/90 border border-[#3F3F46] rounded-lg flex items-center justify-center text-[#A1A1AA] hover:text-white hover:bg-[#27272A] transition-all opacity-0 group-hover/carousel:opacity-100"
           >
             <ChevronRight size={20} />
           </button>

@@ -5,32 +5,32 @@ const { parse } = require('url');
 const PORT = 3131;
 
 const server = http.createServer((req, res) => {
+  // CORS Headers
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', '*');
 
   if (req.method === 'OPTIONS') {
-    res.writeHead(204);
+    res.writeHead(200);
     res.end();
     return;
   }
 
   const query = parse(req.url, true).query;
-  let targetUrl = query.url || req.url.slice(1);
+  const targetUrl = query.url;
 
-  if (!targetUrl || !targetUrl.startsWith('http')) {
-    res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('NonoTV Proxy Local Ativo! Use: http://localhost:3131/?url=SUA_URL');
+  if (!targetUrl) {
+    res.writeHead(400);
+    res.end('Falta o parâmetro ?url=');
     return;
   }
 
-  console.log(`\n[Proxy] 📡 Solicitando: ${targetUrl}`);
+  console.log(`[Proxy] 📡 Solicitando: ${targetUrl}`);
 
   function pipeRequest(currentUrl, redirectCount = 0) {
     if (redirectCount > 5) {
-      console.error(`[Erro] 🛑 Muitos redirecionamentos.`);
-      res.writeHead(500);
-      res.end('Erro: Muitos redirecionamentos do servidor IPTV.');
+      res.writeHead(508);
+      res.end('Erro: Muitos redirecionamentos');
       return;
     }
 
@@ -42,19 +42,26 @@ const server = http.createServer((req, res) => {
         method: req.method,
         headers: {
           'User-Agent': 'VLC/3.0.18 LibVLC/3.0.18',
-          'Referer': options.origin || options.host,
+          'Referer': `http://${options.host}/`,
           'Accept': '*/*',
           'Connection': 'keep-alive',
-          'Range': req.headers.range || ''
-        }
+          'Range': req.headers.range || '',
+          'X-Forwarded-For': '127.0.0.1'
+        },
+        timeout: 60000 
       }, (proxyRes) => {
-        if ([301, 302, 307, 308].includes(proxyRes.statusCode) && proxyRes.headers.location) {
-          console.log(`[Proxy] ↪️ Redirecionando para: ${proxyRes.headers.location}`);
-          pipeRequest(proxyRes.headers.location, redirectCount + 1);
+        // TRATAMENTO DE REDIRECIONAMENTO (CRÍTICO!)
+        if ([301, 302, 303, 307, 308].includes(proxyRes.statusCode) && proxyRes.headers.location) {
+          const nextUrl = proxyRes.headers.location.startsWith('http') 
+            ? proxyRes.headers.location 
+            : `${options.protocol}//${options.host}${proxyRes.headers.location}`;
+          
+          console.log(`[Proxy] ↪️ Redirecionando para: ${nextUrl}`);
+          pipeRequest(nextUrl, redirectCount + 1);
           return;
         }
 
-        console.log(`[Proxy] ✅ Resposta: ${proxyRes.statusCode} (${proxyRes.headers['content-type'] || 'unknown type'})`);
+        console.log(`[Proxy] ✅ Resposta: ${proxyRes.statusCode} (${proxyRes.headers['content-type'] || 'unknown'})`);
 
         const headers = { ...proxyRes.headers };
         headers['Access-Control-Allow-Origin'] = '*';
@@ -62,6 +69,7 @@ const server = http.createServer((req, res) => {
         headers['Access-Control-Expose-Headers'] = 'Content-Length, Content-Range, Accept-Ranges';
         headers['Accept-Ranges'] = 'bytes';
         
+        // Remove headers de segurança que impedem o player
         delete headers['content-security-policy'];
         delete headers['x-frame-options'];
 
@@ -70,20 +78,28 @@ const server = http.createServer((req, res) => {
       });
 
       proxyReq.on('error', (e) => {
-        if (e.code === 'ENOTFOUND') {
-          console.error(`[Erro] 🛑 Domínio não encontrado: ${options.hostname}. O seu provedor pode estar bloqueando este site.`);
-        } else {
-          console.error(`[Erro] ❌ Falha na conexão: ${e.message}`);
+        console.error(`[Erro] ❌ Falha na conexão: ${e.message}`);
+        if (!res.headersSent) {
+          res.writeHead(502);
+          res.end(`Bad Gateway: ${e.message}`);
         }
-        res.writeHead(500);
-        res.end(`Erro de Conexão: ${e.message}`);
+      });
+
+      proxyReq.on('timeout', () => {
+        proxyReq.destroy();
+        if (!res.headersSent) {
+          res.writeHead(504);
+          res.end('Gateway Timeout');
+        }
       });
 
       proxyReq.end();
     } catch (err) {
-      console.error(`[Erro] 💥 Falha fatal no proxy: ${err.message}`);
-      res.writeHead(500);
-      res.end('Erro interno no proxy local.');
+      console.error(`[Erro] 💥 Erro interno no proxy: ${err.message}`);
+      if (!res.headersSent) {
+        res.writeHead(500);
+        res.end(`Erro Interno: ${err.message}`);
+      }
     }
   }
 
@@ -91,8 +107,11 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`\n🚀 NONOTV TURBO-PROXY ATIVO`);
-  console.log(`📍 Endereço Local: http://localhost:${PORT}`);
-  console.log(`🌐 Endereço Rede:  http://0.0.0.0:${PORT}`);
-  console.log(`🎭 Modo: Camuflagem VLC Ativa | Seguindo Redirecionamentos\n`);
+  console.log(`
+  ==========================================
+  🚀 PROXY ELITE ATIVO NA PORTA ${PORT}
+  🛠️  Suporte a Redirecionamento: SIM
+  🛠️  Bypass de CORS: SIM
+  ==========================================
+  `);
 });

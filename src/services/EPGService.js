@@ -6,7 +6,7 @@ const CACHE_DURATION = 1000 * 60 * 60;
 
 function getProxyUrl(url) {
   if (import.meta.env.DEV) {
-    return `${PROXY_URL}/${encodeURIComponent(url)}`;
+    return `${PROXY_URL}/?url=${encodeURIComponent(url)}`;
   }
   return url;
 }
@@ -48,7 +48,7 @@ export function detectEPGUrl(sourceUrl) {
 }
 
 async function fetchWithProxy(url) {
-  const isNative = CapacitorHttp?.get !== undefined;
+  const isNative = !!(window.Capacitor?.isNativePlatform?.());
   
   if (isNative) {
     const response = await CapacitorHttp.get({
@@ -72,9 +72,9 @@ function parseXMLTV(xmlString) {
     const parser = new DOMParser();
     const doc = parser.parseFromString(xmlString, 'text/xml');
     
-    const programs = doc.querySelectorAll('programme');
+    const programmeNodes = doc.querySelectorAll('programme');
     
-   programs.forEach(el => {
+    programmeNodes.forEach(el => {
       const channelId = el.getAttribute('channel');
       const start = el.getAttribute('start');
       const stop = el.getAttribute('stop');

@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback, lazy, Suspense } from 'react';
 import { 
   AlertCircle, RefreshCw, Search, 
-  Activity, Clock, LogOut, LayoutGrid, Globe, Server, Sparkles
+  Globe, Server
 } from 'lucide-react';
 import { initSpatialNavigation } from './utils/spatialNavigation';
 import Sidebar from './components/Layout/Sidebar';
@@ -58,8 +58,9 @@ export default function App() {
 
   const { validity, isValidating, validateAll, isChannelValid } = useChannelValidator(channels);
 
-  // Validar canais quando carregados
+  // Validar canais quando carregados (somente em produção/APK - no browser CORS impede)
   useEffect(() => {
+    if (import.meta.env.DEV) return; // Streams IPTV não respondem a fetch no browser
     if (channels && channels.length > 0) {
       const timer = setTimeout(() => {
         validateAll(channels.slice(0, 50), (current, total, name) => {
@@ -99,22 +100,7 @@ export default function App() {
   }, [filteredChannels]);
 
   return (
-    <div className="h-screen w-screen bg-[#050505] text-white selection:bg-[#F7941D]/30 font-inter overflow-hidden relative">
-      
-      {/* 📺 BACKGROUND REFLEXIVO */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        {/* Luz Ambiente / Reflexo de Canto */}
-        <div className="absolute top-[-10%] left-[-10%] w-[80%] h-[80%] bg-gradient-to-br from-white/10 to-transparent blur-[120px] rotate-12 opacity-40 animate-pulse" />
-        
-        {/* Glow de Conteúdo */}
-        <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-[#F7941D]/5 blur-[150px] rounded-full mix-blend-screen" />
-        
-        {/* Camada de Micro-Grão */}
-        <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/carbon-fibre.png")' }} />
-        
-        {/* Vinheta de Profundidade */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/40" />
-      </div>
+    <div className="h-screen w-screen bg-[#18181B] text-white selection:bg-[#F7941D]/30 font-inter overflow-hidden relative">
 
       <div className="h-full w-full relative z-10">
         {/* Sidebar - TV UI Expansível */}
@@ -129,7 +115,7 @@ export default function App() {
         />
 
         {/* Área Principal */}
-        <main className="md:ml-[72px] h-full overflow-hidden flex flex-col relative pb-16 md:pb-0">
+        <main className="lg:ml-[72px] md:ml-[72px] h-full overflow-hidden flex flex-col relative pb-16 md:pb-0">
           
           {/* Navbar com Tabs Estilo Netflix */}
           <Navbar 
@@ -143,28 +129,15 @@ export default function App() {
           />
 
           <div className="flex-1 overflow-y-auto custom-scrollbar px-6 md:px-12 pt-4 pb-20">
-            {/* Título Principal */}
-            <header className="mb-10 mt-6 flex items-end justify-between">
-              <div className="space-y-1">
-                <div className="flex items-center gap-3">
-                   <div className="w-1.5 h-6 bg-[#F7941D] rounded-full glow-orange" />
-                   <h1 className="text-5xl md:text-6xl font-black tracking-tighter uppercase font-outfit">
-                      Nono<span className="text-[#F7941D]">TV</span>
-                   </h1>
-                   <div className="bg-white/5 border border-white/10 px-3 py-1 rounded-lg">
-                      <span className="text-[10px] font-black tracking-[0.3em] text-white/40">ELITE ULTRA 4K</span>
-                   </div>
-                </div>
-                <p className="text-white/20 font-black uppercase tracking-[0.5em] text-[9px] ml-1">
-                  {activeSource ? `Link Ativo: ${activeSource.name}` : 'Navegando Offline'}
+            {/* Header */}
+            <header className="mb-8 mt-4 flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-white">
+                  Descobrir
+                </h1>
+                <p className="text-[#71717A] text-sm mt-1">
+                  {filteredChannels.length} canais disponíveis
                 </p>
-              </div>
-
-              {/* Status Minimalista */}
-              <div className="hidden lg:flex items-center gap-8 text-[9px] font-black uppercase tracking-[0.3em] text-white/20 bg-white/5 px-6 py-3 rounded-2xl border border-white/5">
-                 <div className="flex items-center gap-3"><Globe size={14} className="text-blue-500/50" /> {activeCategory}</div>
-                 <div className="flex items-center gap-3"><LayoutGrid size={14} className="text-emerald-500/50" /> {filteredChannels.length} Items</div>
-                 <div className="flex items-center gap-3"><Server size={14} className="text-orange-500/50" /> HQ-SINAL</div>
               </div>
             </header>
 
