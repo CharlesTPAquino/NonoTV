@@ -7,37 +7,23 @@
  */
 
 export const SOURCES = [
-  // === FONTES TESTADAS E FUNCIONANDO ===
-  { 
-    id: '123tv-1',
-    name: '123TV Premium', 
-    url: 'http://123.123tv.to:8080/get.php?username=IpdafRUkSN&password=XSFfLYcjr6&type=m3u_plus',
-    category: 'M3U Plus'
-  },
-  { 
-    id: 'meusrv-1',
-    name: 'MeuServidor Top #1', 
-    url: 'http://meusrv.top:80/get.php?username=781382867&password=443613344&type=m3u_plus',
-    category: 'Premium'
-  },
-  { 
-    id: 'meusrv-2',
-    name: 'MeuServidor Top #2', 
-    url: 'http://meusrv.top:80/get.php?username=383786486&password=398856376&type=m3u_plus',
-    category: 'Premium'
-  },
-  { 
-    id: 'meusrv-3',
-    name: 'MeuServidor Top #3', 
-    url: 'http://meusrv.top:80/get.php?username=388847590&password=713974775&type=m3u_plus',
-    category: 'Premium'
-  },
-  { 
-    id: 'meusrv-4',
-    name: 'MeuServidor Top #4', 
-    url: 'http://meusrv.top:80/get.php?username=131987870&password=677189455&type=m3u_plus',
-    category: 'Premium'
-  },
+  // === FONTES SAWSAX (Premium - 18/03/2026) ===
+  { id: 'sawsax-1', name: 'Premium (welligton7753)', url: 'http://185.66.90.170/get.php?username=welligton7753&password=2336USDGyewz&type=m3u_plus&output=ts', category: 'Premium' },
+  { id: 'sawsax-2', name: 'Premium (Jacqueline4848)', url: 'http://185.66.90.170/get.php?username=Jacqueline4848&password=2Denardi48494&type=m3u_plus&output=ts', category: 'Premium' },
+  { id: 'sawsax-3', name: 'Premium (Fabianoe8449)', url: 'http://185.66.90.170/get.php?username=Fabianoe8449&password=Braga28349&type=m3u_plus&output=ts', category: 'Premium' },
+  { id: 'sawsax-4', name: 'Premium (Avelino38383)', url: 'http://185.66.90.170/get.php?username=Avelino38383&password=Tv825955&type=m3u_plus&output=ts', category: 'Premium' },
+  { id: 'sawsax-5', name: 'Premium (LuizClaudio745)', url: 'http://185.66.90.170/get.php?username=LuizClaudio745&password=Quarto28384&type=m3u_plus&output=ts', category: 'Premium' },
+  { id: 'sawsax-6', name: 'Premium (Karina2838)', url: 'http://185.66.90.170/get.php?username=Karina2838&password=Tv1824940&type=m3u_plus&output=ts', category: 'Premium' },
+  { id: 'sawsax-7', name: 'Premium (Carol39494)', url: 'http://185.66.90.170/get.php?username=Carol39494&password=Tv834949&type=m3u_plus&output=ts', category: 'Premium' },
+  { id: 'sawsax-8', name: 'Premium (Diego28449)', url: 'http://185.66.90.170/get.php?username=Diego28449&password=Nogueira2458&type=m3u_plus&output=ts', category: 'Premium' },
+  { id: 'sawsax-9', name: 'Premium (Matheus2849)', url: 'http://185.66.90.170/get.php?username=Matheus2849&password=Tv27348559&type=m3u_plus&output=ts', category: 'Premium' },
+  { id: 'sawsax-10', name: 'Premium (Jessicab3513)', url: 'http://185.66.90.170/get.php?username=Jessicab3513&password=Alves2026&type=m3u_plus&output=ts', category: 'Premium' },
+  { id: 'sawsax-11', name: 'Premium (Ronaldosv001)', url: 'http://185.66.90.170/get.php?username=Ronaldosv001&password=eaX3E912345&type=m3u_plus&output=ts', category: 'Premium' },
+  { id: 'sawsax-12', name: 'Premium (vinicius8328x)', url: 'http://185.66.90.170/get.php?username=vinicius8328x&password=1461UPWMncuv&type=m3u_plus&output=ts', category: 'Premium' },
+  { id: 'sawsax-13', name: 'Premium (Walmir8239)', url: 'http://185.66.90.170/get.php?username=Walmir8239&password=Tv294595&type=m3u_plus&output=ts', category: 'Premium' },
+  { id: 'sawsax-14', name: 'Premium (Jefersonrdw58)', url: 'http://185.66.90.170/get.php?username=Jefersonrdw58&password=Rdw65489&type=m3u_plus&output=ts', category: 'Premium' },
+  { id: 'sawsax-15', name: 'Premium (Veronica3013)', url: 'http://185.66.90.170/get.php?username=Veronica3013&password=Corci2024&type=m3u_plus&output=ts', category: 'Premium' },
+  { id: 'sawsax-16', name: 'Premium (Felipe3021)', url: 'http://185.66.90.170/get.php?username=Felipe3021&password=Caracciolo2025&type=m3u_plus&output=ts', category: 'Premium' },
 
   // === FONTES ABERTAS ===
   { 
@@ -45,23 +31,5 @@ export const SOURCES = [
     name: 'IPTV-ORG (Global)', 
     url: 'https://iptv-org.github.io/iptv/index.m3u',
     category: 'Estável'
-  },
-  { 
-    id: 'kazing',
-    name: 'Kazing Premium', 
-    url: 'https://kazing.online/lista.m3u',
-    category: 'Premium'
-  },
-  { 
-    id: 'zeroum',
-    name: 'ZeroUm Filmes',   
-    url: 'https://zero-um.tv/lista.m3u',
-    category: 'VOD'
-  },
-  { 
-    id: 'plus',
-    name: 'PlusTV (HLS)',    
-    url: 'https://bit.ly/plustv-free',
-    category: 'Free'
   }
 ];

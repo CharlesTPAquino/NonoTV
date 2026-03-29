@@ -46,7 +46,7 @@ export function buildSourceUrl(source) {
 function getProxyUrl(targetUrl) {
   if (typeof window === 'undefined') return targetUrl;
   
-  const isNative = !!window.Capacitor;
+  const isNative = !!(window.Capacitor?.isNativePlatform?.());
   const isDev = import.meta?.env?.DEV;
   
   // Em app nativo ou produção, usa URL direta
@@ -54,9 +54,8 @@ function getProxyUrl(targetUrl) {
     return targetUrl;
   }
   
-  // Em desenvolvimento, usa proxy local (formato: /http://...)
-  const hostname = window.location.hostname || 'localhost';
-  return `http://${hostname}:3131/${targetUrl}`;
+  // Em desenvolvimento, usa proxy local
+  return `http://localhost:3131/?url=${encodeURIComponent(targetUrl)}`;
 }
 
 async function testServer(source) {

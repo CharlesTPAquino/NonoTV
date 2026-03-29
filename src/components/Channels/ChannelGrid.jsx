@@ -105,11 +105,20 @@ export default function ChannelGrid({ channels, activeGroup, activeCategory, set
               ))}
             </div>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-4 md:gap-6">
-            {displayChannels.map((ch, idx) => (
-              <ChannelCard key={ch.id} channel={ch} onPlay={() => onPlay(ch)} index={idx} isValid={channelValidity[ch.id]} />
-            ))}
-          </div>
+          {/* Grid adaptativo por tipo de conteúdo */}
+          {(() => {
+            const isPosterContent = activeCategory === 'movie' || activeCategory === 'series';
+            const gridClass = isPosterContent
+              ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5 md:gap-6'
+              : 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-4 md:gap-5';
+            return (
+              <div className={gridClass}>
+                {displayChannels.map((ch, idx) => (
+                  <ChannelCard key={ch.id} channel={ch} onPlay={() => onPlay(ch)} index={idx} isValid={channelValidity[ch.id]} isPlayerOpen={isPlayerOpen} />
+                ))}
+              </div>
+            );
+          })()}
           {standard.length > limit && (
             <div className="mt-20 flex justify-center pb-20">
               <button onClick={() => setLimit(prev => prev + 50)} className="group relative px-12 py-5 bg-white/5 border border-white/10 rounded-[30px] overflow-hidden transition-all hover:bg-white hover:text-black">

@@ -28,16 +28,8 @@ export const SourceProvider = ({ children }) => {
   }, []);
 
   const getList = async (url) => {
-    const isNative = !!(window.Capacitor);
-    let target = url;
-    
-    if (!isNative && import.meta.env.DEV) {
-      target = `http://${window.location.hostname || 'localhost'}:3131/${url}`;
-    }
-
-    const r = await fetch(target);
-    if (!r.ok) throw new Error(`Status ${r.status}`);
-    return await r.text();
+    const { syncSource } = await import('../services/api');
+    return await syncSource(url);
   };
 
   const selectSource = useCallback(async (source) => {
@@ -226,7 +218,15 @@ export const SourceProvider = ({ children }) => {
   useEffect(() => {
     const saved = localStorage.getItem('activeSourceUrl');
     const source = sources.find(s => s.url === saved);
-    if (source) selectSource(source);
+    if (source) {
+      selectSource(source);
+    } else {
+      // Se a fonte salva não existe mais, selecionar a primeira disponível
+      localStorage.removeItem('activeSourceUrl');
+      if (sources.length > 0) {
+        selectSource(sources[0]);
+      }
+    }
   }, [sources, selectSource]);
 
   return (

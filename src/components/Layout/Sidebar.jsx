@@ -1,96 +1,185 @@
-import React from 'react';
-import { Home, Tv, Film, Clapperboard, Radio, Settings, List } from 'lucide-react';
+import React, { useState } from 'react';
+import { Home, Tv, Film, Clapperboard, Settings, Menu, History, ThumbsUp, PlaySquare, ChevronLeft, ChevronRight } from 'lucide-react';
 
-const CATEGORIES = [
-  { id: 'all',  name: 'Início',     type: 'All',    icon: Home },
-  { id: 'live', name: 'Ao Vivo',    type: 'live',   icon: Tv },
-  { id: 'vod',  name: 'Filmes',     type: 'movie',  icon: Film },
-  { id: 'ser',  name: 'Séries',     type: 'series', icon: Clapperboard },
+const NAV_ITEMS = [
+  { id: 'home',   name: 'Início',     type: 'All',    icon: Home },
+  { id: 'live',   name: 'Ao Vivo',    type: 'live',   icon: Tv },
+  { id: 'vod',    name: 'Filmes',     type: 'movie',  icon: Film },
+  { id: 'series', name: 'Séries',     type: 'series', icon: Clapperboard },
+];
+
+const LIBRARY_ITEMS = [
+  { id: 'history',  name: 'Histórico',   icon: History },
+  { id: 'liked',    name: 'Curtidos',    icon: ThumbsUp },
+  { id: 'playlist', name: 'Playlists',   icon: PlaySquare },
 ];
 
 export default function Sidebar({ activeCategory, setActiveCategory, onOpenSettings, onOpenChannelList }) {
+  const [expanded, setExpanded] = useState(false);
+
   return (
     <>
-      {/* DESKTOP / TV — Expands on focus */}
-      <aside className="tv-sidebar hidden md:flex flex-col items-center pt-8 pb-6 group">
-        {/* Logo Mark */}
-        <div className="w-10 h-10 rounded-xl bg-[#F7941D]/10 border border-[#F7941D]/20 flex items-center justify-center mb-10 shrink-0">
-          <span className="text-[#F7941D] font-black text-sm font-outfit">N</span>
+      {/* DESKTOP / TV - Collapsible YouTube Style */}
+      <aside 
+        className={`hidden lg:block fixed left-0 top-0 h-full bg-[#0F0F0F] border-r border-[#27272A] z-50 transition-all duration-300 ease-in-out flex flex-col ${
+          expanded ? 'w-[240px]' : 'w-[72px]'
+        }`}
+        onMouseEnter={() => setExpanded(true)}
+        onMouseLeave={() => setExpanded(false)}
+      >
+        {/* Header */}
+        <div className={`flex items-center h-14 border-b border-[#27272A] ${expanded ? 'px-5 gap-3' : 'justify-center px-0'}`}>
+          <div className="w-8 h-8 bg-[#F7941D] rounded-lg flex items-center justify-center shrink-0">
+            <span className="text-white font-bold text-sm">N</span>
+          </div>
+          {expanded && (
+            <span className="text-white font-semibold text-lg truncate">NonoTV</span>
+          )}
         </div>
 
-        {/* Navigation */}
-        <nav className="flex flex-col items-center gap-2 flex-1 w-full px-2">
-          {CATEGORIES.map(cat => {
-            const Icon = cat.icon;
-            const isActive = activeCategory === cat.type;
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto py-3 custom-scrollbar overflow-x-hidden">
+          
+          {/* Main Navigation */}
+          <div className={`${expanded ? 'px-3' : 'px-0'}`}>
+            {NAV_ITEMS.map(item => {
+              const Icon = item.icon;
+              const isActive = activeCategory === item.type;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveCategory(item.type)}
+                  className={`w-full flex items-center rounded-xl transition-colors mb-0.5
+                    ${expanded 
+                      ? 'px-4 py-3 gap-4' 
+                      : 'justify-center py-3 px-0'
+                    }
+                    ${isActive 
+                      ? 'bg-[#27272A] text-white' 
+                      : 'text-[#AAAAAA] hover:bg-[#27272A]/50 hover:text-white'
+                    }`}
+                >
+                  <Icon size={22} className={isActive ? 'text-[#F7941D]' : 'shrink-0'} />
+                  {expanded && (
+                    <>
+                      <span className="text-sm font-medium flex-1 text-left">{item.name}</span>
+                      {isActive && (
+                        <div className="w-1 h-6 bg-[#F7941D] rounded-full" />
+                      )}
+                    </>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Divider */}
+          {expanded && <div className="h-px bg-[#27272A] mx-4 my-3" />}
+
+          {/* Library Section */}
+          {expanded && (
+            <div className="px-3">
+              <h3 className="px-4 text-xs font-semibold text-[#71717A] uppercase tracking-wider mb-2">
+                Biblioteca
+              </h3>
+              {LIBRARY_ITEMS.map(item => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.id}
+                    className="w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-colors text-[#AAAAAA] hover:bg-[#27272A]/50 hover:text-white"
+                  >
+                    <Icon size={22} />
+                    <span className="text-sm font-medium">{item.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Divider */}
+          {expanded && <div className="h-px bg-[#27272A] mx-4 my-3" />}
+
+          {/* Channels Button */}
+          {expanded && (
+            <div className="px-3">
+              <button
+                onClick={onOpenChannelList}
+                className="w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-colors text-[#AAAAAA] hover:bg-[#27272A]/50 hover:text-white"
+              >
+                <Menu size={22} />
+                <span className="text-sm font-medium">Todos os Canais</span>
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        {expanded && (
+          <div className="px-3 py-4 border-t border-[#27272A]">
+            <button
+              onClick={onOpenSettings}
+              className="w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-colors text-[#AAAAAA] hover:bg-[#27272A]/50 hover:text-white"
+            >
+              <Settings size={22} />
+              <span className="text-sm font-medium">Configurações</span>
+            </button>
+          </div>
+        )}
+      </aside>
+
+      {/* MEDIUM SCREENS - Collapsed with toggle */}
+      <aside className="hidden md:flex lg:hidden fixed left-0 top-0 h-full w-[72px] bg-[#0F0F0F] border-r border-[#27272A] flex-col items-center pt-4 z-50">
+        <div className="w-10 h-10 bg-[#F7941D] rounded-xl flex items-center justify-center mb-6">
+          <span className="text-white font-bold text-sm">N</span>
+        </div>
+
+        <nav className="flex flex-col items-center gap-1 w-full px-2 flex-1">
+          {NAV_ITEMS.map(item => {
+            const Icon = item.icon;
+            const isActive = activeCategory === item.type;
             return (
               <button
-                key={cat.id}
-                onClick={() => setActiveCategory(cat.type)}
-                className={`group relative w-full h-12 rounded-2xl flex items-center justify-center transition-all duration-500 outline-none
-                  focus:ring-2 focus:ring-[#F7941D]/50
+                key={item.id}
+                onClick={() => setActiveCategory(item.type)}
+                className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors
                   ${isActive 
-                    ? 'bg-[#F7941D]/15 text-[#F7941D]' 
-                    : 'text-white/30 hover:text-white hover:bg-white/5'
+                    ? 'bg-[#27272A] text-white' 
+                    : 'text-[#AAAAAA] hover:bg-[#27272A]/50 hover:text-white'
                   }`}
-                title={cat.name}
+                title={item.name}
               >
-                {/* Active pill indicator */}
-                {isActive && (
-                  <div className="absolute left-0 w-1 h-8 bg-[#F7941D] rounded-full shadow-[0_0_12px_#F7941D]" />
-                )}
-                <Icon size={22} className="shrink-0" />
-                
-                {/* Label - shows on hover/focus */}
-                <span className="absolute left-14 bg-black/90 border border-white/10 backdrop-blur-xl px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest text-white opacity-0 pointer-events-none group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity whitespace-nowrap z-50">
-                  {cat.name}
-                </span>
+                <Icon size={22} className={isActive ? 'text-[#F7941D]' : ''} />
               </button>
             );
           })}
         </nav>
 
-        {/* Channel List Button */}
-        {onOpenChannelList && (
+        <div className="flex flex-col gap-1 w-full px-2 pb-4">
           <button 
-            onClick={onOpenChannelList}
-            className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/[0.04] flex items-center justify-center text-white/20 hover:text-[#F7941D] hover:bg-[#F7941D]/5 transition-all duration-500 my-2"
-            title="Lista de Canais"
+            onClick={onOpenSettings}
+            className="w-12 h-12 rounded-xl flex items-center justify-center text-[#AAAAAA] hover:bg-[#27272A]/50 hover:text-white"
+            title="Configurações"
           >
-            <List size={18} />
+            <Settings size={22} />
           </button>
-        )}
-
-        {/* Settings at bottom */}
-        <button 
-          onClick={onOpenSettings}
-          className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/[0.04] flex items-center justify-center text-white/20 hover:text-[#F7941D] hover:bg-[#F7941D]/5 transition-all duration-500"
-          title="Configurações"
-        >
-          <Settings size={18} />
-        </button>
+        </div>
       </aside>
 
-      {/* MOBILE / TABLET — Bottom navigation bar */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-black/80 backdrop-blur-[30px] border-t border-white/[0.04] z-50 flex items-center justify-around px-4 safe-area-bottom">
-        {CATEGORIES.map(cat => {
-          const Icon = cat.icon;
-          const isActive = activeCategory === cat.type;
+      {/* MOBILE - Bottom Navigation */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-[#0F0F0F] border-t border-[#27272A] z-50 flex items-center justify-around px-2 safe-area-bottom">
+        {NAV_ITEMS.slice(0, 4).map(item => {
+          const Icon = item.icon;
+          const isActive = activeCategory === item.type;
           return (
             <button
-              key={cat.id}
-              onClick={() => setActiveCategory(cat.type)}
-              className={`flex flex-col items-center gap-1 py-2 px-3 rounded-xl transition-all duration-300 relative
-                ${isActive 
-                  ? 'text-[#F7941D]' 
-                  : 'text-white/30'
-                }`}
+              key={item.id}
+              onClick={() => setActiveCategory(item.type)}
+              className={`flex flex-col items-center justify-center gap-1 w-16 h-full transition-colors
+                ${isActive ? 'text-[#F7941D]' : 'text-[#71717A]'}`}
             >
-              {isActive && (
-                <div className="absolute top-0 w-8 h-0.5 bg-[#F7941D] rounded-full shadow-[0_0_10px_#F7941D]" />
-              )}
-              <Icon size={20} />
-              <span className="text-[8px] font-black uppercase tracking-widest">{cat.name}</span>
+              <Icon size={22} />
+              <span className="text-[10px] font-medium">{item.name}</span>
             </button>
           );
         })}

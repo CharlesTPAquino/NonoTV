@@ -34,23 +34,25 @@ export function useChannelValidator(channels = []) {
   const getProxyUrl = useCallback((url) => {
     if (typeof window === 'undefined') return url;
     
-    const isNative = !!window.Capacitor;
+    const isNative = !!(window.Capacitor?.isNativePlatform?.());
     const isDev = import.meta?.env?.DEV;
     
     if (isNative || !isDev) return url;
     
-    const hostname = window.location.hostname || 'localhost';
-    return `http://${hostname}:3131/${url}`;
+    return `http://localhost:3131/?url=${encodeURIComponent(url)}`;
   }, []);
 
   const validateChannel = useCallback(async (channel) => {
     const url = getProxyUrl(channel.url);
     
     try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), VALIDATION_TIMEOUT);
       const response = await fetch(url, {
-        method: 'GET',
-        mode: 'cors'
+        method: 'HEAD',
+        signal: controller.signal
       });
+      clearTimeout(timer);
       
       if (response.ok || response.status === 302 || response.status === 0) {
         return { valid: true, status: response.status || 200 };

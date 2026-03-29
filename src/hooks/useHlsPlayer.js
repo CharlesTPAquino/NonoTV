@@ -107,23 +107,35 @@ export default function useHlsPlayer(url, videoRef, options = {}) {
       return;
     }
 
+    const isDev = import.meta.env.DEV;
+    const PROXY = 'http://localhost:3131';
+
     const hls = new Hls({
       enableWorker: true,
-      lowLatencyMode: false,
-      backBufferLength: 90,
-      maxBufferLength: 40,
-      maxMaxBufferLength: 90,
-      manifestLoadingMaxRetry: 10,
-      manifestLoadingRetryDelay: 2000,
-      levelLoadingMaxRetry: 10,
-      fragLoadingMaxRetry: 10,
+      lowLatencyMode: true,
+      backBufferLength: 0,
+      maxBufferLength: 10,
+      maxMaxBufferLength: 20,
+      manifestLoadingMaxRetry: 15,
+      manifestLoadingRetryDelay: 1000,
+      levelLoadingMaxRetry: 15,
+      fragLoadingMaxRetry: 15,
       startLevel: -1,
       abrEwmaDefaultEstimate: 5000000,
-      xhrSetup: (xhr) => { xhr.withCredentials = false; },
+      xhrSetup: (xhr, url) => {
+        xhr.withCredentials = false;
+        // Em DEV, roteia cada request do HLS pelo proxy local
+        if (isDev && url && !url.startsWith(PROXY)) {
+          const proxied = `${PROXY}/?url=${encodeURIComponent(url)}`;
+          xhr.open('GET', proxied, true);
+        }
+      },
     });
 
     hlsRef.current = hls;
-    hls.loadSource(src);
+    // Em DEV, roteia o manifesto pelo proxy
+    const loadUrl = isDev ? `${PROXY}/?url=${encodeURIComponent(src)}` : src;
+    hls.loadSource(loadUrl);
     hls.attachMedia(video);
 
     // Enable hardware acceleration
