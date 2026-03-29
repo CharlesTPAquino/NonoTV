@@ -69,7 +69,7 @@ export const SourceProvider = ({ children }) => {
     try {
       setSyncStatus(`Conectando: ${source.name}...`);
       
-      console.log('[SourceContext] Iniciando sync com timeout global de 15s...');
+      console.log('[SourceContext] Iniciando sync (timeout 45s)...');
       
       const text = await Promise.race([
         retryService.executeWithRetry(
@@ -77,7 +77,7 @@ export const SourceProvider = ({ children }) => {
           source.id,
           source.name
         ),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT_GLOBAL_15S')), 15000))
+        new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT_CONEXAO')), 45000))
       ]);
       
       const parsed = parseM3U(text);
@@ -121,6 +121,8 @@ export const SourceProvider = ({ children }) => {
       
       if (erroReal === 'SOURCE_BLOCKED') {
         setError(`Fonte bloqueada devido a muitas falhas contínuas. Aguarde 2 minutos.`);
+      } else if (erroReal.includes('TIMEOUT')) {
+        setError(`Servidor ${source.name} demorou para responder. Tente novamente.`);
       } else if (erroReal.includes('Failed to fetch') || erroReal.includes('NetworkError')) {
         setError(`Sem conexão com a internet ou servidor offline (Falha de Rede). ${erroReal}`);
       } else {

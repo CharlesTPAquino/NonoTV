@@ -97,6 +97,13 @@ export const CREDENTIALS = {
       { user: getEnv('VITE_RAMYS_USER_1', '33174554'), pass: getEnv('VITE_RAMYS_PASS_1', '29784475') },
       { user: getEnv('VITE_RAMYS_USER_2', '89347528'), pass: getEnv('VITE_RAMYS_PASS_2', '25443698') },
     ]
+  },
+
+  brazilzao: {
+    host: getEnv('VITE_BRAZILZAO_HOST', 'http://brazilzao.top:80'),
+    accounts: [
+      { user: getEnv('VITE_BRAZILZAO_USER_1', 'ian123'), pass: getEnv('VITE_BRAZILZAO_PASS_1', '252452469') },
+    ]
   }
 };
 
