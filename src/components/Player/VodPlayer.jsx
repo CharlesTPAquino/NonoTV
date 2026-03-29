@@ -23,14 +23,26 @@ const VOD_CONFIG = {
 function detectStreamType(url) {
   if (!url) return 'hls';
   const path = url.toLowerCase().split('?')[0];
-  if (
-    path.includes('.m3u8') ||
-    path.includes('get.php') ||
-    path.includes('live/') ||
-    path.includes('playlist')
-  )
-    return 'hls';
-  return 'direct';
+  
+  const hlsPatterns = [
+    '.m3u8', 'get.php', 'live/', 'playlist', 
+    'stream', 'mpegts', '/hls/', '/live/'
+  ];
+  
+  const videoPatterns = [
+    '.mp4', '.mkv', '.webm', '.avi', '.mov',
+    '.m4v', '.3gp', '.ts', '.m2ts'
+  ];
+  
+  for (const pattern of hlsPatterns) {
+    if (path.includes(pattern)) return 'hls';
+  }
+  
+  for (const pattern of videoPatterns) {
+    if (path.includes(pattern)) return 'video';
+  }
+  
+  return 'hls';
 }
 
 /**
@@ -141,20 +153,25 @@ export default function VodPlayer({ channel, channels, onClose }) {
     if (streamType === 'hls') {
       if (hlsRef.current) {
         hlsRef.current.destroy();
+        hlsRef.current = null;
       }
       if (Hls.isSupported()) {
         const hls = new Hls({
           enableWorker: true,
           lowLatencyMode: false,
+          maxBufferLength: 30,
+          maxMaxBufferLength: 60,
+          backBufferLength: 30
         });
         hls.loadSource(newChannel.url);
         hls.attachMedia(video);
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
           video.play().catch(() => {});
+          setIsBuffering(false);
         });
         hls.on(Hls.Events.ERROR, (event, data) => {
           if (data.fatal) {
-            setError('Erro ao carregar vídeo');
+            setError('Erro ao carregar HLS');
           }
         });
         hlsRef.current = hls;

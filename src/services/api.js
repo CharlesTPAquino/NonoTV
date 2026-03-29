@@ -1,4 +1,4 @@
-import { Capacitor } from '@capacitor/core';
+import { CapacitorHttp } from '@capacitor/core';
 
 const PROXY_URL = 'http://localhost:3131';
 
@@ -37,8 +37,8 @@ function isDevMode() {
   return import.meta?.env?.DEV === true && window.location?.hostname === 'localhost';
 }
 
-async function tryPublicProxy(url, proxyIndex = 0) {
-  if (proxyIndex >= PUBLIC_PROXIES.length) {
+async function tryPublicProxy(url, proxyIndex = 0, maxRetries = 2) {
+  if (proxyIndex >= PUBLIC_PROXIES.length || proxyIndex >= maxRetries) {
     throw new Error('All public proxies failed');
   }
   
@@ -49,7 +49,8 @@ async function tryPublicProxy(url, proxyIndex = 0) {
     const proxyUrl = proxy + encodeURIComponent(url);
     const response = await fetch(proxyUrl, {
       headers,
-      mode: 'cors'
+      mode: 'cors',
+      signal: AbortSignal.timeout(15000)
     });
     
     if (response.ok) {
@@ -58,16 +59,14 @@ async function tryPublicProxy(url, proxyIndex = 0) {
     }
     
     console.warn(`[API] Proxy público ${proxyIndex + 1} falhou com status ${response.status}`);
-    return await tryPublicProxy(url, proxyIndex + 1);
+    return await tryPublicProxy(url, proxyIndex + 1, maxRetries);
   } catch (error) {
     console.warn(`[API] Proxy público ${proxyIndex + 1} erro:`, error.message);
-    return await tryPublicProxy(url, proxyIndex + 1);
+    return await tryPublicProxy(url, proxyIndex + 1, maxRetries);
   }
 }
 
 async function tryCapacitorHttp(url) {
-  const { CapacitorHttp } = await import('@capacitor/core');
-  
   console.log('[APK] Tentando CapacitorHttp para:', url);
   
   try {
@@ -75,8 +74,8 @@ async function tryCapacitorHttp(url) {
       url, 
       headers,
       responseType: 'text',
-      connectTimeout: 30000,
-      readTimeout: 30000
+      connectTimeout: 60000,
+      readTimeout: 60000
     });
     
     console.log('[APK] CapacitorHttp status:', res.status);
@@ -98,7 +97,8 @@ async function tryDirectFetch(url) {
   try {
     const res = await fetch(url, { 
       headers,
-      mode: 'cors'
+      mode: 'cors',
+      signal: AbortSignal.timeout(30000)
     });
     
     if (res.ok) {
@@ -143,7 +143,7 @@ export async function syncSource(url) {
       return await tryDirectFetch(url);
     } catch {
       console.log('[DEV] Tentando proxies públicos...');
-      return await tryPublicProxy(url);
+      return await tryPublicProxy(url, 0, 2);
     }
   }
   
@@ -159,7 +159,7 @@ export async function syncSource(url) {
       console.log('[APK] Tentando proxies públicos como fallback...');
       
       try {
-        return await tryPublicProxy(url);
+        return await tryPublicProxy(url, 0, 2);
       } catch (proxyError) {
         console.warn('[APK] Proxies públicos falharam:', proxyError.message);
         console.log('[APK] Tentando fetch nativo direto...');
@@ -179,7 +179,7 @@ export async function syncSource(url) {
     return await tryDirectFetch(url);
   } catch {
     console.log('[WEB] Fetch direto falhou, tentando proxies públicos...');
-    return await tryPublicProxy(url);
+    return await tryPublicProxy(url, 0, 2);
   }
 }
 
