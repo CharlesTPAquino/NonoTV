@@ -30,10 +30,15 @@ export default function VideoPlayer({ channel, channels, onClose, mode = 'smart'
 
   const { playing, buffering, error, status } = playerState;
 
-  // Hide controls instantly when playing starts
+  // Hide controls instantly when playing starts (autoPlay)
   useEffect(() => {
     if (playing && !showChannelList && !showSettings) {
       setShowControls(false);
+      // Auto-hide play button after 2 seconds on autoPlay
+      const timer = setTimeout(() => {
+        setShowControls(false);
+      }, 2000);
+      return () => clearTimeout(timer);
     }
   }, [playing, showChannelList, showSettings]);
 
@@ -138,16 +143,13 @@ export default function VideoPlayer({ channel, channels, onClose, mode = 'smart'
         onClick={(e) => { e.stopPropagation(); togglePlay(); }}
       />
 
-      {/* Buffering Overlay */}
+      {/* Buffering Overlay - Only spinner, no full screen cover */}
       {(buffering || status === 'loading') && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm z-20">
-          <div className="relative w-16 h-16">
-            <div className="absolute inset-0 border-4 border-white/10 rounded-full" />
-            <div className="absolute inset-0 border-4 border-t-[#F7941D] rounded-full animate-spin" />
+        <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
+          <div className="relative w-12 h-12">
+            <div className="absolute inset-0 border-3 border-white/10 rounded-full" />
+            <div className="absolute inset-0 border-3 border-t-[#F7941D] rounded-full animate-spin" />
           </div>
-          <span className="mt-4 text-[#F7941D] font-black uppercase tracking-widest text-xs animate-pulse">
-            Sintonizando...
-          </span>
         </div>
       )}
 
@@ -176,25 +178,6 @@ export default function VideoPlayer({ channel, channels, onClose, mode = 'smart'
         </div>
       </div>
 
-      {/* Center Play Button */}
-      <div 
-        className={`absolute inset-0 flex items-center justify-center z-30 transition-opacity duration-300 ${
-          showControls && !playing ? 'opacity-100' : 'opacity-0'
-        }`}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button 
-          onClick={togglePlay}
-          className="w-20 h-20 rounded-full bg-[#F7941D] flex items-center justify-center shadow-lg"
-        >
-          {playing ? (
-            <Pause size={32} className="text-black" fill="currentColor" />
-          ) : (
-            <Play size={32} className="text-black ml-1" fill="currentColor" />
-          )}
-        </button>
-      </div>
-
       {/* Bottom Controls */}
       <div 
         className={`absolute bottom-0 left-0 right-0 p-6 flex items-center justify-between transition-all duration-300 z-40 ${
@@ -203,7 +186,7 @@ export default function VideoPlayer({ channel, channels, onClose, mode = 'smart'
         onClick={(e) => e.stopPropagation()}
       >
         {/* Left: Prev/Next */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <button onClick={handlePrev} className="w-10 h-10 rounded-full bg-black/50 backdrop-blur flex items-center justify-center text-white hover:bg-white/20">
             <ChevronLeft size={20} />
           </button>
@@ -212,15 +195,15 @@ export default function VideoPlayer({ channel, channels, onClose, mode = 'smart'
           </button>
         </div>
 
-        {/* Center: Play/Pause */}
+        {/* Center: Play/Pause (único botão) */}
         <button 
           onClick={togglePlay}
-          className="w-14 h-14 rounded-full bg-[#F7941D] flex items-center justify-center"
+          className="w-16 h-16 rounded-full bg-[#F7941D] flex items-center justify-center shadow-lg"
         >
           {playing ? (
-            <Pause size={24} className="text-black" fill="currentColor" />
+            <Pause size={28} className="text-black" fill="currentColor" />
           ) : (
-            <Play size={24} className="text-black ml-1" fill="currentColor" />
+            <Play size={28} className="text-black ml-1" fill="currentColor" />
           )}
         </button>
 
@@ -239,13 +222,6 @@ export default function VideoPlayer({ channel, channels, onClose, mode = 'smart'
         </div>
       </div>
 
-      {/* Close button always visible in corner */}
-      <button
-        onClick={handleClose}
-        className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/50 backdrop-blur flex items-center justify-center text-white hover:bg-red-500 transition-all z-50"
-      >
-        <X size={18} />
-      </button>
     </div>
   );
 }

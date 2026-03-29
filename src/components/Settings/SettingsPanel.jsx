@@ -103,61 +103,93 @@ export default function SettingsPanel({
           {activeTab === 'sources' && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-white">Fontes IPTV</h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-semibold text-white">Servidores IPTV</h3>
+                  <span className="bg-[#F7941D]/20 text-[#F7941D] text-[10px] font-bold px-2 py-0.5 rounded-full">
+                    {sources.length}
+                  </span>
+                </div>
                 <button
                   onClick={handleImportM3U}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[#27272A] rounded-lg text-[#A1A1AA] text-xs hover:text-white transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[#27272A] rounded-lg text-[#A1A1AA] text-xs hover:text-white hover:bg-[#3F3F46] transition-colors"
                 >
                   <Upload size={12} />
                   Importar
                 </button>
               </div>
 
-              <div className="space-y-2">
+              {/* Grid de Servidores */}
+              <div className="grid grid-cols-1 gap-3">
                 {sources.map(source => {
                   const isActive = activeSource?.id === source.id;
+                  const sourceStatus = getSourceStatus?.(source.id);
+                  
                   return (
                     <button
                       key={source.id}
                       onClick={() => onSelectSource(source)}
-                      className={`w-full flex items-center gap-3 p-4 rounded-xl transition-all ${
+                      className={`group relative flex items-center gap-3 p-3 rounded-2xl transition-all overflow-hidden ${
                         isActive
-                          ? 'bg-[#F7941D]/10 border border-[#F7941D]/30'
-                          : 'bg-[#27272A] border border-transparent hover:border-[#3F3F46]'
+                          ? 'bg-gradient-to-r from-[#F7941D]/20 to-[#F7941D]/5 border border-[#F7941D]/30'
+                          : 'bg-[#27272A] border border-transparent hover:border-[#3F3F46] hover:bg-[#3F3F46]'
                       }`}
                     >
-                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                        isActive ? 'bg-[#F7941D] text-white' : 'bg-[#18181B] text-[#71717A]'
+                      {/* Indicador ativo */}
+                      {isActive && (
+                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#F7941D]" />
+                      )}
+                      
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
+                        isActive ? 'bg-[#F7941D] text-white shadow-lg shadow-[#F7941D]/30' : 'bg-[#18181B] text-[#71717A] group-hover:text-white'
                       }`}>
-                        {isActive ? (
-                          <ChevronRight size={18} />
-                        ) : (
-                          <Server size={18} />
-                        )}
+                        <Server size={20} />
                       </div>
-                      <div className="flex-1 text-left">
-                        <p className="font-medium text-white text-sm">{source.name}</p>
-                        <p className="text-[#71717A] text-xs truncate">{source.url}</p>
+                      
+                      <div className="flex-1 text-left min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className={`font-semibold text-sm truncate ${isActive ? 'text-white' : 'text-white/90'}`}>
+                            {source.name}
+                          </p>
+                          {sourceStatus?.isHealthy === false && (
+                            <span className="w-2 h-2 bg-red-500 rounded-full" title="Servidor offline" />
+                          )}
+                        </div>
+                        <p className="text-[#71717A] text-xs truncate mt-0.5">{source.url}</p>
+                      </div>
+                      
+                      <div className={`p-2 rounded-lg transition-all ${isActive ? 'bg-[#F7941D] text-white' : 'bg-[#18181B] text-[#71717A] group-hover:text-white'}`}>
+                        <ChevronRight size={16} />
                       </div>
                     </button>
                   );
                 })}
               </div>
 
+              {/* Status dos Servidores */}
               <div className="mt-4 pt-4 border-t border-white/10">
+                <h4 className="text-xs font-semibold text-[#71717A] uppercase tracking-wider mb-3">Status dos Servidores</h4>
                 <ServerHealthDashboard 
                   sources={sources} 
                   onSelectSource={onSelectSource}
                 />
               </div>
 
-              <button
-                onClick={handleExportM3U}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#27272A] rounded-xl text-[#A1A1AA] text-sm hover:text-white transition-colors"
-              >
-                <Download size={16} />
-                Exportar Lista M3U
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleExportM3U}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-[#27272A] rounded-xl text-[#A1A1AA] text-sm hover:text-white hover:bg-[#3F3F46] transition-colors"
+                >
+                  <Download size={16} />
+                  Exportar
+                </button>
+                <button
+                  onClick={onRefresh}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-[#F7941D] rounded-xl text-white text-sm font-medium hover:bg-[#E8830D] transition-colors"
+                >
+                  <RefreshCw size={16} />
+                  Atualizar
+                </button>
+              </div>
             </div>
           )}
 

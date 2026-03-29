@@ -4,7 +4,7 @@ class PrefetchService {
   constructor() {
     this.prefetchedUrls = new Map();
     this.prefetchTimeout = null;
-    this.maxPrefetch = 3;
+    this.maxPrefetch = 5;
   }
 
   async prefetchChannel(channel, onProgress) {
@@ -96,6 +96,8 @@ class PrefetchService {
       const nextIndex = (currentIndex + i) % allChannels.length;
       nextChannels.push(allChannels[nextIndex]);
     }
+
+    console.log(`[PrefetchService] Carregando ${nextChannels.length} canais:`, nextChannels.map(c => c.name).join(', '));
 
     const results = await Promise.all(
       nextChannels.map(ch => this.prefetchChannel(ch))
