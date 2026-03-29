@@ -1,9 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">185.66.90.170</domain>
+        <domain includeSubdomains="true">206.109.59.13</domain>
+        <domain includeSubdomains="true">209.131.123.115</domain>
+        <domain includeSubdomains="true">209.131.123.121</domain>
+    </domain-config>
     <base-config cleartextTrafficPermitted="true">
         <trust-anchors>
-            <certificates src="system"/>
-            <certificates src="user"/>
+            <certificates src="system" />
+            <certificates src="user" />
         </trust-anchors>
     </base-config>
 </network-security-config>
