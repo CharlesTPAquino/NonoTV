@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import Hls from 'hls.js';
+import { aiService } from '../services/AIService';
 
 /**
  * NonoTV — Turbo Player Hook
- * Motor de reprodução resiliente com auto-recuperação.
+ * Motor de reprodução resiliente com AI e auto-recuperação.
  */
 
 function detectStreamType(url) {
@@ -12,6 +13,49 @@ function detectStreamType(url) {
   const path = lower.split('?')[0];
   if (/\.(mp4|mkv|avi|mov|m4v|webm|flv)$/i.test(path)) return 'direct';
   return 'hls';
+}
+
+function detectSupportedCodecs(video) {
+  const codecs = [];
+  
+  // Testar codecs comuns
+  const testCodecs = [
+    'avc1.42001E', // H.264 Baseline
+    'avc1.42001F', // H.264 Main
+    'avc1.64001F', // H.264 High
+    'hvc1.1.L3.1', // H.265/HEVC
+    'hev1.1.L3.1', // HEVC
+    'av01.0.01M', // AV1
+    'vp9',         // VP9
+    'vp8',         // VP8
+  ];
+  
+  testCodecs.forEach(codec => {
+    const support = video.canPlayType('video/mp4', codec);
+    if (support === 'probably' || support === 'maybe') {
+      codecs.push(codec);
+    }
+  });
+  
+  return codecs;
+}
+
+function findCompatibleLevel(levels, supportedCodecs) {
+  if (!levels || levels.length === 0) return -1;
+  
+  // Primeiro, tentar encontrar um nível com codec suportado
+  for (let i = 0; i < levels.length; i++) {
+    const level = levels[i];
+    const codec = level.codecs || '';
+    
+    // Verificar se o codec é suportado
+    if (codec && supportedCodecs.some(sc => codec.includes(sc))) {
+      return i;
+    }
+  }
+  
+  // Se nenhum for encontrado, retorna o primeiro (geralmente o mais baixo)
+  return 0;
 }
 
 export default function useHlsPlayer(url, videoRef, options = {}) {
@@ -24,7 +68,8 @@ export default function useHlsPlayer(url, videoRef, options = {}) {
     audioTracks: [],
     subtitles: [],
     activeAudio: -1,
-    activeSubtitle: -1
+    activeSubtitle: -1,
+    codecInfo: []
   });
 
   const hlsRef = useRef(null);
@@ -64,10 +109,10 @@ export default function useHlsPlayer(url, videoRef, options = {}) {
 
     const hls = new Hls({
       enableWorker: true,
-      lowLatencyMode: true,
-      backBufferLength: 60,
-      maxBufferLength: 30,
-      maxMaxBufferLength: 60,
+      lowLatencyMode: false,
+      backBufferLength: 90,
+      maxBufferLength: 40,
+      maxMaxBufferLength: 90,
       manifestLoadingMaxRetry: 10,
       manifestLoadingRetryDelay: 2000,
       levelLoadingMaxRetry: 10,
@@ -81,20 +126,61 @@ export default function useHlsPlayer(url, videoRef, options = {}) {
     hls.loadSource(src);
     hls.attachMedia(video);
 
+    // Enable hardware acceleration
+    video.setAttribute('playsinline', '');
+    video.setAttribute('preload', 'auto');
+
     hls.on(Hls.Events.MANIFEST_PARSED, (_, data) => {
-      console.log('[Turbo-Player] Sinal validado, iniciando buffer...');
+      const levels = data.levels || [];
+      const codecInfo = levels.map((level, idx) => ({
+        index: idx,
+        height: level.height,
+        bitrate: level.bitrate,
+        codecs: level.codecs || 'unknown',
+        width: level.width
+      }));
+      
+      console.log('[Turbo-Player] Codecs disponíveis:', codecInfo);
+      
+      // Detectar melhor codec para o dispositivo
+      const supportedCodecs = detectSupportedCodecs(video);
+      console.log('[Turbo-Player] Codecs suportados:', supportedCodecs);
+      
+      // Selecionar nível compatível
+      const compatibleLevel = findCompatibleLevel(levels, supportedCodecs);
+      if (compatibleLevel >= 0) {
+        hls.currentLevel = compatibleLevel;
+        console.log(`[Turbo-Player] Codec selecionado: ${codecInfo[compatibleLevel]?.codecs || 'default'} (nível ${compatibleLevel})`);
+      }
+      
       update({ 
         buffering: false, 
         status: 'ready', 
         error: null, 
         retryCount: 0,
         audioTracks: hls.audioTracks,
-        subtitles: hls.subtitleTracks
+        subtitles: hls.subtitleTracks,
+        codecInfo
       });
       if (optionsRef.current.autoPlay !== false) {
         video.play().catch(err => console.warn('[Player] Bloqueio de Autoplay:', err));
       }
-      if (optionsRef.current.onQualitiesFound) optionsRef.current.onQualitiesFound(data.levels);
+      if (optionsRef.current.onQualitiesFound) optionsRef.current.onQualitiesFound(levels);
+      
+      // AI: Auto-select best quality based on network
+      if (levels && levels.length > 1) {
+        const optimalLevel = aiService.getOptimalQuality(levels, 20, 5000000);
+        if (optimalLevel > 0) {
+          hls.currentLevel = optimalLevel;
+          console.log(`[AI] Qualidade selecionada: ${optimalLevel}`);
+        }
+      }
+    });
+
+    // AI: Buffer monitoring
+    hls.on(Hls.Events.FRAG_BUFFERED, (_, data) => {
+      const bufferLength = video.buffered.length > 0 ? video.buffered.end(0) - video.currentTime : 0;
+      aiService.recordBufferMetrics(bufferLength, 1000000, hls.currentLevel);
     });
 
     hls.on(Hls.Events.AUDIO_TRACK_SWITCHED, (_, data) => {

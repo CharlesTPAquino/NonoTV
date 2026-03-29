@@ -1,15 +1,15 @@
 import React from 'react';
-import { Search, LogOut, Satellite, Settings } from 'lucide-react';
+import { Search, LogOut, Settings, List } from 'lucide-react';
 import ServerSelector from './ServerSelector';
 
 const TABS = [
   { type: 'All',    label: 'Recomendado' },
-  { type: 'movie',  label: 'Filmes E Séries' },
-  { type: 'live',   label: 'Canais Ao Vivo' },
+  { type: 'movie',  label: 'Filmes e Séries' },
+  { type: 'live',   label: 'Ao Vivo' },
   { type: 'series', label: 'Séries' },
 ];
 
-export default function Navbar({ search, setSearch, syncStatus, activeCategory, setActiveCategory, onOpenSettings }) {
+export default function Navbar({ search, setSearch, syncStatus, activeCategory, setActiveCategory, onOpenSettings, onOpenChannelList }) {
   const handleExit = () => {
     if (window.Capacitor?.Plugins?.App) {
       window.Capacitor.Plugins.App.exitApp();
@@ -38,6 +38,17 @@ export default function Navbar({ search, setSearch, syncStatus, activeCategory, 
         
         {/* Actions */}
         <div className="flex items-center gap-3">
+          {/* Channel List Button */}
+          {onOpenChannelList && (
+            <button
+              onClick={onOpenChannelList}
+              className="w-11 h-11 rounded-xl bg-white/[0.04] border border-white/[0.04] flex items-center justify-center text-white/10 hover:text-[#F7941D] hover:bg-[#F7941D]/10 hover:border-[#F7941D]/30 transition-all duration-500"
+              title="Lista de Canais"
+            >
+              <List size={18} />
+            </button>
+          )}
+          <ServerSelector />
           <button
             onClick={onOpenSettings}
             className="w-11 h-11 rounded-xl bg-white/[0.04] border border-white/[0.04] flex items-center justify-center text-white/10 hover:text-[#F7941D] hover:bg-[#F7941D]/10 hover:border-[#F7941D]/30 transition-all duration-500"
@@ -45,7 +56,6 @@ export default function Navbar({ search, setSearch, syncStatus, activeCategory, 
           >
             <Settings size={18} />
           </button>
-          <ServerSelector />
           <button
             onClick={handleExit}
             className="w-11 h-11 rounded-xl bg-white/[0.04] border border-white/[0.04] flex items-center justify-center text-white/10 hover:bg-red-500/20 hover:border-red-500/20 hover:text-red-400 transition-all duration-500 focus:ring-2 focus:ring-red-500/30"
@@ -56,28 +66,32 @@ export default function Navbar({ search, setSearch, syncStatus, activeCategory, 
         </div>
       </div>
 
-      {/* Bottom Row: Category Tabs (Netflix-style) */}
-      <div className="flex items-end gap-1 overflow-x-auto no-scrollbar -mb-px">
+      {/* Bottom Row: Category Tabs (Netflix-style Pill Buttons) */}
+      <div className="flex items-end gap-2 overflow-x-auto no-scrollbar -mb-px pb-1">
         {TABS.map(tab => {
           const isActive = activeCategory === tab.type;
           return (
             <button
               key={tab.type}
               onClick={() => setActiveCategory(tab.type)}
-              className={`relative px-5 py-3 text-[11px] font-bold uppercase tracking-widest transition-all duration-300 whitespace-nowrap rounded-t-xl outline-none
+              className={`pill-button whitespace-nowrap rounded-t-xl outline-none
                 focus:ring-2 focus:ring-[#F7941D]/30
-                ${isActive 
-                  ? 'text-white bg-white/[0.06]' 
-                  : 'text-white/25 hover:text-white/50'
-                }`}
+                ${isActive ? 'pill-button-active' : 'pill-button-inactive'}`}
             >
               {tab.label}
               {isActive && (
-                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-[2px] bg-[#F7941D] rounded-full shadow-[0_0_10px_#F7941D]" />
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-6 h-[2px] bg-black rounded-full shadow-[0_0_10px_#F7941D]" />
               )}
             </button>
           );
         })}
+        
+        {/* Sync Status Indicator */}
+        {syncStatus && (
+          <span className="ml-auto text-[10px] font-bold text-[#F7941D] uppercase tracking-widest animate-pulse">
+            {syncStatus}
+          </span>
+        )}
       </div>
     </nav>
   );

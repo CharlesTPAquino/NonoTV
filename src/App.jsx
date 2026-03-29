@@ -1,27 +1,36 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, lazy, Suspense } from 'react';
 import { 
   AlertCircle, RefreshCw, Search, 
-  Activity, Clock, LogOut, LayoutGrid, Globe, Server
+  Activity, Clock, LogOut, LayoutGrid, Globe, Server, Sparkles
 } from 'lucide-react';
 import { initSpatialNavigation } from './utils/spatialNavigation';
 import Sidebar from './components/Layout/Sidebar';
 import Navbar from './components/Layout/Navbar';
 import ChannelGrid from './components/Channels/ChannelGrid';
-import VideoPlayer from './components/Player/VideoPlayer';
+import ChannelListOverlay from './components/Channels/ChannelListOverlay';
+import VideoPlayer from './components/Player/VideoPlayerMinimal';
 import SettingsPanel from './components/Settings/SettingsPanel';
+import ServerHealthDashboard from './components/Settings/ServerHealthDashboard';
+import ContinueWatching from './components/Channels/ContinueWatching';
+import AIRecommendations from './components/Channels/AIRecommendations';
+import { ChannelGridSkeleton, HeroSkeleton } from './components/UI/Skeleton';
 import { usePlayer } from './context/PlayerContext';
 import { useSources } from './context/SourceContext';
+import { useChannelValidator } from './hooks/useChannelValidator';
+import { useHorizontalSwipe } from './hooks/useSwipeGesture';
+import { aiService } from './services/AIService';
 import { GROUPS as INITIAL_GROUPS } from './data/channels';
 
 /**
- * REFAZENDO O APP (NONO 3.1)
- * Estratégia: Simplicidade Indestrutível + Design Premium
+ * NONOTV ELITE 4K - TV UI / 10-foot Experience
+ * Design: Reflective Glass + Netflix Style Navigation
  */
 export default function App() {
   const [activeCategory,  setActiveCategory]  = useState('All');
   const [activeGroup,     setActiveGroup]     = useState('All');
   const [search,          setSearch]          = useState('');
-  const [settingsOpen,   setSettingsOpen]    = useState(false);
+  const [settingsOpen,    setSettingsOpen]    = useState(false);
+  const [channelListOpen, setChannelListOpen] = useState(false);
 
   const { activeChannel, showPlayer, playChannel, closePlayer } = usePlayer();
   const { 
@@ -47,6 +56,20 @@ export default function App() {
     updateSettings
   } = useSources();
 
+  const { validity, isValidating, validateAll, isChannelValid } = useChannelValidator(channels);
+
+  // Validar canais quando carregados
+  useEffect(() => {
+    if (channels && channels.length > 0) {
+      const timer = setTimeout(() => {
+        validateAll(channels.slice(0, 50), (current, total, name) => {
+          console.log(`[Validator] ${current}/${total}: ${name}`);
+        });
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [channels.length]);
+
   // Inicializa Spatial Navigation para Android TV
   useEffect(() => { 
     initSpatialNavigation(); 
@@ -55,47 +78,38 @@ export default function App() {
   const filteredChannels = useMemo(() => {
     if (!channels || channels.length === 0) return [];
     return channels.filter(c => {
-      // Proteção de Conteúdo básica (Opcional, mas mantida do original)
       if (/adulto|sexo|hot|xxx|18\+|porno/i.test(c.group || '')) return false;
       
-      const matchSearch   = !search || 
+      const matchSearch = !search || 
         c.name.toLowerCase().includes(search.toLowerCase()) || 
         (c.group || '').toLowerCase().includes(search.toLowerCase());
         
       const matchCategory = activeCategory === 'All' || (c.type || 'live') === activeCategory;
-      const matchGroup    = activeGroup === 'All' || c.group === activeGroup;
       
-      return matchSearch && matchCategory && matchGroup;
+      return matchSearch && matchCategory;
     });
-  }, [channels, search, activeCategory, activeGroup]);
+  }, [channels, search, activeCategory]);
 
   const groups = useMemo(() => {
-    if (!channels || channels.length === 0) return INITIAL_GROUPS;
-    
-    const base = channels.filter(c =>
-      !(/adulto|sexo|hot|xxx|18\+|porno/i.test(c.group || '')) &&
-      (activeCategory === 'All' || (c.type || 'live') === activeCategory)
-    );
-    
-    const unique = [...new Set(base.map(c => c.group).filter(Boolean))];
+    const uniqueGroups = [...new Set(filteredChannels.map(c => c.group).filter(Boolean))];
     return [
-      { id: 1, name: 'All', icon: 'home' }, 
-      ...unique.map((g, i) => ({ id: i + 2, name: g, icon: 'tv' }))
+      { name: 'Todos', id: 'All' },
+      ...uniqueGroups.map(g => ({ name: g, id: g }))
     ];
-  }, [channels, activeCategory]);
+  }, [filteredChannels]);
 
   return (
     <div className="h-screen w-screen bg-[#050505] text-white selection:bg-[#F7941D]/30 font-inter overflow-hidden relative">
       
-      {/* 📺 BACKGROUND REFLEXIVO (Simulando TV filmada) */}
+      {/* 📺 BACKGROUND REFLEXIVO */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
         {/* Luz Ambiente / Reflexo de Canto */}
         <div className="absolute top-[-10%] left-[-10%] w-[80%] h-[80%] bg-gradient-to-br from-white/10 to-transparent blur-[120px] rotate-12 opacity-40 animate-pulse" />
         
-        {/* Glow de Conteúdo (Dinâmico) */}
+        {/* Glow de Conteúdo */}
         <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-[#F7941D]/5 blur-[150px] rounded-full mix-blend-screen" />
         
-        {/* Camada de Micro-Grão / Textura de Painel */}
+        {/* Camada de Micro-Grão */}
         <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/carbon-fibre.png")' }} />
         
         {/* Vinheta de Profundidade */}
@@ -103,19 +117,21 @@ export default function App() {
       </div>
 
       <div className="h-full w-full relative z-10">
-        {/* Sidebar Minimalista (Ultra Fina) */}
+        {/* Sidebar - TV UI Expansível */}
         <Sidebar 
           activeCategory={activeCategory} 
           setActiveCategory={(cat) => { 
             setActiveCategory(cat); 
             setActiveGroup('All'); 
           }} 
+          onOpenSettings={() => setSettingsOpen(true)}
+          onOpenChannelList={() => setChannelListOpen(true)}
         />
 
-        {/* Área Principal com margem para Sidebar */}
+        {/* Área Principal */}
         <main className="md:ml-[72px] h-full overflow-hidden flex flex-col relative pb-16 md:pb-0">
           
-          {/* Navbar com Tabs Integradas (Estilo Netflix Premium) */}
+          {/* Navbar com Tabs Estilo Netflix */}
           <Navbar 
             search={search} 
             setSearch={setSearch} 
@@ -123,10 +139,11 @@ export default function App() {
             activeCategory={activeCategory}
             setActiveCategory={(cat) => { setActiveCategory(cat); setActiveGroup('All'); }}
             onOpenSettings={() => setSettingsOpen(true)}
+            onOpenChannelList={() => setChannelListOpen(true)}
           />
 
           <div className="flex-1 overflow-y-auto custom-scrollbar px-6 md:px-12 pt-4 pb-20">
-            {/* Título Principal Dinâmico */}
+            {/* Título Principal */}
             <header className="mb-10 mt-6 flex items-end justify-between">
               <div className="space-y-1">
                 <div className="flex items-center gap-3">
@@ -170,7 +187,25 @@ export default function App() {
               </div>
             )}
 
-            {/* Main Content Grid with Reflective Perspective */}
+            {/* Continue Watching - Based on history */}
+            {history.length > 0 && !search && (
+              <ContinueWatching 
+                history={history}
+                onPlayChannel={playChannel}
+              />
+            )}
+
+            {/* AI Recommendations */}
+            {!search && channels.length > 20 && (
+              <AIRecommendations 
+                channels={channels}
+                onPlay={playChannel}
+                validity={validity}
+                isPlayerOpen={showPlayer}
+              />
+            )}
+
+            {/* Main Content */}
             <div className={(isLoading && !channels.length) ? 'hidden' : 'animate-in fade-in duration-1000'}>
               <ChannelGrid
                 channels={filteredChannels}
@@ -181,6 +216,8 @@ export default function App() {
                 onPlay={playChannel}
                 search={search}
                 isPlayerOpen={showPlayer}
+                channelValidity={validity}
+                isValidating={isValidating}
               />
             </div>
 
@@ -201,7 +238,7 @@ export default function App() {
         </main>
       </div>
 
-      {/* Video Player (Overlay Cinematic) */}
+      {/* Video Player */}
       {showPlayer && activeChannel && (
         <VideoPlayer 
           channel={activeChannel} 
@@ -210,7 +247,7 @@ export default function App() {
         />
       )}
 
-      {/* Sync Status Floating Tab */}
+      {/* Sync Status */}
       {syncStatus && !isLoading && !error && (
         <div className="fixed bottom-10 right-10 reflective-glass !rounded-2xl px-6 py-4 flex items-center gap-5 z-[200] animate-in slide-in-from-right duration-700">
           <RefreshCw size={18} className="text-[#F7941D] animate-spin" />
@@ -220,6 +257,19 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* Channel List Overlay - Menu Lateral de Canais */}
+      <ChannelListOverlay
+        isOpen={channelListOpen}
+        onClose={() => setChannelListOpen(false)}
+        channels={filteredChannels}
+        groups={groups}
+        activeGroup={activeGroup}
+        setActiveGroup={setActiveGroup}
+        onPlayChannel={playChannel}
+        currentChannel={activeChannel}
+        channelValidity={validity}
+      />
 
       {/* Settings Panel */}
       <SettingsPanel

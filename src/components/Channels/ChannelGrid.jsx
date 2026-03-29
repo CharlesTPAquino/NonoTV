@@ -10,7 +10,7 @@ const CATEGORY_META = {
   series: { label: 'Séries',      icon: MonitorPlay,   hint: 'Carregue uma lista com séries. Os episódios são agrupados automaticamente.' },
 };
 
-export default function ChannelGrid({ channels, activeGroup, activeCategory, setActiveGroup, groups, onPlay, search, isPlayerOpen }) {
+export default function ChannelGrid({ channels, activeGroup, activeCategory, setActiveGroup, groups, onPlay, search, isPlayerOpen, channelValidity = {}, isValidating = false }) {
   const [limit, setLimit] = useState(50);
   const isSearching = search && search.length > 0;
 
@@ -62,10 +62,10 @@ export default function ChannelGrid({ channels, activeGroup, activeCategory, set
     <div className={`transition-all duration-700 ${isPlayerOpen ? 'opacity-30 scale-95 blur-md pointer-events-none' : 'opacity-100 scale-100'}`}>
       {isHome ? (
         <div className="space-y-16 animate-in fade-in duration-700">
-          <HeroSection channels={[...featured, ...standard]} onPlay={onPlay} />
+          <HeroSection channels={[...featured, ...standard]} onPlay={onPlay} validity={channelValidity} isPlayerOpen={isPlayerOpen} />
           <div className="space-y-12 pb-20">
             {groupedAll && Object.entries(groupedAll).slice(0, 8).map(([group, items]) => (
-              <ChannelCarousel key={group} title={group} channels={items} onPlay={onPlay} onSeeAll={() => setActiveGroup(group)} />
+              <ChannelCarousel key={group} title={group} channels={items} onPlay={onPlay} onSeeAll={() => setActiveGroup(group)} validity={channelValidity} isPlayerOpen={isPlayerOpen} />
             ))}
           </div>
         </div>
@@ -107,7 +107,7 @@ export default function ChannelGrid({ channels, activeGroup, activeCategory, set
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-4 md:gap-6">
             {displayChannels.map((ch, idx) => (
-              <ChannelCard key={ch.id} channel={ch} onPlay={() => onPlay(ch)} index={idx} />
+              <ChannelCard key={ch.id} channel={ch} onPlay={() => onPlay(ch)} index={idx} isValid={channelValidity[ch.id]} />
             ))}
           </div>
           {standard.length > limit && (

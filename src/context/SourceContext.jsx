@@ -32,10 +32,10 @@ export const SourceProvider = ({ children }) => {
     let target = url;
     
     if (!isNative && import.meta.env.DEV) {
-      target = `http://${window.location.hostname || 'localhost'}:3131/?url=${encodeURIComponent(url)}`;
+      target = `http://${window.location.hostname || 'localhost'}:3131/${url}`;
     }
 
-    const r = await fetch(target, { signal: abortControllerRef.current?.signal });
+    const r = await fetch(target);
     if (!r.ok) throw new Error(`Status ${r.status}`);
     return await r.text();
   };
@@ -62,7 +62,9 @@ export const SourceProvider = ({ children }) => {
       try {
         const parsed = JSON.parse(cached);
         if (parsed.length > 0) setChannels(parsed);
-      } catch {}
+      } catch {
+        // Silent fail for cache parse
+      }
     }
 
     try {
@@ -79,7 +81,22 @@ export const SourceProvider = ({ children }) => {
       if (!parsed || parsed.length === 0) throw new Error('Lista vazia');
 
       setChannels(parsed);
-      localStorage.setItem(cacheKey, JSON.stringify(parsed));
+      
+      // Cache inteligente - só salva ID, nome, logo e group (dados leves)
+      const lightCache = parsed.slice(0, 300).map(ch => ({
+        id: ch.id,
+        name: ch.name,
+        logo: ch.logo,
+        group: ch.group,
+        url: ch.url,
+        type: ch.type
+      }));
+      try {
+        localStorage.setItem(cacheKey, JSON.stringify(lightCache));
+      } catch (e) {
+        console.warn('[Source] Cache cheio, tentando novamente...');
+        try { localStorage.clear(); } catch {}
+      }
       setError(null);
       setSyncStatus('Sincronizado!');
       setTimeout(() => setSyncStatus(null), 2000);

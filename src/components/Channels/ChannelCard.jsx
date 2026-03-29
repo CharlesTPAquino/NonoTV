@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, memo } from 'react';
 import { Play, Radio, Film, Clapperboard } from 'lucide-react';
 import Hls from 'hls.js';
 
@@ -15,7 +15,7 @@ const FALLBACK_GRADIENT = {
   series: 'from-emerald-900/80 via-gray-900 to-black',
 };
 
-export default function ChannelCard({ channel, onPlay, isValid, isPlayerOpen }) {
+function ChannelCard({ channel, onPlay, isValid, isPlayerOpen }) {
   const [isHovered, setIsHovered] = useState(false);
   const [imgError, setImgError] = useState(false);
   const videoRef = useRef(null);
@@ -129,3 +129,13 @@ export default function ChannelCard({ channel, onPlay, isValid, isPlayerOpen }) 
     </button>
   );
 }
+
+export default memo(ChannelCard, (prevProps, nextProps) => {
+  return (
+    prevProps.channel.id === nextProps.channel.id &&
+    prevProps.channel.name === nextProps.channel.name &&
+    prevProps.channel.logo === nextProps.channel.logo &&
+    prevProps.isPlayerOpen === nextProps.isPlayerOpen &&
+    prevProps.isValid === nextProps.isValid
+  );
+});

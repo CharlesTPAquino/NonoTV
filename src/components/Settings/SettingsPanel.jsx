@@ -17,8 +17,10 @@ import {
   Download,
   Clock,
   AlertTriangle,
-  Cpu
+  Cpu,
+  Signal
 } from 'lucide-react';
+import ServerHealthDashboard from './ServerHealthDashboard';
 
 export default function SettingsPanel({
   isOpen,
@@ -103,10 +105,16 @@ export default function SettingsPanel({
 
   const tabs = [
     { id: 'sources', label: 'Fontes', icon: Server },
+    { id: 'status', label: 'Status', icon: Wifi },
     { id: 'favorites', label: 'Favoritos', icon: Heart },
     { id: 'history', label: 'Histórico', icon: History },
     { id: 'sync', label: 'Sync', icon: RefreshCw },
   ];
+
+  const handleStatusSelect = (source) => {
+    onSelectSource(source);
+    setActiveTab('sources');
+  };
 
   return (
     <div className="fixed inset-0 z-[400] flex items-center justify-center p-4">
@@ -256,6 +264,19 @@ export default function SettingsPanel({
                 <Zap size={20} />
                 Detectar Melhor Fonte (AI)
               </button>
+            </div>
+          )}
+
+          {activeTab === 'status' && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <Signal size={20} className="text-orange-500" />
+                Status dos Servidores
+              </h3>
+              <ServerHealthDashboard 
+                sources={sources} 
+                onSelectSource={handleStatusSelect}
+              />
             </div>
           )}
 
