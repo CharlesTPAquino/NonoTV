@@ -28,33 +28,8 @@ export const SourceProvider = ({ children }) => {
     setSourceHealth(SyncManager.getSourceHealth());
   }, []);
 
-  // Health check automático em background a cada 5 minutos
-  useEffect(() => {
-    const runHealthCheck = async () => {
-      console.log('[SourceContext] Iniciando health check automático...');
-      try {
-        const healthResults = await testAllSources(INITIAL_SOURCES, (current, total, name) => {
-          console.log(`[HealthCheck] ${current}/${total}: ${name}`);
-        });
-        setSourceHealth(healthResults);
-        SyncManager.saveSourceHealth(healthResults);
-        console.log('[SourceContext] Health check concluído', healthResults);
-      } catch (err) {
-        console.error('[SourceContext] Erro no health check:', err);
-      }
-    };
-
-    // Executa após 10 segundos do carregamento inicial
-    const initialTimer = setTimeout(runHealthCheck, 10000);
-
-    // Repete a cada 5 minutos
-    const intervalId = setInterval(runHealthCheck, 300000);
-
-    return () => {
-      clearTimeout(initialTimer);
-      clearInterval(intervalId);
-    };
-  }, []);
+  // Health check manual via Settings > Status
+  // Desabilitado automático para evitar lentidão na inicialização
 
   const getList = async (url) => {
     console.log('[SourceContext] getList chamada para:', url);
@@ -94,11 +69,16 @@ export const SourceProvider = ({ children }) => {
     try {
       setSyncStatus(`Conectando: ${source.name}...`);
       
-      const text = await retryService.executeWithRetry(
-        () => getList(source.url),
-        source.id,
-        source.name
-      );
+      console.log('[SourceContext] Iniciando sync com timeout global de 15s...');
+      
+      const text = await Promise.race([
+        retryService.executeWithRetry(
+          () => getList(source.url),
+          source.id,
+          source.name
+        ),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT_GLOBAL_15S')), 15000))
+      ]);
       
       const parsed = parseM3U(text);
       

@@ -1,3 +1,5 @@
+import { CapacitorHttp } from '@capacitor/core';
+
 const LOCAL_PROXY = 'http://localhost:3131';
 
 const PUBLIC_PROXIES = [
@@ -110,7 +112,6 @@ async function fetchWithTimeout(url, timeout) {
   const isNative = !!(window.Capacitor?.isNativePlatform?.());
   
   if (isNative) {
-    const { CapacitorHttp } = await import('@capacitor/core');
     const response = await CapacitorHttp.get({
       url,
       connectTimeout: timeout,
