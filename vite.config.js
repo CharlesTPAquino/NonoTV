@@ -4,21 +4,36 @@ import react from '@vitejs/plugin-react'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
+  base: './',  // Capacitor/Android precisa de caminhos relativos
   test: {
     environment: 'jsdom',
     globals: true,
     setupFiles: './src/tests/setup.js'
   },
   build: {
+    target: 'es2022',  // Modern browsers only for smaller bundles
+    sourcemap: false,  // Disable source maps in production for smaller size
+    minify: 'esbuild', // Faster minifier
     rollupOptions: {
       output: {
         manualChunks: {
           'hls': ['hls.js'],
           'lucide': ['lucide-react'],
           'react-vendor': ['react', 'react-dom'],
-        }
+          'vendor': [ // Third-party libraries
+            '@capacitor/core',
+            '@capacitor/cli'
+          ]
+        },
+        // Optimize chunk sizes
+        chunkFileNames: 'assets/[name]-[hash].js',
+        entryFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]'
       }
-    }
+    },
+    // Additional build optimizations
+    cssCodeSplit: true,
+    assetsInlineLimit: 4096, // Inline assets under 4KB
   },
   server: {
     host: true,
@@ -36,5 +51,10 @@ export default defineConfig({
         }
       }
     }
+  },
+  // Optimize Vite performance
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'hls.js', 'lucide-react'],
+    exclude: ['@capacitor/*']
   }
 })

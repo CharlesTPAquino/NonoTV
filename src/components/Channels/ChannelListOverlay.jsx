@@ -5,17 +5,18 @@ export default function ChannelListOverlay({ isOpen, onClose, channels, groups, 
   const [search, setSearch] = useState('');
 
   const filteredChannels = useMemo(() => {
+    if (!channels || channels.length === 0) return [];
     let filtered = channels;
     
     if (search) {
       filtered = filtered.filter(c => 
-        c.name.toLowerCase().includes(search.toLowerCase()) ||
-        c.group?.toLowerCase().includes(search.toLowerCase())
+        c && c.name && c.name.toLowerCase().includes(search.toLowerCase()) ||
+        c && c.group && c.group.toLowerCase().includes(search.toLowerCase())
       );
     }
     
     if (activeGroup && activeGroup !== 'All') {
-      filtered = filtered.filter(c => c.group === activeGroup);
+      filtered = filtered.filter(c => c && c.group === activeGroup);
     }
     
     return filtered;

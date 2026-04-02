@@ -52,27 +52,39 @@ const ThemeContext = createContext(null);
 
 export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState(() => {
-    const saved = localStorage.getItem('nonotv_theme');
-    return saved || THEMES.DEFAULT;
+    try {
+      const saved = localStorage.getItem('nonotv_theme');
+      return saved || THEMES.DEFAULT;
+    } catch {
+      return THEMES.DEFAULT;
+    }
   });
   
   const [kidsModeActive, setKidsModeActive] = useState(false);
 
   useEffect(() => {
-    localStorage.setItem('nonotv_theme', theme);
-    document.documentElement.setAttribute('data-theme', theme);
-    
-    if (theme === THEMES.KIDS) {
-      setKidsModeActive(true);
+    try {
+      localStorage.setItem('nonotv_theme', theme);
+      document.documentElement.setAttribute('data-theme', theme);
+      
+      if (theme === THEMES.KIDS) {
+        setKidsModeActive(true);
+      }
+    } catch (e) {
+      console.warn('[ThemeContext] Error saving theme:', e);
     }
   }, [theme]);
 
   useEffect(() => {
-    const hour = new Date().getHours();
-    const autoKids = localStorage.getItem('nonotv_auto_kids') === 'true';
-    
-    if (autoKids && hour >= 7 && hour <= 19 && theme !== THEMES.KIDS) {
-      setTheme(THEMES.KIDS);
+    try {
+      const hour = new Date().getHours();
+      const autoKids = localStorage.getItem('nonotv_auto_kids') === 'true';
+      
+      if (autoKids && hour >= 7 && hour <= 19 && theme !== THEMES.KIDS) {
+        setTheme(THEMES.KIDS);
+      }
+    } catch {
+      // Silent fail
     }
   }, []);
 
@@ -98,6 +110,7 @@ export function ThemeProvider({ children }) {
   }, []);
 
   const isKidsMode = theme === THEMES.KIDS;
+  const currentConfig = THEME_CONFIG[theme] || THEME_CONFIG[THEMES.DEFAULT];
 
   return (
     <ThemeContext.Provider value={{
@@ -108,7 +121,7 @@ export function ThemeProvider({ children }) {
       disableKidsMode,
       isKidsMode,
       kidsModeActive,
-      config: THEME_CONFIG[theme],
+      config: currentConfig,
       availableThemes: THEMES,
       themeConfig: THEME_CONFIG
     }}>

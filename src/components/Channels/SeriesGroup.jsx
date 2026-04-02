@@ -3,8 +3,10 @@ import { Play, Tv } from 'lucide-react';
 
 export default function SeriesGroup({ channels, onPlay, isPlayerOpen }) {
   const uniqueSeries = useMemo(() => {
+    if (!channels || channels.length === 0) return [];
     const seen = new Set();
     return channels.filter(ch => {
+      if (!ch || !ch.name) return false;
       const key = ch.group || ch.name.replace(/S\d+|T\d+|Season|Temporada|EP?|E\d+/gi, '').trim();
       if (seen.has(key)) return false;
       seen.add(key);
@@ -12,7 +14,7 @@ export default function SeriesGroup({ channels, onPlay, isPlayerOpen }) {
     });
   }, [channels]);
 
-  if (channels.length === 0) return null;
+  if (!channels || channels.length === 0) return null;
 
   return (
     <section className="mb-12">

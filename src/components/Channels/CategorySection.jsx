@@ -15,11 +15,12 @@ export default function CategorySection({
   const ITEMS_PER_PAGE = type === 'live' ? 12 : 6;
 
   const paginatedChannels = useMemo(() => {
+    if (!channels || channels.length === 0) return [];
     const start = page * ITEMS_PER_PAGE;
     return channels.slice(start, start + ITEMS_PER_PAGE);
   }, [channels, page]);
 
-  const totalPages = Math.ceil(channels.length / ITEMS_PER_PAGE);
+  const totalPages = channels ? Math.ceil(channels.length / ITEMS_PER_PAGE) : 0;
   const hasMore = page < totalPages - 1;
 
   const getTypeInfo = () => {
@@ -37,7 +38,7 @@ export default function CategorySection({
 
   const typeInfo = getTypeInfo();
 
-  if (channels.length === 0) return null;
+  if (!channels || channels.length === 0) return null;
 
   return (
     <section className="mb-12">

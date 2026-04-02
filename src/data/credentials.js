@@ -99,10 +99,35 @@ export const CREDENTIALS = {
     ]
   },
 
+  canalpro: {
+    host: getEnv('VITE_CANALPRO_HOST', 'http://canal-pro.xyz:8080'),
+    accounts: [
+      { user: 'Luishernandez', pass: 'Luish11209', expires: '17-04-26' },
+      { user: '88198747', pass: 'hf84ug87', expires: '15-11-26' },
+      { user: '954082158tv', pass: '65apqz', expires: '16-09-26' },
+      { user: '56994554577wsp3ztvcuenta2', pass: '10022024ztv', expires: '12-06-26' },
+      { user: '89224505', pass: '07092022', expires: '07-06-26' },
+    ]
+  },
+
   brazilzao: {
     host: getEnv('VITE_BRAZILZAO_HOST', 'http://brazilzao.top:80'),
     accounts: [
       { user: getEnv('VITE_BRAZILZAO_USER_1', 'ian123'), pass: getEnv('VITE_BRAZILZAO_PASS_1', '252452469') },
+    ]
+  },
+
+  kazingfun: {
+    host: getEnv('VITE_KAZINGFUN_HOST', 'http://kazing.fun'),
+    accounts: [
+      { user: getEnv('VITE_KAZINGFUN_USER_1', 'jhonny1729'), pass: getEnv('VITE_KAZINGFUN_PASS_1', '882700994121') },
+    ]
+  },
+
+  americakg: {
+    host: getEnv('VITE_AMERICAKG_HOST', 'http://americakg.xyz'),
+    accounts: [
+      { user: getEnv('VITE_AMERICAKG_USER_1', 'u7yckwn5'), pass: getEnv('VITE_AMERICAKG_PASS_1', 'agkedgp9') },
     ]
   }
 };
