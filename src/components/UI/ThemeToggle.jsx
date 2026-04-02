@@ -47,8 +47,8 @@ export default function ThemeToggle({ compact = false }) {
                 : 'bg-white/5 border-white/10 hover:bg-white/10'
             }`}
             style={{
-              backgroundColor: theme === key ? `${THEME_CONFIG[key].primary}20` : undefined,
-              borderColor: theme === key ? `${THEME_CONFIG[key].primary}50` : undefined
+              backgroundColor: theme === key && THEME_CONFIG[key] ? `${THEME_CONFIG[key].primary}20` : undefined,
+              borderColor: theme === key && THEME_CONFIG[key] ? `${THEME_CONFIG[key].primary}50` : undefined
             }}
           >
             <Icon 

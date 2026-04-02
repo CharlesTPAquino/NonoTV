@@ -2,17 +2,10 @@
   "appId": "com.nonotv.app",
   "appName": "NonoTV",
   "webDir": "dist",
-  "overrideUserAgent": "VLC/3.0.18 LibVLC/3.0.18",
   "android": {
     "allowMixedContent": true,
     "captureInput": true,
     "webContentsDebuggingEnabled": true
-  },
-  "server": {
-    "androidScheme": "http",
-    "hostname": "localhost",
-    "cleartext": true,
-    "allowNavigation": ["*"]
   },
   "plugins": {
     "StatusBar": {

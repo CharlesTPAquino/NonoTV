@@ -13,6 +13,8 @@ const DEFAULT_CACHE_CONFIG = {
   sources: 24 * 60 * 60 * 1000
 };
 
+import { parseM3U } from '../utils/m3uParser';
+
 export const SyncManager = {
   getFavorites() {
     try {
@@ -192,6 +194,17 @@ export const SyncManager = {
     }
   },
 
+  unblockAllSources() {
+    try {
+      localStorage.removeItem(STORAGE_KEYS.SOURCE_HEALTH);
+      console.log('[SyncManager] Todas as fontes foram desbloqueadas');
+      return true;
+    } catch (e) {
+      console.error('[SyncManager] Erro ao desbloquear fontes:', e);
+      return false;
+    }
+  },
+
   getFallbackOrder() {
     try {
       return JSON.parse(localStorage.getItem(STORAGE_KEYS.FALLBACK_ORDER)) || [];
@@ -251,30 +264,7 @@ export const SyncManager = {
   },
 
   parseM3U(content) {
-    const lines = content.split('\n');
-    const channels = [];
-    let currentChannel = null;
-
-    for (const line of lines) {
-      if (line.startsWith('#EXTINF:')) {
-        const match = line.match(/tvg-name="([^"]*)".*tvg-logo="([^"]*)".*group-title="([^"]*)",(.+)/);
-        if (match) {
-          currentChannel = {
-            name: match[1] || match[4] || 'Unknown',
-            logo: match[2] || '',
-            group: match[3] || '',
-            type: 'live'
-          };
-        }
-      } else if (line.trim() && !line.startsWith('#') && currentChannel) {
-        currentChannel.url = line.trim();
-        currentChannel.id = btoa(currentChannel.url).slice(0, 16);
-        channels.push({ ...currentChannel });
-        currentChannel = null;
-      }
-    }
-
-    return channels;
+    return parseM3U(content);
   }
 };
 

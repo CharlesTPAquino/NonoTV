@@ -1,5 +1,40 @@
 # NonoTV - Guia para Agentes de IA
 
+## Regras de Nomenclatura de APK
+
+### Formato Obrigatório
+```
+NonoTV_vYYYY-MM-DD_HH-MM.apk
+```
+
+Exemplos:
+- `NonoTV_v2026-03-30_20-46.apk`
+- `NonoTV_v2026-03-29_23-50_debug.apk`
+
+### Regras
+1. **Sempre** usar data e hora da mudança (não hora atual)
+2. **Sempre** incluir `_debug` ou `_release` no sufixo quando aplicável
+3. **Sempre** fazer upload para Drive: `gdrive:Nono+/`
+4. O APK deve ser copiado para a raiz do projeto antes do upload
+
+### Script de Build (Use este padrão)
+```bash
+# 1. Build e sync
+cd /home/pcnono/Secretária/IPTV/meu-iptv
+npm run build
+npx cap sync android
+cd android && ./gradlew assembleDebug
+
+# 2. Copiar com nome correto (use a hora da mudança)
+TIMESTAMP=$(date +"%Y-%m-%d_%H-%M")
+cp android/app/build/outputs/apk/debug/NonoTV-debug.apk "../NonoTV_v${TIMESTAMP}_debug.apk"
+
+# 3. Upload para Drive
+rclone copy "../NonoTV_v${TIMESTAMP}_debug.apk" "gdrive:Nono+/" -v
+```
+
+---
+
 ## Decisões de Arquitetura (29/03/2026)
 
 ### Projeto Principal

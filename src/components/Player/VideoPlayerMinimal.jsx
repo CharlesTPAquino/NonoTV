@@ -1,20 +1,60 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
-  X, Play, Pause, Volume2, VolumeX, Settings,
-  ChevronLeft, ChevronRight, Tv, List
+  X, Play, Pause, Volume2, VolumeX,
+  ChevronLeft, ChevronRight, Maximize2, Minimize2,
+  Settings, List, Tv
 } from 'lucide-react';
 import useHlsPlayer from '../../hooks/useHlsPlayer';
 import { usePlayer } from '../../context/PlayerContext';
 
+const DesignSystem = {
+  colors: {
+    primary: '#F7941D',
+    primaryHover: '#FFA333',
+    background: 'rgba(0, 0, 0, 0.85)',
+    surface: 'rgba(24, 24, 27, 0.9)',
+    text: '#FFFFFF',
+    textSecondary: 'rgba(255, 255, 255, 0.7)',
+    textMuted: 'rgba(255, 255, 255, 0.5)',
+    error: '#EF4444',
+    success: '#22C55E',
+    live: '#DC2626'
+  },
+  spacing: {
+    xs: '4px',
+    sm: '8px',
+    md: '16px',
+    lg: '24px',
+    xl: '32px'
+  },
+  borderRadius: {
+    sm: '8px',
+    md: '12px',
+    lg: '16px',
+    full: '9999px'
+  },
+  transitions: {
+    fast: '150ms ease',
+    normal: '300ms ease',
+    slow: '500ms ease'
+  },
+  shadows: {
+    sm: '0 2px 8px rgba(0,0,0,0.3)',
+    md: '0 4px 16px rgba(0,0,0,0.4)',
+    lg: '0 8px 32px rgba(0,0,0,0.5)'
+  }
+};
+
 export default function VideoPlayer({ channel, channels, onClose, mode = 'smart' }) {
   const videoRef = useRef(null);
-  const { playChannel } = usePlayer();
   const containerRef = useRef(null);
+  const { playChannel } = usePlayer();
   
   const [showControls, setShowControls] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [volume, setVolume] = useState(parseFloat(localStorage.getItem('playerVolume') || '0.8'));
-  const [qualities, setQualities] = useState([]);
-  const [activeQuality, setActiveQuality] = useState(-1);
+  const [qualities] = useState([]);
+  const [activeQuality] = useState(-1);
   const [showChannelList, setShowChannelList] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   
@@ -25,29 +65,45 @@ export default function VideoPlayer({ channel, channels, onClose, mode = 'smart'
     togglePlay
   } = useHlsPlayer(channel?.url, videoRef, {
     autoPlay: true,
-    onQualitiesFound: (levs) => setQualities(levs)
+    onQualitiesFound: () => {}
   });
 
   const { playing, buffering, error, status } = playerState;
 
-  // Hide controls instantly when playing starts (autoPlay)
-  useEffect(() => {
+  const showControlsTemporarily = useCallback(() => {
+    setShowControls(true);
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    if (playing) {
+      hideTimerRef.current = setTimeout(() => setShowControls(false), 6000);
+    }
+  }, [playing]);
+
+  const resetHideTimer = useCallback(() => {
+    if (hideTimerRef.current) {
+      clearTimeout(hideTimerRef.current);
+    }
     if (playing && !showChannelList && !showSettings) {
-      setShowControls(false);
-      // Auto-hide play button after 2 seconds on autoPlay
-      const timer = setTimeout(() => {
+      hideTimerRef.current = setTimeout(() => {
         setShowControls(false);
-      }, 2000);
-      return () => clearTimeout(timer);
+      }, 4000);
     }
   }, [playing, showChannelList, showSettings]);
 
-  // Show controls on interaction
-  const showControlsTemporarily = useCallback(() => {
-    setShowControls(true);
-  }, []);
+  useEffect(() => {
+    if (buffering) {
+      setShowControls(true);
+      return;
+    }
+    if (playing) {
+      resetHideTimer();
+    }
+    return () => {
+      if (hideTimerRef.current) {
+        clearTimeout(hideTimerRef.current);
+      }
+    };
+  }, [playing, buffering, showChannelList, showSettings, resetHideTimer]);
 
-  // Apply volume to video element
   useEffect(() => {
     const video = videoRef.current;
     if (video) {
@@ -57,18 +113,15 @@ export default function VideoPlayer({ channel, channels, onClose, mode = 'smart'
     }
   }, [volume]);
 
-  // Toggle mute
   const toggleMute = useCallback(() => {
     setVolume(prev => prev === 0 ? 0.8 : 0);
   }, []);
 
-  // Handle close
   const handleClose = useCallback((e) => {
     if (e) e.stopPropagation();
     if (onClose) onClose();
   }, [onClose]);
 
-  // Handle next/prev channel
   const handleNext = useCallback(() => {
     const i = channels.findIndex(c => c.id === channel?.id);
     if (i < channels.length - 1) playChannel(channels[i + 1]);
@@ -79,7 +132,31 @@ export default function VideoPlayer({ channel, channels, onClose, mode = 'smart'
     if (i > 0) playChannel(channels[i - 1]);
   }, [channels, channel, playChannel]);
 
-  // Keyboard controls
+  const toggleFullscreen = useCallback(() => {
+    const elem = containerRef.current;
+    if (!elem) return;
+    
+    if (!document.fullscreenElement) {
+      elem.requestFullscreen().then(() => {
+        setIsFullscreen(true);
+      }).catch(err => {
+        console.warn('[Player] Fullscreen error:', err);
+      });
+    } else {
+      document.exitFullscreen().then(() => {
+        setIsFullscreen(false);
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       showControlsTemporarily();
@@ -96,30 +173,71 @@ export default function VideoPlayer({ channel, channels, onClose, mode = 'smart'
           break;
         case 'ArrowLeft': handlePrev(); break;
         case 'ArrowRight': handleNext(); break;
-        case 'Escape': handleClose(); break;
+        case 'f':
+        case 'F':
+          toggleFullscreen();
+          break;
+        case 'Escape': 
+          if (isFullscreen) {
+            document.exitFullscreen();
+          } else {
+            handleClose();
+          }
+          break;
       }
     };
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [togglePlay, handlePrev, handleNext, handleClose, showControlsTemporarily]);
+    window.addEventListener('pointermove', showControlsTemporarily);
+    window.addEventListener('pointerdown', showControlsTemporarily);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('pointermove', showControlsTemporarily);
+      window.removeEventListener('pointerdown', showControlsTemporarily);
+    };
+  }, [togglePlay, handlePrev, handleNext, handleClose, toggleFullscreen, isFullscreen, showControlsTemporarily]);
 
-  // Touch/click to toggle controls
-  const handleContainerClick = useCallback(() => {
+  const handleContainerClick = useCallback((e) => {
     showControlsTemporarily();
   }, [showControlsTemporarily]);
 
   if (error) {
     return (
       <div className="fixed inset-0 z-[200] bg-black flex items-center justify-center p-8">
-        <div className="max-w-md text-center">
-          <div className="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-            <X size={40} className="text-red-500" />
+        <div 
+          className="max-w-md text-center"
+          style={{
+            background: DesignSystem.colors.surface,
+            padding: DesignSystem.spacing.xl,
+            borderRadius: DesignSystem.borderRadius.lg,
+            boxShadow: DesignSystem.shadows.lg
+          }}
+        >
+          <div 
+            className="w-20 h-20 mx-auto mb-6 flex items-center justify-center"
+            style={{
+              background: 'rgba(239, 68, 68, 0.2)',
+              borderRadius: DesignSystem.borderRadius.full
+            }}
+          >
+            <X size={40} style={{ color: DesignSystem.colors.error }} />
           </div>
-          <h2 className="text-2xl font-black text-white uppercase mb-4">Erro de Reprodução</h2>
-          <p className="text-white/50 mb-8">{error}</p>
+          <h2 
+            className="text-2xl font-black uppercase mb-4"
+            style={{ color: DesignSystem.colors.text }}
+          >
+            Erro de Reprodução
+          </h2>
+          <p style={{ color: DesignSystem.colors.textSecondary, marginBottom: DesignSystem.spacing.xl }}>
+            {error}
+          </p>
           <button
             onClick={handleClose}
-            className="w-full py-4 bg-[#F7941D] text-black font-black rounded-2xl uppercase text-xs tracking-widest"
+            className="w-full py-4 font-black uppercase text-xs tracking-widest transition-all active:scale-95"
+            style={{
+              background: DesignSystem.colors.primary,
+              color: '#000',
+              borderRadius: DesignSystem.borderRadius.md
+            }}
           >
             Voltar
           </button>
@@ -128,13 +246,53 @@ export default function VideoPlayer({ channel, channels, onClose, mode = 'smart'
     );
   }
 
+  const ControlButton = ({ onClick, children, className = '', style = {} }) => (
+    <button
+      onClick={onClick}
+      className={`flex items-center justify-center transition-all hover:scale-105 active:scale-95 ${className}`}
+      style={{
+        background: DesignSystem.colors.background,
+        color: DesignSystem.colors.text,
+        borderRadius: DesignSystem.borderRadius.full,
+        width: '44px',
+        height: '44px',
+        backdropFilter: 'blur(10px)',
+        ...style
+      }}
+    >
+      {children}
+    </button>
+  );
+
+  const PlayPauseButton = ({ onClick }) => (
+    <button
+      onClick={onClick}
+      className="flex items-center justify-center transition-all hover:scale-105 active:scale-95"
+      style={{
+        background: DesignSystem.colors.primary,
+        color: '#000',
+        borderRadius: DesignSystem.borderRadius.full,
+        width: '64px',
+        height: '64px',
+        boxShadow: DesignSystem.shadows.md
+      }}
+    >
+      {playing ? (
+        <Pause size={28} />
+      ) : (
+        <Play size={28} style={{ marginLeft: '2px' }} />
+      )}
+    </button>
+  );
+
   return (
     <div 
       ref={containerRef}
       className="fixed inset-0 z-[100] bg-black flex items-center justify-center"
       onClick={handleContainerClick}
+      onPointerMove={showControlsTemporarily}
+      onPointerDown={showControlsTemporarily}
     >
-      {/* Video Element */}
       <video
         ref={videoRef}
         className="w-full h-full object-contain"
@@ -143,85 +301,173 @@ export default function VideoPlayer({ channel, channels, onClose, mode = 'smart'
         onClick={(e) => { e.stopPropagation(); togglePlay(); }}
       />
 
-      {/* Buffering Overlay - Only spinner, no full screen cover */}
-      {(buffering || status === 'loading') && (
-        <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
+      {(buffering && !playing && status !== 'ready') && (
+        <div 
+          className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none"
+          style={{ background: 'rgba(0,0,0,0.3)' }}
+        >
           <div className="relative w-12 h-12">
-            <div className="absolute inset-0 border-3 border-white/10 rounded-full" />
-            <div className="absolute inset-0 border-3 border-t-[#F7941D] rounded-full animate-spin" />
+            <div 
+              className="absolute inset-0 rounded-full" 
+              style={{ border: '3px solid rgba(255,255,255,0.1)' }}
+            />
+            <div 
+              className="absolute inset-0 rounded-full animate-spin"
+              style={{ 
+                border: `3px solid transparent`,
+                borderTopColor: DesignSystem.colors.primary,
+                borderRightColor: DesignSystem.colors.primary
+              }}
+            />
           </div>
         </div>
       )}
 
-      {/* Top Bar */}
       <div 
         className={`absolute top-0 left-0 right-0 p-6 flex items-start justify-between transition-all duration-300 z-40 ${
           showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
+        style={{ 
+          background: 'linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, transparent 100%)' 
+        }}
       >
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={handleClose}
-            className="w-12 h-12 rounded-full bg-black/50 backdrop-blur flex items-center justify-center text-white hover:bg-[#F7941D] hover:text-black transition-all"
-          >
+        <div className="flex items-center gap-3">
+          <ControlButton onClick={handleClose}>
             <X size={20} />
-          </button>
+          </ControlButton>
           
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="flex items-center gap-1.5 bg-red-600 text-white text-[8px] font-black px-2 py-0.5 rounded uppercase">
+              <span 
+                className="flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded uppercase"
+                style={{ 
+                  background: DesignSystem.colors.live,
+                  color: DesignSystem.colors.text
+                }}
+              >
                 AO VIVO
               </span>
             </div>
-            <h2 className="text-white font-black text-xl">{channel?.name}</h2>
+            <h2 
+              className="font-black text-xl"
+              style={{ color: DesignSystem.colors.text }}
+            >
+              {channel?.name}
+            </h2>
           </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <ControlButton onClick={() => setShowChannelList(!showChannelList)}>
+            <Tv size={20} />
+          </ControlButton>
+          <ControlButton onClick={toggleFullscreen}>
+            {isFullscreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
+          </ControlButton>
         </div>
       </div>
 
-      {/* Bottom Controls */}
       <div 
         className={`absolute bottom-0 left-0 right-0 p-6 flex items-center justify-between transition-all duration-300 z-40 ${
           showControls ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
         }`}
+        style={{ 
+          background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%)' 
+        }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Left: Prev/Next */}
-        <div className="flex items-center gap-3">
-          <button onClick={handlePrev} className="w-10 h-10 rounded-full bg-black/50 backdrop-blur flex items-center justify-center text-white hover:bg-white/20">
-            <ChevronLeft size={20} />
-          </button>
-          <button onClick={handleNext} className="w-10 h-10 rounded-full bg-black/50 backdrop-blur flex items-center justify-center text-white hover:bg-white/20">
-            <ChevronRight size={20} />
-          </button>
+        <div className="flex items-center gap-2">
+          <ControlButton onClick={handlePrev}>
+            <ChevronLeft size={22} />
+          </ControlButton>
+          <ControlButton onClick={handleNext}>
+            <ChevronRight size={22} />
+          </ControlButton>
         </div>
 
-        {/* Center: Play/Pause (único botão) */}
-        <button 
-          onClick={togglePlay}
-          className="w-16 h-16 rounded-full bg-[#F7941D] flex items-center justify-center shadow-lg"
-        >
-          {playing ? (
-            <Pause size={28} className="text-black" fill="currentColor" />
-          ) : (
-            <Play size={28} className="text-black ml-1" fill="currentColor" />
-          )}
-        </button>
+        <PlayPauseButton onClick={togglePlay} />
 
-        {/* Right: Volume */}
-        <div className="flex items-center gap-3 bg-black/50 backdrop-blur px-4 py-2 rounded-full">
-          <button onClick={toggleMute} className="text-white">
-            {volume === 0 ? <VolumeX size={18} className="text-red-400" /> : <Volume2 size={18} />}
+        <div 
+          className="flex items-center gap-3 px-4 py-2"
+          style={{ 
+            background: DesignSystem.colors.background,
+            borderRadius: DesignSystem.borderRadius.full,
+            backdropFilter: 'blur(10px)'
+          }}
+        >
+          <button 
+            onClick={toggleMute}
+            className="flex items-center justify-center transition-colors hover:opacity-80"
+            style={{ color: volume === 0 ? DesignSystem.colors.error : DesignSystem.colors.text }}
+          >
+            {volume === 0 ? <VolumeX size={20} /> : <Volume2 size={20} />}
           </button>
           <input 
             type="range" 
             min="0" max="1" step="0.1" 
             value={volume} 
-            onChange={(e) => setVolume(parseFloat(e.target.value))} 
-            className="w-20 accent-[#F7941D] cursor-pointer" 
+            onChange={(e) => setVolume(parseFloat(e.target.value))}
+            className="w-20 cursor-pointer"
+            style={{ accentColor: DesignSystem.colors.primary }}
           />
         </div>
       </div>
 
+      {showChannelList && (
+        <div 
+          className="absolute right-0 top-0 bottom-0 w-80 z-50 overflow-y-auto transition-all duration-300"
+          style={{ 
+            background: DesignSystem.colors.surface,
+            boxShadow: DesignSystem.shadows.lg
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div 
+            className="p-4 flex items-center justify-between border-b"
+            style={{ borderColor: 'rgba(255,255,255,0.1)' }}
+          >
+            <h3 
+              className="font-semibold"
+              style={{ color: DesignSystem.colors.text }}
+            >
+              Canais
+            </h3>
+            <button
+              onClick={() => setShowChannelList(false)}
+              className="flex items-center justify-center transition-colors hover:opacity-70"
+              style={{ color: DesignSystem.colors.textSecondary }}
+            >
+              <X size={20} />
+            </button>
+          </div>
+          <div className="p-2">
+            {channels?.slice(0, 50).map((ch) => (
+              <button
+                key={ch.id}
+                onClick={() => {
+                  playChannel(ch);
+                  setShowChannelList(false);
+                }}
+                className="w-full flex items-center gap-3 p-3 rounded-lg transition-colors text-left"
+                style={{
+                  background: ch.id === channel?.id ? DesignSystem.colors.primary + '20' : 'transparent',
+                  color: ch.id === channel?.id ? DesignSystem.colors.primary : DesignSystem.colors.text
+                }}
+              >
+                {ch.logo && (
+                  <img 
+                    src={ch.logo} 
+                    alt="" 
+                    className="w-8 h-8 object-contain rounded"
+                    onError={(e) => { e.target.style.display = 'none'; }}
+                  />
+                )}
+                <span className="text-sm font-medium truncate">{ch.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

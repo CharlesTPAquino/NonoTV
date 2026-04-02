@@ -6,6 +6,10 @@ import { SyncManager } from '../services/SyncManager';
 import { retryService } from '../services/RetryService';
 import { prefetchService } from '../services/PrefetchService';
 import { testAllSources, clearHealthCache } from '../services/ServerHealthService';
+import ChannelCacheDB from '../services/ChannelCacheDB';
+import { SmartCache } from '../services/SmartCache';
+import SmartPrefetchService from '../services/SmartPrefetchService';
+import SourcePrefetchService from '../services/SourcePrefetchService';
 
 const SourceContext = createContext();
 
@@ -56,11 +60,22 @@ export const SourceProvider = ({ children }) => {
     localStorage.setItem('activeSourceUrl', source.url);
 
     const cacheKey = `nono_v3_${btoa(source.url).slice(0,32)}`;
+
+    const cachedDB = await ChannelCacheDB.get(source.id);
+    if (cachedDB && cachedDB.channels && cachedDB.channels.length > 0) {
+      console.log('[SourceContext] Cache IndexedDB encontrado:', cachedDB.channelCount, 'canais');
+      setChannels(cachedDB.channels);
+      setSyncStatus(`Carregado do cache: ${cachedDB.channelCount} canais`);
+      setTimeout(() => setSyncStatus(null), 1500);
+
+      SourcePrefetchService.prefetchSource(source).catch(() => {});
+    }
+
     const cached = localStorage.getItem(cacheKey);
     if (cached) {
       try {
         const parsed = JSON.parse(cached);
-        if (parsed.length > 0) setChannels(parsed);
+        if (parsed.length > 0 && channels.length === 0) setChannels(parsed);
       } catch {
         // Silent fail for cache parse
       }
@@ -68,26 +83,35 @@ export const SourceProvider = ({ children }) => {
 
     try {
       setSyncStatus(`Conectando: ${source.name}...`);
-      
-      console.log('[SourceContext] Iniciando sync (timeout 45s)...');
-      
+
+      console.log('[SourceContext] Iniciando sync (timeout 30s)...');
+
       const text = await Promise.race([
         retryService.executeWithRetry(
           () => getList(source.url),
           source.id,
           source.name
         ),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT_CONEXAO')), 45000))
+        new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT_CONEXAO')), 30000))
       ]);
-      
-      const parsed = parseM3U(text);
-      
-      if (!parsed || parsed.length === 0) throw new Error('Lista vazia');
 
-      setChannels(parsed);
+      if (!text) throw new Error('Resposta do servidor vazia');
+
+      const parsed = parseM3U(text);
+
+      if (!parsed || parsed.length === 0) throw new Error('Lista parseada está vazia');
+
+      // Auditoria: Garantir que apenas canais válidos entrem no state
+      const validChannels = parsed.filter(ch => ch && ch.name && ch.name.trim());
+      console.log(`[SourceContext] ${validChannels.length} canais válidos carregados de ${parsed.length} totais.`);
       
-      // Cache inteligente - só salva ID, nome, logo e group (dados leves)
-      const lightCache = parsed.slice(0, 300).map(ch => ({
+      if (validChannels.length === 0) throw new Error('Nenhum canal válido encontrado na lista');
+
+      setChannels(validChannels);
+
+      await SmartCache.set(source.id, null, validChannels, source.url, source.name);
+
+      const lightCache = validChannels.slice(0, 300).map(ch => ({
         id: ch.id,
         name: ch.name,
         logo: ch.logo,
@@ -104,35 +128,47 @@ export const SourceProvider = ({ children }) => {
       setError(null);
       setSyncStatus('Sincronizado!');
       setTimeout(() => setSyncStatus(null), 2000);
-      
-      SyncManager.updateSourceHealth(source.id, { 
-        lastSuccess: Date.now(), 
+
+      SyncManager.updateSourceHealth(source.id, {
+        lastSuccess: Date.now(),
         channelCount: parsed.length,
         failures: 0
       });
       SyncManager.unblockSource(source.id);
       setSourceHealth(SyncManager.getSourceHealth());
-      
+
     } catch (err) {
       if (err.name === 'AbortError') return;
-      
+
       const erroReal = err.message || 'Erro Desconhecido';
       console.error('[Source] Falha na Sincronização:', erroReal);
-      
+
       if (erroReal === 'SOURCE_BLOCKED') {
         setError(`Fonte bloqueada devido a muitas falhas contínuas. Aguarde 2 minutos.`);
       } else if (erroReal.includes('TIMEOUT')) {
-        setError(`Servidor ${source.name} demorou para responder. Tente novamente.`);
+        setError(`Servidor ${source.name} está demorando muito para responder. Tente outro servidor nas Configurações.`);
       } else if (erroReal.includes('Failed to fetch') || erroReal.includes('NetworkError')) {
         setError(`Sem conexão com a internet ou servidor offline (Falha de Rede). ${erroReal}`);
       } else {
         setError(`O servidor ${source.name} recusou a conexão: ${erroReal}`);
       }
-      
+
       if (cached) {
-         setSyncStatus('Falha - Canais do Cache');
+        try {
+          const parsed = JSON.parse(cached);
+          if (parsed && parsed.length > 0) {
+            setSyncStatus('Falha - Canais do Cache');
+          } else {
+            setChannels(LOCAL_CHANNELS);
+            setSyncStatus('Falha - Usando Canais Locais');
+          }
+        } catch {
+          setChannels(LOCAL_CHANNELS);
+          setSyncStatus('Falha - Usando Canais Locais');
+        }
       } else {
          setChannels(LOCAL_CHANNELS);
+         setSyncStatus('Falha - Usando Canais Locais');
       }
     } finally {
       setIsLoading(false);
@@ -228,14 +264,14 @@ export const SourceProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    const saved = localStorage.getItem('activeSourceUrl');
-    const source = sources.find(s => s.url === saved);
-    if (source) {
-      selectSource(source);
-    } else {
-      // Se a fonte salva não existe mais, selecionar a primeira disponível
-      localStorage.removeItem('activeSourceUrl');
-      if (sources.length > 0) {
+    if (sources.length > 0) {
+      const saved = localStorage.getItem('activeSourceUrl');
+      const source = sources.find(s => s.url === saved);
+      
+      if (source) {
+        selectSource(source);
+      } else {
+        localStorage.removeItem('activeSourceUrl');
         selectSource(sources[0]);
       }
     }
@@ -267,7 +303,8 @@ export const SourceProvider = ({ children }) => {
       getSourceStatus,
       resetSourceStatus,
       getSettings,
-      updateSettings
+      updateSettings,
+      smartPrefetch: SmartPrefetchService
     }}>
       {children}
     </SourceContext.Provider>

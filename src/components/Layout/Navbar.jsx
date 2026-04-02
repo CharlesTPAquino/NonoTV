@@ -1,86 +1,86 @@
 import React from 'react';
-import { Search, LogOut, Settings, List, Menu } from 'lucide-react';
-import ServerSelector from './ServerSelector';
+import { Search, Settings, Bell, User, Zap, LayoutGrid } from 'lucide-react';
 
 const TABS = [
-  { type: 'All',    label: 'Todos' },
-  { type: 'live',   label: 'Ao Vivo' },
-  { type: 'movie',  label: 'Filmes' },
-  { type: 'series', label: 'Séries' },
+  { type: 'All',      label: 'Descobrir' },
+  { type: 'live',     label: 'Ao Vivo' },
+  { type: 'movie',    label: 'Filmes' },
+  { type: 'series',   label: 'Séries' },
+  { type: 'podcasts', label: 'Podcasts' },
 ];
 
-export default function Navbar({ search, setSearch, syncStatus, activeCategory, setActiveCategory, onOpenSettings, onOpenChannelList }) {
-  const handleExit = () => {
-    if (window.Capacitor?.Plugins?.App) {
-      window.Capacitor.Plugins.App.exitApp();
-    } else {
-      window.close();
-    }
-  };
-
+export default function Navbar({ search, setSearch, syncStatus, activeCategory, setActiveCategory, onOpenSettings }) {
+  
   return (
-    <nav className="shrink-0 h-auto bg-[#18181B]/80 backdrop-blur-xl border-b border-[#27272A] z-40 px-6 md:px-10 pt-5 pb-0">
-      {/* Top Row */}
-      <div className="flex items-center justify-between gap-4 mb-4">
-        {/* Logo */}
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-[#F7941D] rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">N</span>
-          </div>
-          <span className="text-white font-bold text-lg hidden sm:block">NonoTV</span>
+    <nav className="relative shrink-0 h-24 md:h-32 flex items-center px-6 md:px-12 z-[90] animate-in fade-in slide-in-from-top-4 duration-1000">
+      
+      {/* Background Glow */}
+      <div className="absolute inset-x-0 top-0 h-full bg-gradient-to-b from-black/80 via-black/20 to-transparent pointer-events-none" />
+
+      <div className="w-full flex items-center justify-between relative z-10">
+        
+        {/* Left - Navigation Tabs (Netflix Style) */}
+        <div className="flex items-center gap-2 md:gap-4 overflow-x-auto scrollbar-hide py-2">
+          {TABS.map((tab, idx) => {
+            const isActive = activeCategory === tab.type;
+            return (
+              <button
+                key={tab.type}
+                onClick={() => setActiveCategory(tab.type)}
+                className={`relative px-4 md:px-6 py-2.5 rounded-2xl transition-all duration-500 whitespace-nowrap group/tab
+                  ${isActive 
+                    ? 'text-white' 
+                    : 'text-white/20 hover:text-white/60'}`}
+                style={{ animationDelay: `${idx * 100}ms` }}
+              >
+                {isActive && (
+                  <div className="absolute inset-0 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-3xl animate-in zoom-in-95 duration-500 shadow-2xl" />
+                )}
+                <span className={`relative z-10 text-xs md:text-sm font-black uppercase tracking-[0.2em] transition-all ${isActive ? 'scale-105' : ''}`}>
+                  {tab.label}
+                </span>
+                {isActive && (
+                  <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-8 h-1 bg-[#F7941D] rounded-full shadow-[0_0_15px_#F7941D]" />
+                )}
+              </button>
+            );
+          })}
         </div>
 
-        {/* Search */}
-        <div className="relative flex-1 max-w-md mx-4">
-          <div className="relative flex items-center bg-[#27272A] border border-transparent focus-within:border-[#F7941D] rounded-xl transition-colors">
-            <Search className="ml-4 text-[#71717A]" size={16} />
-            <input 
-              type="text" 
-              placeholder="Buscar canais..." 
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full h-10 pl-3 pr-4 bg-transparent outline-none text-sm text-white placeholder:text-[#52525B]"
-            />
+        {/* Right - Global Actions */}
+        <div className="hidden md:flex items-center gap-4 lg:gap-6">
+          
+          {/* Signal Indicator */}
+          <div className="flex items-center gap-3 px-4 py-2 bg-white/5 border border-white/5 rounded-2xl backdrop-blur-2xl">
+            <div className="relative">
+              <Zap size={14} className="text-[#F7941D] animate-pulse" />
+              <div className="absolute inset-0 bg-[#F7941D] blur-md opacity-20 animate-pulse" />
+            </div>
+            <span className="text-[10px] font-black uppercase tracking-widest text-white/40">
+              {syncStatus?.includes('Conectado') ? 'Sinal 4K Estável' : 'Sintonizando...'}
+            </span>
+          </div>
+
+          <button 
+            onClick={onOpenSettings}
+            className="w-12 h-12 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-all active:scale-90 group"
+          >
+            <Settings size={20} className="group-hover:rotate-90 transition-transform duration-500" />
+          </button>
+
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#F7941D] to-[#FBB03B] p-[1px] shadow-[0_10px_30px_rgba(247,148,29,0.2)] hover:scale-105 transition-transform duration-500 cursor-pointer">
+            <div className="w-full h-full bg-[#18181B] rounded-[15px] flex items-center justify-center overflow-hidden border border-white/10">
+              <User size={20} className="text-[#F7941D]" />
+            </div>
           </div>
         </div>
-        
-        {/* Actions */}
-        <div className="flex items-center gap-2">
-          {onOpenChannelList && (
-            <button
-              onClick={onOpenChannelList}
-              className="w-10 h-10 rounded-lg bg-[#27272A] flex items-center justify-center text-[#A1A1AA] hover:text-white hover:bg-[#3F3F46] transition-colors"
-            >
-              <Menu size={18} />
-            </button>
-          )}
-          <ServerSelector />
-          <button
-            onClick={onOpenSettings}
-            className="w-10 h-10 rounded-lg bg-[#27272A] flex items-center justify-center text-[#A1A1AA] hover:text-white hover:bg-[#3F3F46] transition-colors"
-          >
-            <Settings size={18} />
+
+        {/* Mobile Sidebar Toggle - Visual Only */}
+        <div className="md:hidden">
+          <button className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center">
+            <LayoutGrid size={20} className="text-white/40" />
           </button>
         </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide -mb-px pb-1">
-        {TABS.map(tab => {
-          const isActive = activeCategory === tab.type;
-          return (
-            <button
-              key={tab.type}
-              onClick={() => setActiveCategory(tab.type)}
-              className={`px-4 py-2.5 text-sm font-medium rounded-t-lg whitespace-nowrap transition-colors
-                ${isActive 
-                  ? 'text-white bg-[#27272A] border border-[#3F3F46] border-b-transparent' 
-                  : 'text-[#71717A] hover:text-white hover:bg-[#27272A]/50'}`}
-            >
-              {tab.label}
-            </button>
-          );
-        })}
       </div>
     </nav>
   );

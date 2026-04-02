@@ -259,7 +259,7 @@ export default function VodPlayer({ channel, channels, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-[100] bg-black"
+      className="fixed inset-0 z-[100] bg-black overflow-hidden select-none"
       onMouseMove={resetControlsTimer}
       onClick={resetControlsTimer}
     >
@@ -267,12 +267,26 @@ export default function VodPlayer({ channel, channels, onClose }) {
       <video
         ref={videoRef}
         src={channel?.url}
-        className="w-full h-full object-contain"
+        className="w-full h-full object-contain pointer-events-auto"
         playsInline
         autoPlay
         crossOrigin="anonymous"
-        onClick={(e) => { e.stopPropagation(); togglePlay(); }}
+        onClick={(e) => { 
+          e.stopPropagation(); 
+          setShowControls(!showControls); 
+          resetControlsTimer();
+        }}
       />
+
+      {/* Central Play/Pause Button - Mobile Optimized */}
+      <div className={`absolute inset-0 flex items-center justify-center z-40 pointer-events-none transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'}`}>
+        <button 
+          onClick={(e) => { e.stopPropagation(); togglePlay(); resetControlsTimer(); }}
+          className="w-20 h-20 md:w-28 md:h-28 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white border border-white/20 pointer-events-auto hover:scale-110 active:scale-95 transition-all"
+        >
+          {isPlaying ? <Pause size={40} fill="currentColor" /> : <Play size={40} fill="currentColor" className="ml-2" />}
+        </button>
+      </div>
 
       {/* Buffering Overlay */}
       {isBuffering && (
@@ -286,35 +300,50 @@ export default function VodPlayer({ channel, channels, onClose }) {
 
       {/* Top Header */}
       <div className={`absolute top-0 left-0 right-0 z-40 transition-all duration-500 ${showControls ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
-        <div className="bg-gradient-to-b from-black/80 via-black/40 to-transparent p-6 md:p-10">
-          <div className="flex items-center justify-between">
+        <div className="bg-gradient-to-b from-black/90 via-black/40 to-transparent p-4 md:p-8">
+          <div className="flex items-center justify-between max-w-[1920px] mx-auto">
+            {/* Left - Back Button */}
             <div className="flex items-center gap-4">
               <button 
                 onClick={(e) => { e.stopPropagation(); onClose(); }}
-                className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+                className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+                title="Voltar"
               >
                 <ChevronLeft size={24} />
               </button>
               
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="px-2 py-0.5 bg-white/20 rounded text-white text-xs font-semibold uppercase tracking-wider">
+              <div className="hidden sm:block">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className="px-2 py-0.5 bg-white/20 rounded text-white text-[10px] font-bold uppercase tracking-wider">
                     {channel?.type === 'movie' ? 'Filme' : 'Série'}
                   </span>
                 </div>
-                <h1 className="text-white text-xl md:text-2xl font-bold">{channel?.name}</h1>
-                {channel?.group && (
-                  <span className="text-white/40 text-sm">{channel.group}</span>
-                )}
+                <h1 className="text-white text-lg md:text-xl font-bold line-clamp-1">{channel?.name}</h1>
               </div>
             </div>
 
-            <button 
-              onClick={(e) => { e.stopPropagation(); setShowSidebar(!showSidebar); }}
-              className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${showSidebar ? 'bg-white text-black' : 'bg-white/10 backdrop-blur-sm text-white hover:bg-white/20'}`}
-            >
-              <List size={20} />
-            </button>
+            {/* Center - Info (Mobile Only) */}
+            <div className="sm:hidden text-center flex-1 px-4">
+              <h1 className="text-white text-base font-bold line-clamp-1">{channel?.name}</h1>
+            </div>
+
+            {/* Right - Sidebar & Close */}
+            <div className="flex items-center gap-2 md:gap-3">
+              <button 
+                onClick={(e) => { e.stopPropagation(); setShowSidebar(!showSidebar); }}
+                className={`w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-colors ${showSidebar ? 'bg-white text-black' : 'bg-white/10 backdrop-blur-md text-white hover:bg-white/20'}`}
+              >
+                <List size={20} />
+              </button>
+              
+              <button 
+                onClick={(e) => { e.stopPropagation(); onClose(); }}
+                className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-red-500/20 backdrop-blur-md flex items-center justify-center text-red-500 hover:bg-red-500/30 transition-colors border border-red-500/20"
+                title="Fechar"
+              >
+                <X size={24} />
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -379,9 +408,9 @@ export default function VodPlayer({ channel, channels, onClose }) {
             {/* Right - Volume, Fullscreen */}
             <div className="flex items-center gap-2">
               {/* Volume */}
-              <div className="hidden md:flex items-center gap-2">
+              <div className="flex items-center gap-2">
                 <button 
-                  onClick={(e) => { e.stopPropagation(); toggleMute(); }}
+                  onClick={(e) => { e.stopPropagation(); toggleMute(); resetControlsTimer(); }}
                   className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/20 transition-colors"
                 >
                   {isMuted || volume === 0 ? <VolumeX size={18} /> : <Volume2 size={18} />}
@@ -393,8 +422,8 @@ export default function VodPlayer({ channel, channels, onClose }) {
                   step="0.01"
                   value={isMuted ? 0 : volume}
                   onChange={handleVolumeChange}
-                  onClick={(e) => e.stopPropagation()}
-                  className="w-20 h-1 bg-white/20 rounded-full appearance-none cursor-pointer accent-white"
+                  onClick={(e) => { e.stopPropagation(); resetControlsTimer(); }}
+                  className="w-16 md:w-20 h-1 bg-white/20 rounded-full appearance-none cursor-pointer accent-white"
                 />
               </div>
 
