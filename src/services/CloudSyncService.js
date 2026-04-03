@@ -1,164 +1,128 @@
+import { createClient } from '@supabase/supabase-js';
+
 /**
- * Cloud Sync Service
- * Sincroniza favoritos e histórico entre dispositivos
- * 
- * Implementação atual: Exporta/importa JSON localmente
- * Futuro: Integrar com Firebase/Supabase
+ * Cloud Sync Service v5
+ * Gerencia a sincronização de favoritos e histórico com Supabase
+ * Fallback automático para localStorage se não configurado
  */
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+// Inicializa o cliente apenas se as chaves estiverem presentes
+const supabase = (SUPABASE_URL && SUPABASE_ANON_KEY && SUPABASE_URL !== 'https://your-project-id.supabase.co')
+  ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  : null;
 
 const STORAGE_KEYS = {
   CLOUD_SYNC: 'nono_cloud_sync',
-  LAST_SYNC: 'nono_last_sync'
+  LAST_SYNC: 'nono_last_sync',
+  DEVICE_ID: 'nono_device_id'
 };
 
-const generateDeviceId = () => {
-  let deviceId = localStorage.getItem('nono_device_id');
+const getDeviceId = () => {
+  let deviceId = localStorage.getItem(STORAGE_KEYS.DEVICE_ID);
   if (!deviceId) {
-    deviceId = 'device_' + Math.random().toString(36).substring(2, 15);
-    localStorage.setItem('nono_device_id', deviceId);
+    deviceId = 'dev_' + Math.random().toString(36).substring(2, 15);
+    localStorage.setItem(STORAGE_KEYS.DEVICE_ID, deviceId);
   }
   return deviceId;
 };
 
-const generateSyncCode = () => {
-  return Math.random().toString(36).substring(2, 8).toUpperCase();
-};
-
 export const CloudSyncService = {
-  getDeviceId() {
-    return generateDeviceId();
+  isEnabled() {
+    return !!supabase;
   },
 
-  getLastSync() {
+  /**
+   * Sincroniza favoritos com a nuvem
+   */
+  async syncFavorites(favorites) {
+    if (!this.isEnabled()) return null;
+
     try {
-      const lastSync = localStorage.getItem(STORAGE_KEYS.LAST_SYNC);
-      return lastSync ? JSON.parse(lastSync) : null;
-    } catch {
-      return null;
-    }
-  },
+      const deviceId = getDeviceId();
+      const { data, error } = await supabase
+        .from('nono_sync')
+        .upsert({ 
+          device_id: deviceId, 
+          favorites: favorites,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'device_id' });
 
-  exportData(favorites, history, channels) {
-    const data = {
-      version: '1.0',
-      deviceId: generateDeviceId(),
-      exportedAt: Date.now(),
-      favorites: favorites || [],
-      history: (history || []).map(h => ({
-        ...h,
-        lastWatched: h.lastWatched || h.addedAt
-      })).slice(0, 50),
-      channels: (channels || []).slice(0, 100).map(c => ({
-        id: c.id,
-        name: c.name,
-        logo: c.logo,
-        group: c.group,
-        url: c.url
-      }))
-    };
-
-    localStorage.setItem(STORAGE_KEYS.LAST_SYNC, JSON.stringify({
-      exportedAt: data.exportedAt,
-      favoritesCount: data.favorites.length,
-      historyCount: data.history.length
-    }));
-
-    return data;
-  },
-
-  importData(jsonString) {
-    try {
-      const data = JSON.parse(jsonString);
+      if (error) throw error;
       
-      if (!data.version || !data.favorites) {
-        throw new Error('Formato inválido');
-      }
-
-      const result = {
-        success: true,
-        importedAt: Date.now(),
-        favoritesCount: data.favorites.length,
-        historyCount: data.history?.length || 0
-      };
-
-      localStorage.setItem(STORAGE_KEYS.CLOUD_SYNC, JSON.stringify(data));
-      localStorage.setItem(STORAGE_KEYS.LAST_SYNC, JSON.stringify(result));
-
-      return result;
+      this._updateLastSyncStatus('favorites', favorites.length);
+      return data;
     } catch (error) {
-      return {
-        success: false,
-        error: error.message
-      };
-    }
-  },
-
-  getStoredData() {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEYS.CLOUD_SYNC);
-      return stored ? JSON.parse(stored) : null;
-    } catch {
+      console.warn('[CloudSync] Erro ao sincronizar favoritos:', error.message);
       return null;
     }
   },
 
-  mergeData(localFavorites, localHistory, cloudData) {
-    const merged = {
-      favorites: [],
-      history: []
-    };
+  /**
+   * Sincroniza histórico com a nuvem
+   */
+  async syncHistory(history) {
+    if (!this.isEnabled()) return null;
 
-    const existingFavorites = new Set(localFavorites.map(f => f.id || f.url));
-    
-    if (cloudData?.favorites) {
-      cloudData.favorites.forEach(fav => {
-        if (!existingFavorites.has(fav.id || fav.url)) {
-          merged.favorites.push(fav);
-        }
-      });
+    try {
+      const deviceId = getDeviceId();
+      const { data, error } = await supabase
+        .from('nono_sync')
+        .upsert({ 
+          device_id: deviceId, 
+          history: history,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'device_id' });
+
+      if (error) throw error;
+      
+      this._updateLastSyncStatus('history', history.length);
+      return data;
+    } catch (error) {
+      console.warn('[CloudSync] Erro ao sincronizar histórico:', error.message);
+      return null;
     }
-    merged.favorites = [...localFavorites, ...merged.favorites];
-
-    const existingHistory = new Set(localHistory.map(h => h.id || h.url));
-    
-    if (cloudData?.history) {
-      cloudData.history.forEach(hist => {
-        if (!existingHistory.has(hist.id || hist.url)) {
-          merged.history.push(hist);
-        }
-      });
-    }
-    
-    merged.history = [...localHistory, ...merged.history]
-      .sort((a, b) => (b.lastWatched || b.addedAt || 0) - (a.lastWatched || a.addedAt || 0))
-      .slice(0, 50);
-
-    return merged;
   },
 
-  clearCloudData() {
-    localStorage.removeItem(STORAGE_KEYS.CLOUD_SYNC);
-    localStorage.removeItem(STORAGE_KEYS.LAST_SYNC);
+  /**
+   * Recupera dados da nuvem para o dispositivo atual
+   */
+  async fetchCloudData() {
+    if (!this.isEnabled()) return null;
+
+    try {
+      const deviceId = getDeviceId();
+      const { data, error } = await supabase
+        .from('nono_sync')
+        .select('*')
+        .eq('device_id', deviceId)
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error; // PGRST116 = No rows found
+      
+      return data;
+    } catch (error) {
+      console.warn('[CloudSync] Erro ao buscar dados da nuvem:', error.message);
+      return null;
+    }
+  },
+
+  _updateLastSyncStatus(type, count) {
+    const status = JSON.parse(localStorage.getItem(STORAGE_KEYS.LAST_SYNC) || '{}');
+    status[type] = {
+      count,
+      timestamp: Date.now()
+    };
+    localStorage.setItem(STORAGE_KEYS.LAST_SYNC, JSON.stringify(status));
   },
 
   getSyncStatus() {
-    const lastSync = this.getLastSync();
-    const cloudData = this.getStoredData();
-    
     return {
-      hasCloudData: !!cloudData,
-      lastSync: lastSync,
-      deviceId: generateDeviceId()
-    };
-  },
-
-  createShareableLink(data) {
-    const exported = this.exportData(data.favorites, data.history, data.channels);
-    const encoded = btoa(JSON.stringify(exported));
-    return {
-      code: generateSyncCode(),
-      data: encoded,
-      expiresAt: Date.now() + (24 * 60 * 60 * 1000)
+      enabled: this.isEnabled(),
+      deviceId: getDeviceId(),
+      lastSync: JSON.parse(localStorage.getItem(STORAGE_KEYS.LAST_SYNC) || '{}')
     };
   }
 };

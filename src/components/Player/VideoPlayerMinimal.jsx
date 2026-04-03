@@ -52,6 +52,7 @@ export default function VideoPlayer({ channel, channels, onClose, mode = 'smart'
   
   const [showControls, setShowControls] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isPipActive, setIsPipActive] = useState(false);
   const [volume, setVolume] = useState(parseFloat(localStorage.getItem('playerVolume') || '0.8'));
   const [qualities] = useState([]);
   const [activeQuality] = useState(-1);
@@ -131,6 +132,20 @@ export default function VideoPlayer({ channel, channels, onClose, mode = 'smart'
     const i = channels.findIndex(c => c.id === channel?.id);
     if (i > 0) playChannel(channels[i - 1]);
   }, [channels, channel, playChannel]);
+
+  const togglePip = useCallback(async () => {
+    try {
+      if (document.pictureInPictureElement) {
+        await document.exitPictureInPicture();
+        setIsPipActive(false);
+      } else if (videoRef.current) {
+        await videoRef.current.requestPictureInPicture();
+        setIsPipActive(true);
+      }
+    } catch (err) {
+      console.warn('[Player] PiP Error:', err);
+    }
+  }, []);
 
   const toggleFullscreen = useCallback(() => {
     const elem = containerRef.current;
@@ -358,6 +373,11 @@ export default function VideoPlayer({ channel, channels, onClose, mode = 'smart'
         </div>
 
         <div className="flex items-center gap-2">
+          {document.pictureInPictureEnabled && (
+            <ControlButton onClick={togglePip}>
+              <ExternalLink size={20} className={isPipActive ? 'text-[#F7941D]' : ''} />
+            </ControlButton>
+          )}
           <ControlButton onClick={() => setShowChannelList(!showChannelList)}>
             <Tv size={20} />
           </ControlButton>
