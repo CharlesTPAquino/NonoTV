@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, memo } from 'react';
 import { Play, Star, Clock, Film, Tv, Info, Zap } from 'lucide-react';
+import { prefetchService } from '../../services/PrefetchService';
 
 let HlsClass = null;
 
@@ -59,28 +60,50 @@ function ChannelCard({ channel, onPlay, isValid, isPlayerOpen }) {
 
   useEffect(() => {
     if (!isHovered || isPlayerOpen || !videoRef.current || !hlsLoaded || !HlsClass || isPoster) return;
-    const video = videoRef.current;
     
-    if (HlsClass.isSupported()) {
-      const hls = new HlsClass({ 
-        maxBufferLength: 2, 
-        manifestLoadingMaxRetry: 1,
-        enableWorker: true 
-      });
-      hlsRef.current = hls;
-      hls.loadSource(channel.url);
-      hls.attachMedia(video);
-      hls.on(HlsClass.Events.MANIFEST_PARSED, () => {
+    // Debounce: Inicia preview apenas se o usuário parar o mouse/foco por 300ms
+    const timer = setTimeout(() => {
+      const video = videoRef.current;
+      if (!video) return;
+
+      if (HlsClass.isSupported()) {
+        const hls = new HlsClass({ 
+          maxBufferLength: 2, 
+          maxMaxBufferLength: 5,
+          manifestLoadingMaxRetry: 1,
+          enableWorker: true,
+          backBufferLength: 0 // Libera memória de frames passados imediatamente
+        });
+        hlsRef.current = hls;
+        hls.loadSource(channel.url);
+        hls.attachMedia(video);
+        
+        // Zapping Predictor: Inicia prefetch completo em background
+        prefetchService.prefetchChannel(channel);
+
+        hls.on(HlsClass.Events.MANIFEST_PARSED, () => {
+          video.play().catch(() => {});
+        });
+      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.src = channel.url;
         video.play().catch(() => {});
-      });
-    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      video.src = channel.url;
-      video.play().catch(() => {});
-    }
+      }
+    }, 300);
 
     return () => {
-      if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null; }
-      if (video) { video.pause(); video.removeAttribute('src'); video.load(); }
+      clearTimeout(timer);
+      if (hlsRef.current) {
+        hlsRef.current.stopLoad();
+        hlsRef.current.detachMedia();
+        hlsRef.current.destroy();
+        hlsRef.current = null;
+      }
+      const video = videoRef.current;
+      if (video) {
+        video.pause();
+        video.removeAttribute('src');
+        video.load(); // Força liberação do buffer de hardware
+      }
     };
   }, [isHovered, channel.url, isPlayerOpen, hlsLoaded, isPoster]);
 

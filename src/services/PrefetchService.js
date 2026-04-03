@@ -1,158 +1,82 @@
 import Hls from 'hls.js';
+import { detectDeviceProfile } from './SmartServerOrchestrator';
 
+/**
+ * AI-Zapping Prefetch Service v4.8
+ * Antecipa o carregamento de canais baseando-se no foco do usuário e poder de hardware.
+ */
 class PrefetchService {
   constructor() {
     this.prefetchedUrls = new Map();
-    this.prefetchTimeout = null;
-    this.maxPrefetch = 5;
+    this.maxPrefetch = 3;
+    this.activePrefetchCount = 0;
   }
 
-  async prefetchChannel(channel, onProgress) {
+  async prefetchChannel(channel) {
     if (!channel?.url) return null;
+    
+    // Filtro de Hardware: Só prefetch em dispositivos potentes
+    const profile = detectDeviceProfile();
+    if (profile.label === 'Resiliência') return null; // Lite não faz prefetch
 
-    const url = channel.url.toLowerCase();
-    if (!url.includes('.m3u8') && !url.includes('m3u')) {
-      return null;
-    }
-
-    if (this.prefetchedUrls.has(channel.url)) {
-      console.log('[PrefetchService] Já prefetched:', channel.name);
-      return this.prefetchedUrls.get(channel.url);
-    }
-
-    console.log('[PrefetchService] Prefetching:', channel.name);
+    if (this.prefetchedUrls.has(channel.url)) return this.prefetchedUrls.get(channel.url);
+    if (this.activePrefetchCount >= this.maxPrefetch) return null;
 
     return new Promise((resolve) => {
       try {
+        this.activePrefetchCount++;
+        
         if (Hls.isSupported()) {
           const hls = new Hls({
-            maxBufferLength: 2,
-            maxMaxBufferLength: 10,
+            enableWorker: true,
+            maxBufferLength: 5, // Baixa apenas 5s para 'aquecer'
             manifestLoadingMaxRetry: 1,
-            levelLoadingMaxRetry: 1
+            fragLoadingMaxRetry: 1
           });
 
           hls.loadSource(channel.url);
           
           hls.on(Hls.Events.MANIFEST_PARSED, () => {
-            console.log('[PrefetchService] Prefetch completo:', channel.name);
-            this.prefetchedUrls.set(channel.url, { hls, channel });
+            console.log(`[AI-Zapping] Canal aquecido: ${channel.name}`);
+            this.prefetchedUrls.set(channel.url, { hls, channel, timestamp: Date.now() });
+            this.activePrefetchCount--;
             this.cleanupOldPrefetch();
-            resolve({ hls, channel, success: true });
+            resolve({ success: true });
           });
 
-          hls.on(Hls.Events.ERROR, (event, data) => {
-            console.log('[PrefetchService] Erro no prefetch:', channel.name, data.type);
+          hls.on(Hls.Events.ERROR, () => {
             hls.destroy();
-            resolve({ hls: null, channel, success: false, error: data.type });
+            this.activePrefetchCount--;
+            resolve({ success: false });
           });
-
-        } else if (window.MediaSource?.isTypeSupported('application/vnd.apple.mpegurl')) {
-          const video = document.createElement('video');
-          video.src = channel.url;
-          video.preload = 'auto';
-          
-          video.oncanplay = () => {
-            console.log('[PrefetchService] Prefetch completo (Safari):', channel.name);
-            this.prefetchedUrls.set(channel.url, { video, channel });
-            this.cleanupOldPrefetch();
-            resolve({ video, channel, success: true });
-          };
-
-          video.onerror = () => {
-            console.log('[PrefetchService] Erro no prefetch (Safari):', channel.name);
-            resolve({ video: null, channel, success: false, error: 'load error' });
-          };
         } else {
-          resolve({ channel, success: false, error: 'HLS not supported' });
+          this.activePrefetchCount--;
+          resolve({ success: false });
         }
-      } catch (error) {
-        console.log('[PrefetchService] Exceção:', error.message);
-        resolve({ channel, success: false, error: error.message });
+      } catch {
+        this.activePrefetchCount--;
+        resolve({ success: false });
       }
     });
-  }
-
-  async prefetchNextChannels(currentChannel, allChannels, count = 2) {
-    if (!allChannels || allChannels.length === 0) return [];
-
-    const settings = { preferHD: true, enablePrefetch: true, prefetchNext: true };
-    try {
-      const stored = JSON.parse(localStorage.getItem('nono_settings'));
-      if (stored) Object.assign(settings, stored);
-    } catch {
-      // Silent fail for settings parse
-    }
-
-    if (!settings.enablePrefetch || !settings.prefetchNext) {
-      return [];
-    }
-
-    const currentIndex = allChannels.findIndex(ch => ch.id === currentChannel?.id);
-    if (currentIndex === -1) return [];
-
-    const nextChannels = [];
-    for (let i = 1; i <= count; i++) {
-      const nextIndex = (currentIndex + i) % allChannels.length;
-      nextChannels.push(allChannels[nextIndex]);
-    }
-
-    console.log(`[PrefetchService] Carregando ${nextChannels.length} canais:`, nextChannels.map(c => c.name).join(', '));
-
-    const results = await Promise.all(
-      nextChannels.map(ch => this.prefetchChannel(ch))
-    );
-
-    return results.filter(r => r?.success);
   }
 
   cleanupOldPrefetch() {
     if (this.prefetchedUrls.size <= this.maxPrefetch) return;
-
-    const entries = Array.from(this.prefetchedUrls.entries());
-    const toRemove = entries.slice(0, entries.length - this.maxPrefetch);
-
-    toRemove.forEach(([url, data]) => {
-      if (data.hls) {
-        data.hls.destroy();
-      }
-      if (data.video) {
-        data.video.src = '';
-        data.video.load();
-      }
-      this.prefetchedUrls.delete(url);
-      console.log('[PrefetchService] Removido do cache:', data.channel?.name);
-    });
+    const oldestUrl = Array.from(this.prefetchedUrls.keys())[0];
+    const data = this.prefetchedUrls.get(oldestUrl);
+    if (data?.hls) data.hls.destroy();
+    this.prefetchedUrls.delete(oldestUrl);
   }
 
-  getPrefetched(url) {
-    return this.prefetchedUrls.get(url);
-  }
-
-  hasPrefetched(url) {
-    return this.prefetchedUrls.has(url);
+  getWarmHls(url) {
+    return this.prefetchedUrls.get(url)?.hls || null;
   }
 
   clearAll() {
-    this.prefetchedUrls.forEach((data) => {
-      if (data.hls) data.hls.destroy();
-      if (data.video) {
-        data.video.src = '';
-        data.video.load();
-      }
-    });
+    this.prefetchedUrls.forEach(d => d.hls?.destroy());
     this.prefetchedUrls.clear();
-    console.log('[PrefetchService] Cache limpo');
-  }
-
-  getStatus() {
-    return {
-      cached: this.prefetchedUrls.size,
-      channels: Array.from(this.prefetchedUrls.values()).map(d => d.channel?.name)
-    };
   }
 }
 
 export const prefetchService = new PrefetchService();
-
 export default prefetchService;
