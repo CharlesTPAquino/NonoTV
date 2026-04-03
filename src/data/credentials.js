@@ -6,6 +6,8 @@
  * ATENÇÃO: Em produção, use .env para evitar expor credenciais
  */
 
+import { getOrchestratedUrl } from '../services/SmartServerOrchestrator';
+
 const getEnv = (key, fallback = '') => {
   return import.meta?.env?.[key] || fallback;
 };
@@ -129,11 +131,121 @@ export const CREDENTIALS = {
     accounts: [
       { user: getEnv('VITE_AMERICAKG_USER_1', 'u7yckwn5'), pass: getEnv('VITE_AMERICAKG_PASS_1', 'agkedgp9') },
     ]
-  }
+  },
+
+  mx51: {
+    host: getEnv('VITE_MX51_HOST', 'http://s.mx51.online'),
+    accounts: [
+      { user: 'Carlosfxvelha', pass: '753Zdv64725', expires: '26-03-26' },
+      { user: 'Emanuele2489', pass: 'Bw23gH', expires: '04-05-26' },
+      { user: '82127915', pass: '29584856458', expires: '28-02-26' },
+      { user: 'EdilmaT1859868', pass: 'CostaE7676XX', expires: '06-03-26' },
+      { user: 'YA4S5BZC', pass: '83UJQma3', expires: '25-02-26' },
+      { user: 'renan1041', pass: '54s6d5t322', expires: '05-03-26' },
+      { user: 'maiconleal2', pass: 'mai84696722', expires: '05-03-26' },
+      { user: '11977398911', pass: 'edvaldo170264', expires: '23-03-26' },
+      { user: 'davisangineto001tv', pass: '018191910maac', expires: '12-03-26' },
+      { user: 'Luaratv34', pass: 'mnb25301090', expires: '15-03-26' },
+      { user: 'Ze290624', pass: 'tv8899546778', expires: '04-03-26' },
+      { user: 'fabriciomgodoi1', pass: '5083715604', expires: '08-03-26' },
+      { user: 'lrboscariol', pass: '9G58pSucss', expires: '24-03-26' },
+      { user: 'hdAD32', pass: '4DaRb3', expires: '18-03-26' },
+      { user: 'gustavo41pai', pass: 'iB9352', expires: '24-05-26' },
+      { user: 'Jaco1032', pass: 'J15c', expires: '19-03-26' },
+      { user: 'adolfo28364916', pass: '29363926384', expires: '14-03-26' },
+      { user: 'victoralbuquerque', pass: 'vt2080904050', expires: '14-03-26' },
+      { user: 'luiznunes', pass: '937274ab', expires: '11-03-26' },
+      { user: '4196356700', pass: 'h4080905065', expires: '02-03-26' },
+      { user: '98874014412', pass: 'a988740144a', expires: '22-03-26' },
+      { user: '11973636893', pass: 'renatooliveira2023', expires: '01-06-26' },
+      { user: '64362502', pass: 'br423374538', expires: '02-03-26' },
+      { user: 'eliaspedregu', pass: '29ac09ac12ac', expires: '10-03-26' },
+      { user: 'eiuKyO07120', pass: 'Katia19843022', expires: '06-03-26' },
+      { user: 'tvteste01', pass: '08000272mac', expires: '10-03-26' },
+      { user: 'danilo053', pass: '14122890632', expires: '04-03-26' },
+      { user: 'raqueltelefthtertosemp', pass: 'gfdsa5432198', expires: '13-03-26' },
+      { user: 'rodrigo7631', pass: 'd654dsf1w4as', expires: '27-02-26' },
+      { user: 'tainaraissa', pass: 'CL100724ctv', expires: '17-03-26' },
+      { user: 'victorjesus', pass: '1792739627ab', expires: '24-03-26' },
+      { user: 'luizval', pass: 'Asd123', expires: '08-03-26' },
+      { user: 'MarcosTeo27', pass: 'Mt357992758', expires: '09-03-26' },
+      { user: 'reginaldocampos', pass: 'hCKsf9yGtz', expires: '04-04-26' },
+      { user: 'didi071056', pass: '071056didi', expires: '23-03-26' },
+      { user: 'Cristian13579', pass: 'Cr135', expires: '08-03-26' },
+      { user: '19998808440', pass: 'h40809050', expires: '28-02-26' },
+      { user: 'Julio41298762', pass: 'C4ABWGQYsp', expires: '14-03-26' },
+      { user: '84107381', pass: '87637363838', expires: '25-02-26' },
+      { user: 'euniceusa', pass: '23ferre777BBB', expires: '30-09-26' },
+      { user: 'Conrado', pass: 'Co102', expires: '11-03-26' },
+      { user: 'WENDER024', pass: 'D2c9F1', expires: '13-03-26' },
+      { user: 'UoTGA3DlrR', pass: '6XHCsxAOTddr', expires: '18-03-26' },
+      { user: 'QNxFXKJweq', pass: 'gTht5ZXmkQ', expires: '23-03-26' },
+      { user: 'frodrigues', pass: 'fr9785953118', expires: '03-03-26' },
+      { user: 'Sebastiao2782', pass: '68vBWe', expires: '11-05-26' },
+      { user: 'Elaine8585', pass: '29337355198', expires: '06-03-26' },
+      { user: 'alexandre9938', pass: '99381640xxx', expires: '03-03-26' },
+      { user: 'cesar8821', pass: '88217234scs', expires: '02-03-26' },
+      { user: 'wagner2025', pass: 'Ee8s9G', expires: '07-03-26' },
+      { user: 'valdemarmarli', pass: '55996724808', expires: '03-03-26' },
+      { user: 'eddydicabra', pass: '59qv5qoimhr', expires: '06-04-26' },
+      { user: 'Andreluis', pass: 'P95eTnEZV', expires: '03-03-26' },
+      { user: '11968826329', pass: 'angelo300661', expires: '10-06-26' },
+      { user: 'Mg10', pass: 'Vip10', expires: '17-04-26' },
+      { user: 'nelsontv', pass: 'JOjo1214tv', expires: '07-03-26' },
+      { user: '27047644', pass: '87163592zxc', expires: '24-02-26' },
+      { user: 'CrisMae1', pass: 'maiptv98768823', expires: '06-03-26' },
+      { user: 'tatiana9944', pass: 'Ta994a', expires: '13-03-26' },
+      { user: 'Marise2024', pass: '19305314592', expires: '21-07-26' },
+      { user: 'gilvan1326', pass: 'cb67sg39svg', expires: '26-03-26' },
+      { user: 'Miranda40s', pass: 'Leloli091hj', expires: '08-03-26' },
+      { user: 'silvinha42', pass: 'wagnerd2024', expires: '26-02-26' },
+    ]
+  },
+
+  amsplay: {
+    host: 'http://amsplay.com:80',
+    accounts: [
+      { user: 'a37167770', pass: '112233Aa', expires: '22-04-26' },
+      { user: 'Xjq726PXm75jX', pass: 'Ry83776uY38', expires: '04-04-26' },
+      { user: 'Aquiles2', pass: 'Aq96788998', expires: '27-04-26' },
+      { user: 'Marcostv1000', pass: 'Ma101214', expires: '14-04-26' },
+      { user: '267500', pass: 'pPgp2J', expires: 'ilimitado' },
+      { user: '950930', pass: 'Factor4k', expires: '14-04-26' },
+      { user: 'Maxwell5680', pass: 'R3aaS1', expires: '17-04-26' },
+      { user: 'FranciscoJesuus', pass: '8KFjb6', expires: '02-04-26' },
+    ]
+  },
+
+  gpamigos: {
+    host: getEnv('VITE_GPAMIGOS_HOST', 'http://d.plmv.site'),
+    accounts: [
+      { user: 'gerivaldovaldo', pass: '100limitscell', expires: '07-04-26' },
+    ]
+  },
+
+  chefemcasa: {
+    host: getEnv('VITE_CHEFEMCASA_HOST', 'http://dj.chefemcasa.store:80'),
+    accounts: [
+      { user: 'FV280724', pass: 'FV8855338855', expires: '28-04-26' },
+    ]
+  },
+
+  falcon12: {
+    host: getEnv('VITE_FALCON12_HOST', 'http://falcon12.top:80'),
+    accounts: [
+      { user: '624793687', pass: '377283764', expires: '16-07-26' },
+    ]
+  },
+
+  sansuygtv: {
+    host: getEnv('VITE_SANSUYTV_HOST', 'http://sansuygtv.site:80'),
+    accounts: [
+      { user: '19998728046', pass: 'eli19734848', expires: '11-04-26' },
+    ]
+  },
 };
 
-export const buildUrl = (host, user, pass) => 
-  `${host}/get.php?username=${user}&password=${pass}&type=m3u_plus`;
+export const buildUrl = (host, user, pass) => getOrchestratedUrl(host, user, pass);
 
 export const getSourceUrl = (provider, accountIndex = 0) => {
   const creds = CREDENTIALS[provider];
