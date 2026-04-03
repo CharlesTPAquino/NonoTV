@@ -1,10 +1,7 @@
-import React, { useState, useMemo, useCallback } from 'react';
-import { FixedSizeList as List } from 'react-window';
-import AutoSizer from 'react-virtualized-auto-sizer';
+import React, { useState, useMemo } from 'react';
 import ChannelCard from './ChannelCard';
 import HeroSection from './HeroSection';
 import ChannelCarousel from './ChannelCarousel';
-import { ChannelGridSkeleton } from '../UI/Skeleton';
 import { ChannelGridSkeleton, HeroSkeleton } from '../UI/Skeleton';
 import { LayoutGrid, Tv, Clapperboard, MonitorPlay, WifiOff, Search, Compass, ChevronRight } from 'lucide-react';
 
@@ -16,6 +13,7 @@ const CATEGORY_META = {
 };
 
 export default function ChannelGrid({ channels, activeGroup, activeCategory, setActiveGroup, groups, onPlay, search, isPlayerOpen, channelValidity = {}, isValidating = false }) {
+  const [limit, setLimit] = useState(60);
   const isSearching = search && search.length > 0;
 
   const { groupedAll, featured, standard } = useMemo(() => {
@@ -30,7 +28,6 @@ export default function ChannelGrid({ channels, activeGroup, activeCategory, set
         return { groupedAll: null, featured: [], standard: validChannels };
       }
 
-      // Home Mode: Separar destaques e agrupar
       const featuredList = validChannels.filter(c => c.logo && c.group).slice(0, 15);
       const standardList = validChannels; 
       
@@ -49,29 +46,7 @@ export default function ChannelGrid({ channels, activeGroup, activeCategory, set
   }, [channels, activeCategory, isSearching]);
 
   const isHome = activeCategory === 'All' && activeGroup === 'All' && !isSearching;
-
   const isPosterContent = activeCategory === 'movie' || activeCategory === 'series' || activeCategory === 'podcasts';
-
-  // Componente de Linha Virtualizada
-  const Row = useCallback(({ index, style, data }) => {
-    const { itemsPerRow, rowItems, onPlay, channelValidity, isPlayerOpen } = data;
-    const items = rowItems[index];
-
-    return (
-      <div style={{ ...style, display: 'flex', gap: '24px', paddingLeft: '8px', paddingRight: '8px' }}>
-        {items.map((ch) => (
-          <div key={ch.id} style={{ width: `calc((100% / ${itemsPerRow}) - 20px)` }}>
-            <ChannelCard 
-              channel={ch} 
-              onPlay={() => onPlay(ch)} 
-              isValid={channelValidity[ch.id]} 
-              isPlayerOpen={isPlayerOpen} 
-            />
-          </div>
-        ))}
-      </div>
-    );
-  }, []);
 
   if (standard.length === 0 && !isHome) {
     if (isValidating || (channels.length === 0 && !isSearching)) {
@@ -103,10 +78,12 @@ export default function ChannelGrid({ channels, activeGroup, activeCategory, set
     );
   }
 
+  const displayChannels = standard.slice(0, limit);
+
   return (
-    <div className={`h-full transition-all duration-1000 ease-in-out ${isPlayerOpen ? 'opacity-20 scale-95 blur-2xl pointer-events-none' : 'opacity-100 scale-100'}`}>
+    <div className="w-full">
       {isHome ? (
-        <div className="space-y-24 animate-in fade-in duration-1000 overflow-y-auto h-full pr-4 custom-scrollbar">
+        <div className="space-y-24 animate-in fade-in duration-1000">
           <HeroSection channels={[...featured, ...standard]} onPlay={onPlay} validity={channelValidity} isPlayerOpen={isPlayerOpen} />
           
           <div className="space-y-20 pb-32">
@@ -120,10 +97,7 @@ export default function ChannelGrid({ channels, activeGroup, activeCategory, set
                         <span className="text-white/20 text-[9px] font-black uppercase tracking-[0.3em]">Premium Collection</span>
                       </div>
                    </div>
-                   <button 
-                    onClick={() => setActiveGroup(group)}
-                    className="flex items-center gap-2 text-white/30 hover:text-[#F7941D] transition-colors group/all"
-                   >
+                   <button onClick={() => setActiveGroup(group)} className="flex items-center gap-2 text-white/30 hover:text-[#F7941D] transition-colors group/all">
                       <span className="text-[10px] font-black uppercase tracking-widest">Ver Tudo</span>
                       <ChevronRight size={16} className="group-hover/all:translate-x-1 transition-transform" />
                    </button>
@@ -134,87 +108,44 @@ export default function ChannelGrid({ channels, activeGroup, activeCategory, set
           </div>
         </div>
       ) : (
-        <div className="flex flex-col h-full animate-in slide-in-from-bottom-10 duration-1000">
-          {/* Header Exploration */}
-          <div className="shrink-0 flex flex-col md:flex-row md:items-end justify-between gap-8 mb-8 px-2 md:px-0">
+        <div className="flex flex-col animate-in slide-in-from-bottom-10 duration-1000">
+          <div className="shrink-0 flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12 px-2 md:px-0">
             <div className="max-w-2xl">
               <div className="flex items-center gap-3 text-[#F7941D] mb-4">
                 <Compass size={18} className="animate-spin-slow" />
-                <span className="text-[10px] font-black uppercase tracking-[0.4em]">
-                  Exploração de Sinal 4K
-                </span>
+                <span className="text-[10px] font-black uppercase tracking-[0.4em]">Exploração de Sinal 4K</span>
               </div>
               <h2 className="text-5xl md:text-6xl lg:text-7xl font-black text-white uppercase tracking-tighter leading-[0.9] drop-shadow-2xl">
                 {isSearching ? search : activeGroup === 'All' ? (CATEGORY_META[activeCategory]?.label || activeCategory) : activeGroup}
               </h2>
               <div className="flex items-center gap-4 mt-6">
                  <div className="h-px w-12 bg-[#F7941D]/50" />
-                 <p className="text-white/20 text-[10px] font-black uppercase tracking-[0.3em]">
-                   {standard.length} Itens Catalogados
-                 </p>
+                 <p className="text-white/20 text-[10px] font-black uppercase tracking-[0.3em]">{standard.length} Itens Catalogados</p>
               </div>
             </div>
 
-            {/* Filter Pills Elite Style */}
             <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-2 scroll-smooth">
               {groups.slice(0, 20).map((g, idx) => (
-                <button
-                  key={g.id}
-                  onClick={() => setActiveGroup(g.name)}
-                  className={`relative px-8 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border animate-in fade-in slide-in-from-right-4
-                    ${activeGroup === g.name 
-                      ? 'bg-white text-black border-white shadow-[0_15px_40px_rgba(255,255,255,0.2)] scale-105' 
-                      : 'bg-white/5 text-white/30 border-white/5 hover:border-white/20 hover:bg-white/10 hover:text-white'
-                    }`}
-                  style={{ animationDelay: `${idx * 50}ms` }}
-                >
+                <button key={g.id} onClick={() => setActiveGroup(g.name)} className={`relative px-8 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border ${activeGroup === g.name ? 'bg-white text-black border-white' : 'bg-white/5 text-white/30 border-white/5 hover:bg-white/10 hover:text-white'}`}>
                   {g.name}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Virtualized Grid Layout */}
-          <div className="flex-1 min-h-0">
-            <AutoSizer>
-              {({ height, width }) => {
-                // Cálculo dinâmico de colunas baseado na largura
-                const minWidth = isPosterContent ? 160 : 240; 
-                const itemsPerRow = Math.max(2, Math.floor(width / minWidth));
-                
-                // Agrupamento de canais em linhas
-                const rowItems = [];
-                for (let i = 0; i < standard.length; i += itemsPerRow) {
-                  rowItems.push(standard.slice(i, i + itemsPerRow));
-                }
-
-                // Altura da linha baseada no aspecto (16:9 vs 2:3)
-                const rowHeight = isPosterContent 
-                  ? (width / itemsPerRow) * 1.5 + 40 // Poster 2:3
-                  : (width / itemsPerRow) * 0.5625 + 60; // Live 16:9
-
-                return (
-                  <List
-                    height={height}
-                    width={width}
-                    itemCount={rowItems.length}
-                    itemSize={rowHeight}
-                    itemData={{
-                      itemsPerRow,
-                      rowItems,
-                      onPlay,
-                      channelValidity,
-                      isPlayerOpen
-                    }}
-                    className="no-scrollbar"
-                    overscanCount={5}
-                  >
-                    {Row}
-                  </List>
-                );
-              }}
-            </AutoSizer>
+          <div className={`grid ${isPosterContent ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'} gap-6 md:gap-8`}>
+            {displayChannels.map((ch) => (
+              <ChannelCard key={ch.id} channel={ch} onPlay={() => onPlay(ch)} isValid={channelValidity[ch.id]} isPlayerOpen={isPlayerOpen} />
+            ))}
           </div>
+
+          {standard.length > limit && (
+            <div className="mt-20 flex justify-center pb-32">
+              <button onClick={() => setLimit(prev => prev + 60)} className="px-12 py-4 bg-white/5 border border-white/10 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-white/10 transition-all">
+                Carregar Mais Conteúdo
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

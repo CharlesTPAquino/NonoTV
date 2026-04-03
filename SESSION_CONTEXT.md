@@ -38,24 +38,23 @@
 
 *O descumprimento destas regras pode levar ao colapso estrutural do app em hardware limitado.*
 
-### 4. Virtualização de Grid (v4.3 Elite Performance)
-- **Implementação:** `react-window` + `AutoSizer` no `ChannelGrid.jsx`.
-- **Resultado:** Renderização de apenas ~15-20 elementos simultâneos. Suporte nativo a listas de 50.000+ canais com 60fps.
-- **Adaptação:** Grid inteligente que calcula alturas diferentes para Live (16:9) e VOD (2:3).
+### 4. Grid de Canais (v4.3.3 Hybrid)
+- **Status:** Virtualização desativada temporariamente por estabilidade.
+- **Implementação:** Grid CSS Responsiva com Paginação (60 itens/página).
+- **Recuperação:** Resolvido erro de referência no `EPGService.js` que causava crash total.
 
-### 5. Blindagem de Memória (HLS Stability)
-- **Implementação:** Debounce de 300ms no preview e limpeza profunda de buffers no `ChannelCard.jsx`.
-- **Resultado:** Zero vazamento de memória (Memory Leaks) em navegação rápida por scroll infinito.
+### 5. Debugger Nativo
+- **Novo Recurso:** `debug-overlay` injetado no HTML para reportar erros de runtime em produção.
 
 ---
 
 ## 🎯 Para Onde Vamos (Próxima Sessão)
 
-### Prioridade 1: Skeleton Screens Dinâmicos
-Criar skeletons que respeitem os novos formatos (16:9 e 2:3) para evitar "layout shift" durante o carregamento da lista virtualizada.
+### Prioridade 1: Re-implementação Cautelosa da Virtualização
+Agora que o core está estável, vamos reintroduzir a `react-window` garantindo que os componentes sejam importados via namespace e que o container tenha altura fixa.
 
-### Prioridade 2: Sincronização em Nuvem (Sync v5)
-Implementar Supabase/Firebase para salvar favoritos e histórico fora do localStorage, permitindo multi-dispositivo.
+### Prioridade 2: Limpeza do Debugger
+Remover o overlay de erro do `index.html` antes da versão final de produção (ou torná-lo ativável apenas via flag).
 
 ---
 

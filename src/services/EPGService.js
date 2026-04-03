@@ -1,9 +1,14 @@
-import { CapacitorHttp } from '@capacitor/core';
 import { fetchWithProxyRotation } from './EPGProxyManager';
 
 const PROXY_URL = 'http://localhost:3131';
 const CACHE_KEY = 'nono_epg_cache';
 const CACHE_DURATION = 1000 * 60 * 60 * 12;
+const TIMEOUT_MS = 15000;
+
+const PUBLIC_PROXIES = [
+  'https://api.allorigins.win/raw?url=',
+  'https://corsproxy.io/?'
+];
 
 function getProxyUrl(url) {
   if (import.meta.env.DEV) {
@@ -12,69 +17,69 @@ function getProxyUrl(url) {
   return url;
 }
 
-export function extractXtreamCredentials(url) {
-  try {
-    const urlObj = new URL(url);
-    const username = urlObj.searchParams.get('username');
-    const password = urlObj.searchParams.get('password');
-    const baseUrl = `${urlObj.protocol}//${urlObj.host}${urlObj.pathname.split('/get.php')[0]}`;
-    
-    if (username && password) {
-      return { baseUrl, username, password };
-    }
-    return null;
-  } catch {
-    return null;
-  }
+function isNativePlatform() {
+  if (typeof window === 'undefined') return false;
+  if (window.Capacitor?.isNativePlatform?.()) return true;
+  if (window.Capacitor?.platform === 'android' || window.Capacitor?.platform === 'ios') return true;
+  if (typeof android !== 'undefined') return true;
+  return false;
 }
 
-export function detectEPGUrl(sourceUrl) {
-  const xtream = extractXtreamCredentials(sourceUrl);
-  
-  if (xtream) {
-    return {
-      type: 'xtream',
-      url: `${xtream.baseUrl}/xmltv.php?username=${xtream.username}&password=${xtream.password}`
-    };
+async function fetchEPGData(url) {
+  // Try direct first
+  try {
+    const res = await fetch(url, {
+      signal: AbortSignal.timeout(TIMEOUT_MS)
+    });
+    if (res.ok) return await res.text();
+  } catch {
+    // Try proxies
   }
   
-  if (sourceUrl.includes('m3u') || sourceUrl.includes('playlist')) {
-    const baseUrl = sourceUrl.replace(/(\/playlist|\/lista|\/index).*\.m3u.*/i, '/xmltv.xml');
-    if (baseUrl !== sourceUrl) {
-      return { type: 'm3u', url: baseUrl };
+  // Try proxies
+  for (const proxy of PUBLIC_PROXIES) {
+    try {
+      const proxyUrl = proxy + encodeURIComponent(url);
+      const res = await fetch(proxyUrl, {
+        signal: AbortSignal.timeout(TIMEOUT_MS)
+      });
+      if (res.ok) return await res.text();
+    } catch {
+      continue;
     }
   }
   
-  return null;
+  throw new Error('EPG fetch failed');
 }
 
 async function fetchWithProxy(url, options = {}) {
-  const isNative = !!(window.Capacitor?.isNativePlatform?.());
+  const isNative = isNativePlatform();
+  const timeout = options.timeout || TIMEOUT_MS;
   
-  if (isNative || !import.meta.env.DEV) {
+  // Try fetchWithProxyRotation first
+  if (!isNative || import.meta.env.DEV) {
     try {
       return await fetchWithProxyRotation(url, {
-        maxRetries: 3,
-        timeout: 15000,
+        maxRetries: 2,
+        timeout,
         ...options
       });
     } catch (error) {
-      console.log('[EPGService] Proxy rotation failed, trying direct:', error.message);
+      console.log('[EPGService] Proxy rotation failed:', error.message);
     }
   }
   
-  if (isNative) {
-    const response = await CapacitorHttp.get({
-      url: getProxyUrl(url),
-      connectTimeout: 15000,
-      readTimeout: 15000
+  // Direct fetch
+  try {
+    return await fetchEPGData(url);
+  } catch {
+    // Fallback via proxy URL
+    const res = await fetch(getProxyUrl(url), {
+      signal: AbortSignal.timeout(timeout)
     });
-    return response.data;
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.text();
   }
-  
-  const res = await fetch(getProxyUrl(url));
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return await res.text();
 }
 
 function parseXMLTV(xmlString) {
@@ -315,6 +320,53 @@ export function getProgramCatchupUrl(sourceUrl, program, streamId) {
   if (!program?.start) return null;
   
   return buildCatchupUrl(sourceUrl, streamId, program.start, 120);
+}
+
+export function extractXtreamCredentials(url) {
+  if (!url) return null;
+  try {
+    const u = new URL(url);
+    const baseUrl = `${u.protocol}//${u.host}`;
+    const username = u.searchParams.get('username');
+    const password = u.searchParams.get('password');
+    
+    if (username && password) {
+      return { baseUrl, username, password };
+    }
+    
+    // Check path-based (some servers use /get.php or /xmltv.php)
+    const match = url.match(/(https?:\/\/[^\/]+)\/.*username=([^&]+)&password=([^&]+)/i);
+    if (match) {
+      return { baseUrl: match[1], username: match[2], password: match[3] };
+    }
+  } catch (e) {
+    // URL parser failed, try regex
+    const match = url.match(/(https?:\/\/[^\/]+)\/.*username=([^&]+)&password=([^&]+)/i);
+    if (match) {
+      return { baseUrl: match[1], username: match[2], password: match[3] };
+    }
+  }
+  return null;
+}
+
+export function detectEPGUrl(sourceUrl) {
+  if (!sourceUrl) return null;
+  
+  // Xtream Codes EPG pattern
+  const xtream = extractXtreamCredentials(sourceUrl);
+  if (xtream) {
+    return {
+      type: 'xtream',
+      url: `${xtream.baseUrl}/xmltv.php?username=${xtream.username}&password=${xtream.password}`
+    };
+  }
+  
+  // Direct XMLTV link
+  if (sourceUrl.includes('.xml') || sourceUrl.includes('.gz')) {
+    return { type: 'direct', url: sourceUrl };
+  }
+  
+  return null;
 }
 
 export async function refreshEPG(sourceUrl, force = false) {

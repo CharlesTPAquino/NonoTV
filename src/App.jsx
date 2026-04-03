@@ -37,6 +37,17 @@ export default function App() {
   const [settingsTab,      setSettingsTab]      = useState('sources');
   const [channelListOpen, setChannelListOpen] = useState(false);
 
+  // Background dinâmico baseado na categoria
+  const ambientClass = useMemo(() => {
+    switch(activeCategory) {
+      case 'live': return 'from-red-950/20 via-[#050505] to-black';
+      case 'movie': return 'from-orange-950/20 via-[#050505] to-black';
+      case 'series': return 'from-indigo-950/20 via-[#050505] to-black';
+      case 'podcasts': return 'from-emerald-950/20 via-[#050505] to-black';
+      default: return 'from-[#1a1a1a]/20 via-[#050505] to-black';
+    }
+  }, [activeCategory]);
+
   console.log('[NonoTV] App renderizado');
 
   const { activeChannel, showPlayer, playChannel, closePlayer } = usePlayer();
@@ -50,16 +61,13 @@ export default function App() {
 
   const { validity, isValidating, validateAll } = useChannelValidator(channels);
 
-  // Lógica de exibição resiliente: Prioriza canais da fonte, fallback para locais
   const displayChannelsList = useMemo(() => {
     if (channels && channels.length > 0) return channels;
     return LOCAL_CHANNELS;
   }, [channels]);
 
-  // Inicializações
   useEffect(() => { initSpatialNavigation(); }, []);
 
-  // Atalhos de teclado
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Guide' || (e.key === 'Enter' && e.shiftKey)) {
@@ -101,15 +109,17 @@ export default function App() {
     }
   }, [filteredChannels]);
 
+  // Se estiver na Home (All), usamos o scroll do App. 
+  // Se estiver em categoria (Grid Virtualizada), o scroll é interno à Grid.
+  const isHome = activeCategory === 'All' && activeGroup === 'All' && !search;
+
   return (
     <div className={`h-screen w-screen bg-[#050505] text-white font-inter overflow-hidden relative selection:bg-[#F7941D]/30 transition-all duration-1000 bg-gradient-to-br ${ambientClass}`}>
 
-      {/* Decorative background elements */}
       <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-[#F7941D]/5 blur-[120px] rounded-full pointer-events-none" />
       <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-500/5 blur-[120px] rounded-full pointer-events-none" />
 
       <div className="h-full w-full relative z-10 flex">
-        {/* Sidebar */}
         <Sidebar 
           activeCategory={activeCategory} 
           setActiveCategory={(cat) => { setActiveCategory(cat); setActiveGroup('All'); }} 
@@ -121,7 +131,6 @@ export default function App() {
           setSearch={setSearch}
         />
 
-        {/* Main Content Area */}
         <main className="flex-1 h-full overflow-hidden flex flex-col relative pb-16 md:pb-0 lg:ml-[88px]">
           
           <Navbar 
@@ -130,10 +139,9 @@ export default function App() {
             onOpenSettings={() => { setSettingsTab('sources'); setSettingsOpen(true); }}
           />
 
-          <div className="flex-1 overflow-y-auto custom-scrollbar px-6 md:px-12 pt-4 pb-32">
+          <div className={`flex-1 ${isHome ? 'overflow-y-auto' : 'overflow-hidden'} custom-scrollbar px-6 md:px-12 pt-4 pb-32`}>
             
-            {/* Header */}
-            <header className="mb-12 mt-4">
+            <header className="mb-12 mt-4 shrink-0">
               <h1 className="text-3xl font-black text-white uppercase tracking-tighter">
                 {activeCategory === 'podcasts' ? 'Podcasts' : 
                  activeCategory === 'live' ? 'TV Ao Vivo' :
@@ -145,17 +153,15 @@ export default function App() {
               </p>
             </header>
 
-            {/* Error Notification */}
             {error && (
-              <div className="p-6 mb-8 bg-red-500/10 border border-red-500/20 rounded-3xl flex items-center gap-6 animate-in slide-in-from-top duration-500">
+              <div className="p-6 mb-8 bg-red-500/10 border border-red-500/20 rounded-3xl flex items-center gap-6 animate-in slide-in-from-top duration-500 shrink-0">
                  <AlertCircle className="text-red-500 shrink-0" size={24} />
                  <p className="text-white/60 text-xs font-bold uppercase tracking-widest flex-1">{error}</p>
                  <button onClick={() => selectSource(null)} className="px-4 py-2 bg-white text-black text-[10px] font-black rounded-xl uppercase tracking-widest">Restaurar</button>
               </div>
             )}
 
-            {/* Content Display */}
-            <div className="animate-in fade-in duration-1000">
+            <div className="flex-1 min-h-0 animate-in fade-in duration-1000">
               {activeCategory === 'podcasts' ? (
                 <Suspense fallback={<ChannelGridSkeleton />}>
                   <PodcastGrid onSelectPodcast={setActivePodcast} />
@@ -173,7 +179,6 @@ export default function App() {
               )}
             </div>
 
-            {/* Sync Overlay */}
             {isLoading && filteredChannels.length === 0 && (
               <div className="flex flex-col items-center justify-center py-40">
                 <div className="w-16 h-16 border-4 border-white/5 border-t-[#F7941D] rounded-full animate-spin mb-6" />
@@ -184,12 +189,10 @@ export default function App() {
         </main>
       </div>
 
-      {/* Video Player - carregado diretamente */}
       {showPlayer && activeChannel && (
         <VideoPlayerMinimal channel={activeChannel} channels={filteredChannels} onClose={closePlayer} />
       )}
 
-      {/* Overlays com Suspense */}
       <Suspense fallback={null}>
         {activePodcast && (
           <PodcastPlayer podcast={activePodcast} onClose={() => setActivePodcast(null)} />
@@ -212,16 +215,10 @@ export default function App() {
         />
       </Suspense>
 
-      {/* Sync Toast */}
       {syncStatus && !error && (
         <div className="fixed bottom-10 right-10 bg-white/5 backdrop-blur-3xl border border-white/10 rounded-2xl px-6 py-4 flex items-center gap-4 z-[200] animate-in slide-in-from-right-10 shadow-2xl">
           <RefreshCw size={16} className={`text-[#F7941D] ${isLoading ? 'animate-spin' : ''}`} />
           <span className="text-[10px] font-black uppercase tracking-widest text-[#F7941D]">{syncStatus}</span>
-        </div>
-      )}
-    </div>
-  );
-}x] font-black uppercase tracking-widest text-[#F7941D]">{syncStatus}</span>
         </div>
       )}
     </div>
