@@ -5,7 +5,7 @@ import { CHANNELS as LOCAL_CHANNELS } from '../data/channels';
 import { SyncManager } from '../services/SyncManager';
 import { retryService } from '../services/RetryService';
 import { prefetchService } from '../services/PrefetchService';
-import { testAllSources, clearHealthCache } from '../services/ServerHealthService';
+import { testSourcesParallel, sortSourcesByPerformance, getSourceStatus, testSourceSmart, getMetrics, resetMetrics } from '../services/SmartServerOrchestrator';
 import ChannelCacheDB from '../services/ChannelCacheDB';
 import { SmartCache } from '../services/SmartCache';
 import SmartPrefetchService from '../services/SmartPrefetchService';
@@ -31,6 +31,77 @@ export const SourceProvider = ({ children }) => {
     setHistory(SyncManager.getHistory());
     setSourceHealth(SyncManager.getSourceHealth());
   }, []);
+
+  const [serverStatuses, setServerStatuses] = useState({});
+  const [fallbackQueue, setFallbackQueue] = useState([]);
+
+  const runHealthCheck = useCallback(async () => {
+    setSyncStatus('Verificando servidores...');
+    const statuses = await testSourcesParallel(sources, (current, total, name) => {
+      setSyncStatus(`Verificando ${current}/${total}: ${name}`);
+    });
+    setServerStatuses(statuses);
+    setSyncStatus(null);
+    return statuses;
+  }, [sources]);
+
+  const checkSourceHealth = useCallback(async (source) => {
+    return await testSourceSmart(source);
+  }, []);
+
+  const selectSourceWithFallback = useCallback(async (source) => {
+    if (!source) {
+      setActiveSource(null);
+      setChannels(LOCAL_CHANNELS);
+      localStorage.removeItem('activeSourceUrl');
+      setError(null);
+      return;
+    }
+
+    const sorted = sortSourcesByPerformance(sources);
+    const currentIndex = sorted.findIndex(s => s.id === source.id);
+    const sourcesToTry = sorted.slice(currentIndex);
+
+    let lastError = null;
+    
+    for (const trySource of sourcesToTry) {
+      try {
+        setSyncStatus(`Tentando: ${trySource.name}...`);
+        console.log('[SourceContext] Tentando fonte com fallback:', trySource.name);
+        
+        await selectSource(trySource);
+        return;
+      } catch (err) {
+        lastError = err;
+        console.log('[SourceContext] Fonte falhou, tentando próxima:', trySource.name, err.message);
+        setSyncStatus(`Falhou, tentando próximo...`);
+      }
+    }
+
+    setError(`Nenhum servidor funcionou. Último erro: ${lastError?.message}`);
+    setChannels(LOCAL_CHANNELS);
+  }, [sources]);
+
+  const autoSelectBestSource = useCallback(async () => {
+    setSyncStatus('Selecionando melhor servidor...');
+    
+    const sorted = sortSourcesByPerformance(sources);
+    const healthStatuses = await testSourcesParallel(sorted.slice(0, 10), (current, total) => {
+      setSyncStatus(`Testando ${current}/${total}...`);
+    });
+    
+    const workingSource = sorted.find(s => healthStatuses[s.id]?.online);
+    
+    if (workingSource) {
+      setSyncStatus(`Melhor servidor: ${workingSource.name}`);
+      setTimeout(() => setSyncStatus(null), 1500);
+      await selectSource(workingSource);
+    } else {
+      setSyncStatus('Nenhum servidor online, usando primeiro da lista');
+      setTimeout(() => setSyncStatus(null), 2000);
+      await selectSource(sorted[0]);
+    }
+  }, [sources]);
 
   // Health check manual via Settings > Status
   // Desabilitado automático para evitar lentidão na inicialização
@@ -103,11 +174,22 @@ export const SourceProvider = ({ children }) => {
 
       // Auditoria: Garantir que apenas canais válidos entrem no state
       const validChannels = parsed.filter(ch => ch && ch.name && ch.name.trim());
-      console.log(`[SourceContext] ${validChannels.length} canais válidos carregados de ${parsed.length} totais.`);
+      console.log(`[SourceContext] ${validChannels.length} canais válidos carregados.`);
       
-      if (validChannels.length === 0) throw new Error('Nenhum canal válido encontrado na lista');
+      if (validChannels.length === 0) throw new Error('Nenhum canal válido encontrado');
 
-      setChannels(validChannels);
+      // CARREGAMENTO PROGRESSIVO: 
+      // Se a lista for muito grande (> 2000), carregamos os primeiros 1000 (Live) 
+      // e depois o resto para não travar a UI
+      if (validChannels.length > 2000) {
+        setChannels(validChannels.slice(0, 1000));
+        setTimeout(() => {
+          setChannels(validChannels);
+          console.log('[SourceContext] Lista completa carregada em background');
+        }, 1500);
+      } else {
+        setChannels(validChannels);
+      }
 
       await SmartCache.set(source.id, null, validChannels, source.url, source.name);
 
@@ -304,7 +386,16 @@ export const SourceProvider = ({ children }) => {
       resetSourceStatus,
       getSettings,
       updateSettings,
-      smartPrefetch: SmartPrefetchService
+      smartPrefetch: SmartPrefetchService,
+      serverStatuses,
+      runHealthCheck,
+      checkSourceHealth,
+      sortedSources: () => sortSourcesByPerformance(sources),
+      getServerStatus: (id) => getSourceStatus(id),
+      selectSourceWithFallback,
+      autoSelectBestSource,
+      getConnectionMetrics: () => getMetrics(),
+      resetConnectionMetrics: () => resetMetrics()
     }}>
       {children}
     </SourceContext.Provider>

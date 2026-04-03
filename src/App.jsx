@@ -102,7 +102,11 @@ export default function App() {
   }, [filteredChannels]);
 
   return (
-    <div className="h-screen w-screen bg-[#050505] text-white font-inter overflow-hidden relative selection:bg-[#F7941D]/30">
+    <div className={`h-screen w-screen bg-[#050505] text-white font-inter overflow-hidden relative selection:bg-[#F7941D]/30 transition-all duration-1000 bg-gradient-to-br ${ambientClass}`}>
+
+      {/* Decorative background elements */}
+      <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-[#F7941D]/5 blur-[120px] rounded-full pointer-events-none" />
+      <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-500/5 blur-[120px] rounded-full pointer-events-none" />
 
       <div className="h-full w-full relative z-10 flex">
         {/* Sidebar */}
@@ -213,6 +217,11 @@ export default function App() {
         <div className="fixed bottom-10 right-10 bg-white/5 backdrop-blur-3xl border border-white/10 rounded-2xl px-6 py-4 flex items-center gap-4 z-[200] animate-in slide-in-from-right-10 shadow-2xl">
           <RefreshCw size={16} className={`text-[#F7941D] ${isLoading ? 'animate-spin' : ''}`} />
           <span className="text-[10px] font-black uppercase tracking-widest text-[#F7941D]">{syncStatus}</span>
+        </div>
+      )}
+    </div>
+  );
+}x] font-black uppercase tracking-widest text-[#F7941D]">{syncStatus}</span>
         </div>
       )}
     </div>

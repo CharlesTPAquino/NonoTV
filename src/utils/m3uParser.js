@@ -1,14 +1,24 @@
 /**
- * NonoTV — M3U Parser "Safe Mode"
- * Foco total na compatibilidade com APKs Android TV
+ * NonoTV — M3U Parser Otimizado
+ * Processamento em chunks para listas grandes
  */
-export function parseM3U(content) {
+
+export function parseM3U(content, onProgress) {
   if (!content) return [];
 
   const lines = content.split('\n');
-  const items = [];
+  const totalLines = lines.length;
+  const result = {
+    live: [],
+    movie: [],
+    series: []
+  };
+  
   let currentItem = null;
   const seriesMap = new Map();
+  
+  const CHUNK_SIZE = 1000;
+  let processedLines = 0;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
@@ -16,63 +26,53 @@ export function parseM3U(content) {
 
     if (line.startsWith('#EXTINF:')) {
       currentItem = {};
-      
-      // Captura atributos padrão
-      const logoMatch  = line.match(/tvg-logo="([^"]+)"/i);
+      const logoMatch = line.match(/tvg-logo="([^"]+)"/i);
       const groupMatch = line.match(/group-title="([^"]+)"/i);
+      const commaIdx = line.indexOf(',');
+      const rawName = commaIdx > -1 ? line.substring(commaIdx + 1).trim() : 'Canal Sem Nome';
       
-      // Captura o NOME REAL (Sempre após a PRIMEIRA vírgula da linha #EXTINF que não esteja entre aspas)
-      let commaIdx = -1;
-      let inQuotes = false;
-      for (let j = 0; j < line.length; j++) {
-        if (line[j] === '"') inQuotes = !inQuotes;
-        if (line[j] === ',' && !inQuotes) {
-          commaIdx = j;
-          break;
-        }
-      }
-      const rawName  = commaIdx > -1 ? line.substring(commaIdx + 1).trim() : 'Canal Sem Nome';
-      
-      currentItem.name  = rawName;
+      currentItem.name = rawName;
       currentItem.group = (groupMatch ? groupMatch[1] : 'Geral').trim() || 'Geral';
-      currentItem.logo  = logoMatch ? logoMatch[1] : '';
-      currentItem.id    = Math.random().toString(36).substring(2, 9) + Date.now();
+      currentItem.logo = logoMatch ? logoMatch[1] : '';
+      currentItem.id = `ch_${i}_${Math.random().toString(36).substring(2, 5)}`;
 
     } else if (line.startsWith('http') && currentItem) {
       currentItem.url = line.trim();
-      currentItem.type = detectType(currentItem);
+      const type = detectType(currentItem);
+      currentItem.type = type;
 
-      // Agrupamento Inteligente de Séries
-      if (currentItem.type === 'series') {
+      if (type === 'series') {
         const baseName = extractSeriesBase(currentItem.name);
         if (!seriesMap.has(baseName)) {
-          seriesMap.set(baseName, { 
-            ...currentItem, 
-            name: currentItem.name, 
-            originalName: currentItem.name,
-            isSeries: true, 
-            episodes: [{ ...currentItem, name: currentItem.name }] 
-          });
+          const serie = { ...currentItem, isSeries: true, episodes: [currentItem] };
+          seriesMap.set(baseName, serie);
+          result.series.push(serie);
         } else {
-          seriesMap.get(baseName).episodes.push({ ...currentItem, name: currentItem.name });
+          seriesMap.get(baseName).episodes.push(currentItem);
         }
+      } else if (type === 'movie') {
+        result.movie.push(currentItem);
       } else {
-        items.push(currentItem);
+        result.live.push(currentItem);
       }
       currentItem = null;
     }
-  }
 
-  // Adiciona as séries processadas ao final da lista
-  seriesMap.forEach(serie => items.push(serie));
-  return items;
+    processedLines++;
+    if (onProgress && processedLines % CHUNK_SIZE === 0) {
+      onProgress(processedLines, totalLines);
+    }
+  }
+  
+  // Retornar flat list mas priorizando LIVE
+  return [...result.live, ...result.movie, ...result.series];
 }
 
 function detectType(c) {
   if (!c) return 'live';
   const group = (c.group || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "");
-  const name  = (c.name || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "");
-  const url   = (c.url || '').toLowerCase();
+  const name = (c.name || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "");
+  const url = (c.url || '').toLowerCase();
 
   if (group.includes('SERIE') || name.includes('S0') || url.includes('/series/')) return 'series';
   if (group.includes('FILME') || group.includes('VOD') || url.includes('/movie/')) return 'movie';
@@ -82,6 +82,62 @@ function detectType(c) {
 }
 
 function extractSeriesBase(name) {
-  // Simplificado para garantir que não quebre nomes complexos
   return name.replace(/\s*[-–|].*/i, '').trim();
+}
+
+export function parseM3UFast(content) {
+  if (!content) return [];
+  
+  const items = [];
+  const lines = content.split('\n');
+  
+  let currentItem = null;
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line || !line.startsWith('#EXTINF:')) continue;
+    
+    const urlLine = lines[i + 1]?.trim();
+    if (!urlLine || !urlLine.startsWith('http')) continue;
+    
+    const logoMatch = line.match(/tvg-logo="([^"]+)"/i);
+    const groupMatch = line.match(/group-title="([^"]+)"/i);
+    const commaIdx = line.indexOf(',');
+    const name = commaIdx > -1 ? line.substring(commaIdx + 1).trim() : 'Canal';
+    
+    items.push({
+      id: `ch_${Math.random().toString(36).substring(2, 9)}${i}`,
+      name,
+      group: groupMatch ? groupMatch[1] : 'Geral',
+      logo: logoMatch ? logoMatch[1] : '',
+      url: urlLine,
+      type: 'live'
+    });
+    
+    i++;
+  }
+  
+  return items;
+}
+
+export function groupChannelsByCategory(channels) {
+  const categories = {};
+  
+  for (const channel of channels) {
+    const group = channel.group || 'Geral';
+    if (!categories[group]) {
+      categories[group] = [];
+    }
+    categories[group].push(channel);
+  }
+  
+  return categories;
+}
+
+export function sortChannels(channels, sortBy = 'name') {
+  return [...channels].sort((a, b) => {
+    if (sortBy === 'name') return a.name.localeCompare(b.name);
+    if (sortBy === 'group') return (a.group || '').localeCompare(b.group || '');
+    return 0;
+  });
 }
