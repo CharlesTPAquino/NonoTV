@@ -1,7 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
+import { FixedSizeList as List } from 'react-window';
+import AutoSizer from 'react-virtualized-auto-sizer';
 import ChannelCard from './ChannelCard';
 import HeroSection from './HeroSection';
 import ChannelCarousel from './ChannelCarousel';
+import { ChannelGridSkeleton } from '../UI/Skeleton';
+import { ChannelGridSkeleton, HeroSkeleton } from '../UI/Skeleton';
 import { LayoutGrid, Tv, Clapperboard, MonitorPlay, WifiOff, Search, Compass, ChevronRight } from 'lucide-react';
 
 const CATEGORY_META = {
@@ -12,7 +16,6 @@ const CATEGORY_META = {
 };
 
 export default function ChannelGrid({ channels, activeGroup, activeCategory, setActiveGroup, groups, onPlay, search, isPlayerOpen, channelValidity = {}, isValidating = false }) {
-  const [limit, setLimit] = useState(50);
   const isSearching = search && search.length > 0;
 
   const { groupedAll, featured, standard } = useMemo(() => {
@@ -29,7 +32,7 @@ export default function ChannelGrid({ channels, activeGroup, activeCategory, set
 
       // Home Mode: Separar destaques e agrupar
       const featuredList = validChannels.filter(c => c.logo && c.group).slice(0, 15);
-      const standardList = validChannels; // Mostrar todos no standard para evitar que fiquem ocultos
+      const standardList = validChannels; 
       
       const grouped = {};
       validChannels.forEach(ch => {
@@ -45,10 +48,39 @@ export default function ChannelGrid({ channels, activeGroup, activeCategory, set
     }
   }, [channels, activeCategory, isSearching]);
 
-  const displayChannels = standard.slice(0, limit);
   const isHome = activeCategory === 'All' && activeGroup === 'All' && !isSearching;
 
-  if (displayChannels.length === 0 && !isHome) {
+  const isPosterContent = activeCategory === 'movie' || activeCategory === 'series' || activeCategory === 'podcasts';
+
+  // Componente de Linha Virtualizada
+  const Row = useCallback(({ index, style, data }) => {
+    const { itemsPerRow, rowItems, onPlay, channelValidity, isPlayerOpen } = data;
+    const items = rowItems[index];
+
+    return (
+      <div style={{ ...style, display: 'flex', gap: '24px', paddingLeft: '8px', paddingRight: '8px' }}>
+        {items.map((ch) => (
+          <div key={ch.id} style={{ width: `calc((100% / ${itemsPerRow}) - 20px)` }}>
+            <ChannelCard 
+              channel={ch} 
+              onPlay={() => onPlay(ch)} 
+              isValid={channelValidity[ch.id]} 
+              isPlayerOpen={isPlayerOpen} 
+            />
+          </div>
+        ))}
+      </div>
+    );
+  }, []);
+
+  if (standard.length === 0 && !isHome) {
+    if (isValidating || (channels.length === 0 && !isSearching)) {
+      return (
+        <div className="py-12 animate-in fade-in duration-700">
+           <ChannelGridSkeleton isPoster={isPosterContent} count={18} />
+        </div>
+      );
+    }
     const meta = CATEGORY_META[activeCategory];
     const Icon = meta?.icon || Tv;
     return (
@@ -67,19 +99,14 @@ export default function ChannelGrid({ channels, activeGroup, activeCategory, set
             {isSearching ? `Não encontramos resultados para "${search}" em nosso sinal atual.` : meta?.hint || 'Conecte seu servidor IPTV para liberar o acesso Elite.'}
           </p>
         </div>
-        {!isSearching && activeCategory !== 'All' && (
-          <div className="px-6 py-3 bg-[#F7941D] text-black rounded-2xl shadow-[0_0_30px_rgba(247,148,29,0.3)] animate-bounce-slow">
-            <span className="text-[10px] font-black uppercase tracking-widest">Aguardando Sintonização...</span>
-          </div>
-        )}
       </div>
     );
   }
 
   return (
-    <div className={`transition-all duration-1000 ease-in-out ${isPlayerOpen ? 'opacity-20 scale-95 blur-2xl pointer-events-none' : 'opacity-100 scale-100'}`}>
+    <div className={`h-full transition-all duration-1000 ease-in-out ${isPlayerOpen ? 'opacity-20 scale-95 blur-2xl pointer-events-none' : 'opacity-100 scale-100'}`}>
       {isHome ? (
-        <div className="space-y-24 animate-in fade-in duration-1000">
+        <div className="space-y-24 animate-in fade-in duration-1000 overflow-y-auto h-full pr-4 custom-scrollbar">
           <HeroSection channels={[...featured, ...standard]} onPlay={onPlay} validity={channelValidity} isPlayerOpen={isPlayerOpen} />
           
           <div className="space-y-20 pb-32">
@@ -107,9 +134,9 @@ export default function ChannelGrid({ channels, activeGroup, activeCategory, set
           </div>
         </div>
       ) : (
-        <div className="animate-in slide-in-from-bottom-10 duration-1000">
+        <div className="flex flex-col h-full animate-in slide-in-from-bottom-10 duration-1000">
           {/* Header Exploration */}
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16 px-2 md:px-0">
+          <div className="shrink-0 flex flex-col md:flex-row md:items-end justify-between gap-8 mb-8 px-2 md:px-0">
             <div className="max-w-2xl">
               <div className="flex items-center gap-3 text-[#F7941D] mb-4">
                 <Compass size={18} className="animate-spin-slow" />
@@ -123,7 +150,7 @@ export default function ChannelGrid({ channels, activeGroup, activeCategory, set
               <div className="flex items-center gap-4 mt-6">
                  <div className="h-px w-12 bg-[#F7941D]/50" />
                  <p className="text-white/20 text-[10px] font-black uppercase tracking-[0.3em]">
-                   {displayChannels.length} Itens Catalogados
+                   {standard.length} Itens Catalogados
                  </p>
               </div>
             </div>
@@ -133,7 +160,7 @@ export default function ChannelGrid({ channels, activeGroup, activeCategory, set
               {groups.slice(0, 20).map((g, idx) => (
                 <button
                   key={g.id}
-                  onClick={() => { setActiveGroup(g.name); setLimit(50); }}
+                  onClick={() => setActiveGroup(g.name)}
                   className={`relative px-8 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border animate-in fade-in slide-in-from-right-4
                     ${activeGroup === g.name 
                       ? 'bg-white text-black border-white shadow-[0_15px_40px_rgba(255,255,255,0.2)] scale-105' 
@@ -147,46 +174,47 @@ export default function ChannelGrid({ channels, activeGroup, activeCategory, set
             </div>
           </div>
 
-          {/* Grid Layout Ultra */}
-          {(() => {
-            const isPosterContent = activeCategory === 'movie' || activeCategory === 'series' || activeCategory === 'podcasts';
-            const gridClass = isPosterContent
-              ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-6 md:gap-8'
-              : 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-5 md:gap-6';
-            
-            return (
-              <div className={gridClass}>
-                {displayChannels.map((ch, idx) => (
-                  <div 
-                    key={ch.id} 
-                    className="animate-in fade-in zoom-in-95 duration-500" 
-                    style={{ animationDelay: `${(idx % 20) * 30}ms` }}
-                  >
-                    <ChannelCard channel={ch} onPlay={() => onPlay(ch)} isValid={channelValidity[ch.id]} isPlayerOpen={isPlayerOpen} />
-                  </div>
-                ))}
-              </div>
-            );
-          })()}
+          {/* Virtualized Grid Layout */}
+          <div className="flex-1 min-h-0">
+            <AutoSizer>
+              {({ height, width }) => {
+                // Cálculo dinâmico de colunas baseado na largura
+                const minWidth = isPosterContent ? 160 : 240; 
+                const itemsPerRow = Math.max(2, Math.floor(width / minWidth));
+                
+                // Agrupamento de canais em linhas
+                const rowItems = [];
+                for (let i = 0; i < standard.length; i += itemsPerRow) {
+                  rowItems.push(standard.slice(i, i + itemsPerRow));
+                }
 
-          {/* Infinite Scroll / Load More Premium */}
-          {standard.length > limit && (
-            <div className="mt-24 flex flex-col items-center justify-center pb-32 space-y-6">
-              <div className="h-px w-full max-w-xs bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-              <button 
-                onClick={() => setLimit(prev => prev + 50)} 
-                className="group relative px-16 py-6 bg-[#050505] border border-white/10 rounded-[2.5rem] overflow-hidden transition-all hover:border-[#F7941D]/50 reflective-glass shadow-2xl"
-              >
-                <div className="absolute inset-0 bg-gradient-to-br from-[#F7941D]/0 via-transparent to-[#F7941D]/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                <span className="relative text-xs font-black uppercase tracking-[0.4em] text-white/60 group-hover:text-[#F7941D] transition-colors">
-                  Expandir Sinal
-                </span>
-              </button>
-              <p className="text-white/10 text-[9px] font-bold uppercase tracking-widest">
-                Mostrando {limit} de {standard.length} resultados
-              </p>
-            </div>
-          )}
+                // Altura da linha baseada no aspecto (16:9 vs 2:3)
+                const rowHeight = isPosterContent 
+                  ? (width / itemsPerRow) * 1.5 + 40 // Poster 2:3
+                  : (width / itemsPerRow) * 0.5625 + 60; // Live 16:9
+
+                return (
+                  <List
+                    height={height}
+                    width={width}
+                    itemCount={rowItems.length}
+                    itemSize={rowHeight}
+                    itemData={{
+                      itemsPerRow,
+                      rowItems,
+                      onPlay,
+                      channelValidity,
+                      isPlayerOpen
+                    }}
+                    className="no-scrollbar"
+                    overscanCount={5}
+                  >
+                    {Row}
+                  </List>
+                );
+              }}
+            </AutoSizer>
+          </div>
         </div>
       )}
     </div>

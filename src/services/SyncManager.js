@@ -14,6 +14,7 @@ const DEFAULT_CACHE_CONFIG = {
 };
 
 import { parseM3U } from '../utils/m3uParser';
+import { CloudSyncService } from './CloudSyncService';
 
 export const SyncManager = {
   getFavorites() {
@@ -38,6 +39,11 @@ export const SyncManager = {
         addedAt: Date.now()
       });
       localStorage.setItem(STORAGE_KEYS.FAVORITES, JSON.stringify(favorites));
+      
+      // Sincronização em nuvem assíncrona
+      CloudSyncService.syncFavorites(favorites).catch(err => 
+        console.warn('[SyncManager] Falha no sync cloud de favoritos:', err)
+      );
     }
     return favorites;
   },
@@ -45,6 +51,12 @@ export const SyncManager = {
   removeFavorite(channelId) {
     const favorites = this.getFavorites().filter(f => f.id !== channelId);
     localStorage.setItem(STORAGE_KEYS.FAVORITES, JSON.stringify(favorites));
+    
+    // Sincronização em nuvem assíncrona
+    CloudSyncService.syncFavorites(favorites).catch(err => 
+      console.warn('[SyncManager] Falha no sync cloud de favoritos:', err)
+    );
+    
     return favorites;
   },
 
@@ -84,11 +96,23 @@ export const SyncManager = {
     
     const trimmed = history.slice(0, 50);
     localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(trimmed));
+    
+    // Sincronização em nuvem assíncrona (com debounce implícito pela frequência de chamadas)
+    CloudSyncService.syncHistory(trimmed).catch(err => 
+      console.warn('[SyncManager] Falha no sync cloud de histórico:', err)
+    );
+    
     return trimmed;
   },
 
   clearHistory() {
     localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify([]));
+    
+    // Limpa na nuvem também
+    CloudSyncService.syncHistory([]).catch(err => 
+      console.warn('[SyncManager] Falha ao limpar histórico na nuvem:', err)
+    );
+    
     return [];
   },
 
