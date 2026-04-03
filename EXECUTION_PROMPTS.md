@@ -1,39 +1,33 @@
-# 🚀 PROMPTS DE EXECUÇÃO: IPTV ELITE ULTRA 4K
+# 🎯 Missões de Desenvolvimento - NonoTV v4.2+
 
-Siga cada prompt abaixo, um por um, para implementar o plano de fidelidade visual às capturas de tela.
-
----
-
-### 🎨 1. TEMA GLOBAL & FUNDO REFLEXIVO
-**Prompt:**
-> "No arquivo `src/index.css`, implemente um tema ultra-escuro usando a base `#050505`. Crie uma classe `.reflective-glass` que utilize `backdrop-filter: blur(25px) saturate(180%)` e um gradiente linear de 135 graus para simular o reflexo de luz em uma tela de TV de vidro. Adicione uma animação de brilho sutil (`shimmer`) no fundo do App (`App.jsx`) usando gradientes radiais que pulsam levemente, simulando a luz ambiente de uma sala de cinema refletida no painel."
+Estes prompts são projetados para IA de codificação e desenvolvedores. Use-os para iniciar tarefas específicas.
 
 ---
 
-### 📂 2. NAVEGAÇÃO HÍBRIDA (SIDEBAR & TOP TABS)
-**Prompt:**
-> "Refatore o componente `Sidebar.jsx` para ser um 'dock' lateral de apenas 72px de largura no desktop, contendo apenas ícones minimalistas da Lucide. No mobile, transforme-o em uma barra de navegação inferior (Bottom Nav) fixa. No `Navbar.jsx`, implemente um sistema de 'Top Tabs' similar ao da Netflix (Recomendado, Filmes, Séries, Ao Vivo), garantindo que a aba ativa tenha um indicador de brilho neon laranja (#F7941D) na parte inferior."
+### 🛡️ Auditoria de Impacto (AI) - MANDATÓRIO
+> "Sempre que uma instrução solicitar mudanças nas configurações estruturais ou de design do projeto IPTV, devo realizar a seguinte Auditoria de Impacto (AI):
+> 1. Evolução vs. Legado: O que exatamente melhora na percepção do usuário final?
+> 2. Custo de Recurso: Qual o impacto em RAM, CPU e Tempo de Carregamento? (Trazer estimativas).
+> 3. Risco de Colapso: Quais as 3 principais formas dessa mudança quebrar o app em hardware limitado (TV Boxes)?
+> 4. Variáveis de Reversão: Como voltamos ao estado anterior se a implementação falhar em produção?
+> 5. Conflito de Design System: A mudança respeita a hierarquia visual (Live 16:9, VOD 2:3, Glassmorphism)?
+> A implementação só deve prosseguir após o detalhamento desses pontos."
 
 ---
 
-### 🎬 3. HOME & CARROSSEL VOD PREMIUM (IMAGEM 5)
-**Prompt:**
-> "No componente `HeroSection.jsx`, use a classe `.reflective-glass` para o container principal. O layout deve mostrar o título em fonte `Outfit Black` gigante (acima de 72px) com um leve drop-shadow e as categorias do conteúdo em uma pílula flutuante. No `ChannelCarousel.jsx`, remova o fundo dos cards e adicione uma borda sutil de 1px apenas no foco. O título da categoria (ex: 'O mais novo') deve ter uma borda lateral grossa em laranja e ser acompanhado por um contador discreto de itens."
+### 🚀 Missão: Virtualização de Grid (Alta Prioridade)
+> "Siga o plano de otimização de performance. Implemente a biblioteca `react-window` ou `react-virtuoso` no componente `ChannelGrid.jsx`. 
+> **Desafio:** A grid deve suportar colunas dinâmicas (responsividade) e dois tipos de layouts de card (16:9 p/ Live e 2:3 p/ VOD) sem quebrar o cálculo de altura dos itens virtualizados.
+> **Objetivo:** Scroll fluído (60fps) em listas de 50.000+ canais."
 
 ---
 
-### 📡 4. LIVE TV & INTEGRAÇÃO DE EPG REAL
-**Prompt:**
-> "Crie o arquivo `src/services/EPGService.js`. Implemente uma função `fetchEPG(sourceUrl)` que detecte o tipo de servidor (Xtream Codes/M3U) e busque o arquivo XMLTV correspondente (ex: trocando `m3u_plus` por `xmltv` na URL). No `VideoPlayer.jsx`, adicione uma barra de progresso horizontal que mostre 'Agora' e 'Próximo' para o canal atual, usando dados reais vindos desse serviço em vez de mocks."
+### 🔍 Missão: Debug de Memory Leak (Estabilidade)
+> "Realize uma auditoria profunda no componente `ChannelCard.jsx`. Verifique se as instâncias do `hls.js` estão sendo corretamente destruídas quando o card sai do viewport ou quando o player principal é aberto.
+> **Ação:** Adicione logs detalhados no `useEffect` de cleanup e teste a navegação rápida para observar se o heap de memória cresce indefinidamente."
 
 ---
 
-### 📺 5. PLAYER CINEMATOGRÁFICO (IMAGEM 2)
-**Prompt:**
-> "Redesenhe o overlay de controles em `VideoPlayer.jsx`. Posicione o nome do canal em fonte negrito grande no canto inferior esquerdo. Crie uma linha de botões circulares translúcidos (`reflective-glass`) na parte inferior central contendo ícones para: Voltar, Favorito, Recarregar, EPG, Info e Tela Cheia. Inclua no topo direito um relógio digital e o placar/tempo do jogo se o canal for de esportes (detectado por palavra-chave)."
-
----
-
-### 📱 6. FOCO EM ACESSIBILIDADE & TV/TABLET
-**Prompt:**
-> "Certifique-se de que todos os novos componentes interativos tenham um estado `:focus` que utilize `box-shadow: 0 0 0 4px rgba(247, 148, 29, 0.5)` e um leve `scale(1.1)`. Verifique a navegação espacial (`Spatial Navigation`) para garantir que o foco pule corretamente entre o Sidebar, as Top Tabs e o Grid de Canais usando as setas do controle remoto ou teclado."
+### 🎨 Missão: Skeletons Adaptativos (UI/UX)
+> "Refine o componente `src/components/UI/Skeleton.jsx`. Atualmente ele é genérico.
+> **Tarefa:** Crie `ChannelCardSkeletonLive` (16:9) e `ChannelCardSkeletonVod` (2:3). Integre-os no `ChannelGrid.jsx` para que o usuário sinta a estrutura da página antes mesmo das imagens carregarem."

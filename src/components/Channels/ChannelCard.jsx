@@ -32,8 +32,12 @@ function ChannelCard({ channel, onPlay, isValid, isPlayerOpen }) {
 
   const contentType = getContentType(channel);
   const isPoster = contentType === 'movie' || contentType === 'series';
-  const quality = getQualityBadge(channel.name);
   const isLive = contentType === 'live';
+  const quality = getQualityBadge(channel.name);
+
+  // Layout dinâmico: 16:9 para LIVE, 2:3 para VOD
+  const aspectClass = isLive ? 'aspect-video' : 'aspect-[2/3]';
+  const containerRadius = isLive ? 'rounded-2xl' : 'rounded-[1.5rem] md:rounded-[2rem]';
 
   useEffect(() => {
     if (isPlayerOpen) {
@@ -89,18 +93,17 @@ function ChannelCard({ channel, onPlay, isValid, isPlayerOpen }) {
       onMouseLeave={() => setIsHovered(false)}
       onFocus={() => !isPlayerOpen && setIsHovered(true)}
       onBlur={() => setIsHovered(false)}
-      className={`group relative flex flex-col w-full text-left outline-none transition-all duration-700 select-none ${
-        isHovered ? 'z-30 scale-[1.05] md:scale-[1.08]' : 'z-0 scale-100'
+      className={`group relative flex flex-col w-full text-left outline-none transition-all duration-500 select-none ${
+        isHovered ? 'z-30 scale-[1.05]' : 'z-0 scale-100'
       }`}
     >
-      {/* Main Container - Aspect 2:3 Premium Poster */}
-      <div className="relative aspect-[2/3] w-full rounded-[1.5rem] md:rounded-[2rem] overflow-hidden bg-[#050505] border border-white/5 group-hover:border-white/20 transition-all duration-700 shadow-2xl group-hover:shadow-[0_20px_50px_rgba(0,0,0,0.8)]">
+      {/* Main Container */}
+      <div className={`relative ${aspectClass} w-full ${containerRadius} overflow-hidden bg-[#050505] border border-white/5 group-hover:border-[#F7941D]/50 transition-all duration-500 shadow-2xl group-hover:shadow-[0_0_30px_rgba(247,148,29,0.2)]`}>
         
         {/* Reflection Highlight */}
-        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-white/10 to-transparent pointer-events-none z-30" />
         <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out z-30" />
 
-        {/* Channel Artwork */}
+        {/* Artwork */}
         <div className="absolute inset-0 z-0 flex items-center justify-center">
           {!imgError && channel.logo ? (
             <img
@@ -108,16 +111,14 @@ function ChannelCard({ channel, onPlay, isValid, isPlayerOpen }) {
               alt={channel.name}
               loading="lazy"
               onError={() => setImgError(true)}
-              className={`w-full h-full transition-all duration-1000 ${
-                isPoster ? 'object-cover' : 'object-contain p-8'
+              className={`w-full h-full transition-all duration-700 ${
+                isPoster ? 'object-cover' : 'object-contain p-6'
               } ${isHovered ? 'scale-110 brightness-[0.4] blur-[2px]' : 'scale-100 brightness-[0.85]'}`}
             />
           ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center p-6 bg-gradient-to-br from-[#1C1C1E] to-[#050505]">
-              <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-4 border border-white/10">
-                <Tv className="w-8 h-8 text-white/10" />
-              </div>
-              <span className="text-white/20 text-xs font-black text-center uppercase tracking-widest leading-relaxed line-clamp-3">
+            <div className="w-full h-full flex flex-col items-center justify-center p-4 bg-gradient-to-br from-[#1C1C1E] to-[#050505]">
+              <Tv className="w-8 h-8 text-white/10 mb-2" />
+              <span className="text-white/20 text-[8px] font-black text-center uppercase tracking-widest line-clamp-2">
                 {channel.name}
               </span>
             </div>
@@ -126,99 +127,69 @@ function ChannelCard({ channel, onPlay, isValid, isPlayerOpen }) {
 
         {/* Video Preview Overlay (Live only) */}
         {isHovered && !isPlayerOpen && hlsLoaded && isLive && (
-          <div className="absolute inset-0 z-10 bg-black/40 animate-in fade-in duration-700">
-             <video 
-              ref={videoRef} 
-              muted 
-              autoPlay 
-              playsInline 
-              className="w-full h-full object-cover brightness-[0.6] blur-[1px]" 
-            />
+          <div className="absolute inset-0 z-10 bg-black/40">
+             <video ref={videoRef} muted autoPlay playsInline className="w-full h-full object-cover brightness-[0.6]" />
           </div>
         )}
 
-        {/* Content Overlays - Gradient & Glass */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent z-20" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-transparent z-20" />
+        {/* Dynamic Glow for LIVE */}
+        {isLive && isHovered && (
+          <div className="absolute inset-0 z-20 border-2 border-red-600/50 animate-pulse" />
+        )}
 
-        {/* Badges - Top Area */}
-        <div className="absolute top-4 left-4 z-40 flex flex-col gap-2">
+        {/* Content Overlays */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-20" />
+
+        {/* Badges */}
+        <div className="absolute top-3 left-3 z-40 flex flex-col gap-1.5">
           {isLive && (
-            <div className="flex items-center gap-2 bg-red-600/90 backdrop-blur-xl px-3 py-1.5 rounded-xl shadow-2xl border border-white/20">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
-              </span>
-              <span className="text-white text-[9px] font-black uppercase tracking-[0.2em]">AO VIVO</span>
+            <div className="flex items-center gap-1.5 bg-red-600 px-2 py-1 rounded-lg shadow-xl border border-white/20 pulse-glow">
+              <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+              <span className="text-white text-[8px] font-black uppercase tracking-tighter">AO VIVO</span>
             </div>
           )}
           {contentType === 'movie' && (
-            <div className="flex items-center gap-2 bg-[#F7941D] text-black px-3 py-1.5 rounded-xl shadow-2xl border border-white/20">
-              <Film size={12} className="fill-black" />
-              <span className="text-[9px] font-black uppercase tracking-[0.2em]">FILME</span>
-            </div>
-          )}
-          {contentType === 'series' && (
-            <div className="flex items-center gap-2 bg-indigo-600 text-white px-3 py-1.5 rounded-xl shadow-2xl border border-white/20">
-              <Tv size={12} className="fill-white/20" />
-              <span className="text-[9px] font-black uppercase tracking-[0.2em]">SÉRIE</span>
+            <div className="flex items-center gap-1.5 bg-[#F7941D] text-black px-2 py-1 rounded-lg font-black uppercase tracking-tighter text-[8px]">
+              <Film size={10} className="fill-black" />
+              <span>FILME</span>
             </div>
           )}
         </div>
 
-        {/* Quality Badge - Top Right */}
+        {/* Quality Badge */}
         {quality && (
-          <div className="absolute top-4 right-4 z-40">
-            <div className={`bg-gradient-to-br ${quality.color} ${quality.glow} text-white text-[9px] font-black px-3 py-1.5 rounded-xl shadow-xl border border-white/20 backdrop-blur-md`}>
+          <div className="absolute top-3 right-3 z-40">
+            <div className={`bg-black/60 backdrop-blur-md text-white text-[8px] font-black px-2 py-1 rounded-lg border border-white/10`}>
               {quality.label}
             </div>
           </div>
         )}
 
-        {/* Play Icon - Hover Center */}
-        <div className={`absolute inset-0 z-40 flex items-center justify-center transition-all duration-700 ${
-          isHovered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+        {/* Play Icon */}
+        <div className={`absolute inset-0 z-40 flex items-center justify-center transition-all duration-500 ${
+          isHovered ? 'opacity-100 scale-100' : 'opacity-0 scale-50'
         }`}>
-          <div className="relative group/play">
-            <div className="absolute inset-0 bg-[#F7941D] rounded-full blur-3xl opacity-30 group-hover/play:opacity-60 transition-opacity" />
-            <div className="relative w-16 h-16 md:w-20 md:h-20 rounded-full bg-white text-black flex items-center justify-center shadow-2xl transition-all duration-500 group-hover/play:scale-110 active:scale-90 border-4 border-white/20">
-              <Play size={28} className="fill-black ml-1.5" />
-            </div>
+          <div className={`w-12 h-12 md:w-16 md:h-16 rounded-full bg-white text-black flex items-center justify-center shadow-2xl border-4 border-white/20`}>
+            <Play size={24} className="fill-black ml-1" />
           </div>
         </div>
 
-        {/* Bottom Info Section */}
-        <div className={`absolute bottom-0 left-0 right-0 z-40 p-5 md:p-8 transition-all duration-700 ${
-          isHovered ? 'translate-y-0' : 'translate-y-2'
+        {/* Info Area */}
+        <div className={`absolute bottom-0 left-0 right-0 z-40 p-4 md:p-6 transition-all duration-500 ${
+          isHovered ? 'translate-y-0' : 'translate-y-1'
         }`}>
-          <div className="flex items-center gap-2 mb-2 opacity-0 group-hover:opacity-100 transition-all duration-500 delay-100">
-             <div className="w-1.5 h-1.5 bg-[#F7941D] rounded-full shadow-[0_0_8px_#F7941D]" />
-             <span className="text-[#F7941D] text-[9px] font-black uppercase tracking-[0.3em] truncate max-w-[150px]">
-               {channel.group || 'Elite Stream'}
+          <div className="flex items-center gap-1.5 mb-1">
+             <div className={`w-1 h-1 rounded-full ${isLive ? 'bg-red-500 shadow-[0_0_5px_red]' : 'bg-[#F7941D]'}`} />
+             <span className="text-white/40 text-[8px] font-black uppercase tracking-widest truncate">
+               {channel.group || 'Elite'}
              </span>
           </div>
           
-          <h3 className="font-black text-sm md:text-base lg:text-lg text-white leading-tight tracking-tight drop-shadow-2xl line-clamp-2">
+          <h3 className={`font-black ${isLive ? 'text-xs md:text-sm' : 'text-sm md:text-base'} text-white leading-tight line-clamp-2`}>
             {channel.name}
           </h3>
-
-          <div className="mt-4 flex items-center gap-4 opacity-0 group-hover:opacity-100 transition-all duration-500 delay-200">
-            <div className="flex items-center gap-2 text-white/40 text-[9px] font-bold uppercase tracking-widest">
-              <Clock size={12} />
-              <span>Sinal Estável</span>
-            </div>
-            {isLive && (
-              <div className="flex items-center gap-2 text-[#4ADE80] text-[9px] font-black uppercase tracking-widest">
-                <Zap size={12} className="fill-[#4ADE80]/20" />
-                <span>Online</span>
-              </div>
-            )}
-          </div>
         </div>
       </div>
-      
-      {/* Footer Reflection Effect */}
-      <div className={`absolute -bottom-2 left-1/2 -translate-x-1/2 w-4/5 h-1 bg-white/5 blur-md rounded-full transition-opacity duration-700 ${isHovered ? 'opacity-100' : 'opacity-0'}`} />
     </button>
   );
 }

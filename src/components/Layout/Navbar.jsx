@@ -2,11 +2,11 @@ import React from 'react';
 import { Search, Settings, Bell, User, Zap, LayoutGrid } from 'lucide-react';
 
 const TABS = [
-  { type: 'All',      label: 'Descobrir' },
-  { type: 'live',     label: 'Ao Vivo' },
-  { type: 'movie',    label: 'Filmes' },
-  { type: 'series',   label: 'Séries' },
-  { type: 'podcasts', label: 'Podcasts' },
+  { type: 'All',      label: 'Descobrir', color: '#F7941D' },
+  { type: 'live',     label: 'Ao Vivo',   color: '#EF4444' },
+  { type: 'movie',    label: 'Filmes',    color: '#F97316' },
+  { type: 'series',   label: 'Séries',    color: '#6366F1' },
+  { type: 'podcasts', label: 'Podcasts',  color: '#10B981' },
 ];
 
 export default function Navbar({ search, setSearch, syncStatus, activeCategory, setActiveCategory, onOpenSettings }) {
@@ -23,6 +23,8 @@ export default function Navbar({ search, setSearch, syncStatus, activeCategory, 
         <div className="flex items-center gap-2 md:gap-4 overflow-x-auto scrollbar-hide py-2">
           {TABS.map((tab, idx) => {
             const isActive = activeCategory === tab.type;
+            const accentColor = tab.color;
+            
             return (
               <button
                 key={tab.type}
@@ -34,13 +36,19 @@ export default function Navbar({ search, setSearch, syncStatus, activeCategory, 
                 style={{ animationDelay: `${idx * 100}ms` }}
               >
                 {isActive && (
-                  <div className="absolute inset-0 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-3xl animate-in zoom-in-95 duration-500 shadow-2xl" />
+                  <div 
+                    className="absolute inset-0 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-3xl animate-in zoom-in-95 duration-500 shadow-2xl"
+                    style={{ borderColor: `${accentColor}33` }} 
+                  />
                 )}
                 <span className={`relative z-10 text-xs md:text-sm font-black uppercase tracking-[0.2em] transition-all ${isActive ? 'scale-105' : ''}`}>
                   {tab.label}
                 </span>
                 {isActive && (
-                  <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-8 h-1 bg-[#F7941D] rounded-full shadow-[0_0_15px_#F7941D]" />
+                  <div 
+                    className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full animate-in slide-in-from-bottom-2 duration-500"
+                    style={{ backgroundColor: accentColor, boxShadow: `0 0 15px ${accentColor}` }}
+                  />
                 )}
               </button>
             );

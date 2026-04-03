@@ -1,28 +1,33 @@
-import { Capacitor, CapacitorHttp } from '@capacitor/core';
-
-const PROXY_URL = 'http://localhost:3131';
-
 /**
  * NonoTV Stream Service - Unified Streaming Layer
  * Handles: Live TV (HLS), VOD (MP4), Series with intelligent codec detection
  */
 
+const PUBLIC_PROXIES = [
+  'https://api.allorigins.win/raw?url=',
+  'https://corsproxy.io/?'
+];
+
+const PROXY_URL = 'http://localhost:3131';
+
+const STREAM_TIMEOUT = 25000;
+
 const STREAM_CONFIG = {
   live: {
-    timeout: 30000,
+    timeout: 25000,
     retries: 3,
     headers: {
-      'User-Agent': 'VLC/3.0.18 LibVLC/3.0.18',
+      'User-Agent': 'VLC/3.0.18 NonoTV/4.2',
       'Accept': '*/*',
       'Accept-Language': 'pt-BR,pt;q=0.9',
       'Connection': 'keep-alive'
     }
   },
   vod: {
-    timeout: 60000,
+    timeout: 30000,
     retries: 2,
     headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      'User-Agent': 'VLC/3.0.18 NonoTV/4.2',
       'Accept': 'video/*,*/*',
       'Range': 'bytes=0-'
     }
@@ -86,43 +91,66 @@ export function detectCodec(url, type) {
  * Busca o conteúdo M3U da fonte
  */
 export async function fetchSource(url) {
-  const isNative = Capacitor.isNativePlatform();
+  const isNative = isNativePlatform();
   const config = STREAM_CONFIG.live;
+
+  // Função para tentar fetch direto
+  async function tryDirect() {
+    const res = await fetch(url, { 
+      headers: config.headers,
+      signal: AbortSignal.timeout(STREAM_TIMEOUT)
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.text();
+  }
+
+  // Função para tentar proxies
+  async function tryProxies() {
+    for (const proxy of PUBLIC_PROXIES) {
+      try {
+        const proxyUrl = proxy + encodeURIComponent(url);
+        const res = await fetch(proxyUrl, {
+          headers: config.headers,
+          signal: AbortSignal.timeout(STREAM_TIMEOUT)
+        });
+        if (res.ok) return await res.text();
+      } catch {
+        continue;
+      }
+    }
+    throw new Error('Proxies failed');
+  }
 
   try {
     if (isNative) {
-      console.log('[StreamService] Modo nativo:', url.substring(0, 50) + '...');
-      
-      const response = await CapacitorHttp.get({
-        url,
-        headers: config.headers,
-        connectTimeout: config.timeout,
-        readTimeout: config.timeout
-      });
-      
-      if (response.status !== 200) {
-        throw new Error(`Servidor retornou status ${response.status}`);
+      // APK: fetch direto primeiro, depois proxies
+      console.log('[StreamService] APK modo:', url.substring(0, 40) + '...');
+      try {
+        return await tryDirect();
+      } catch {
+        return await tryProxies();
       }
-      
-      return response.data;
     }
 
-    // Web mode with proxy
+    // Web mode
     if (import.meta.env.DEV) {
       try {
-        const proxyRes = await fetch(`${PROXY_URL}/${encodeURIComponent(url)}`, {
-          headers: config.headers
+        const proxyRes = await fetch(`${PROXY_URL}/?url=${encodeURIComponent(url)}`, {
+          headers: config.headers,
+          signal: AbortSignal.timeout(STREAM_TIMEOUT)
         });
         if (proxyRes.ok) return await proxyRes.text();
       } catch (e) {
-        console.warn('[StreamService] Proxy offline, tentando direto...');
+        console.warn('[StreamService] Proxy local falhou');
       }
     }
 
-    // Direct fallback
-    const directRes = await fetch(url, { headers: config.headers });
-    if (!directRes.ok) throw new Error(`HTTP ${directRes.status}`);
-    return await directRes.text();
+    // Web: proxies primeiro, depois direto
+    try {
+      return await tryProxies();
+    } catch {
+      return await tryDirect();
+    }
 
   } catch (error) {
     console.error('[StreamService] Erro:', error.message);
@@ -134,31 +162,39 @@ export async function fetchSource(url) {
   }
 }
 
+function isNativePlatform() {
+  if (typeof window === 'undefined') return false;
+  if (window.Capacitor?.isNativePlatform?.()) return true;
+  if (window.Capacitor?.platform === 'android' || window.Capacitor?.platform === 'ios') return true;
+  if (typeof android !== 'undefined') return true;
+  return false;
+}
+
 /**
  * Valida se uma URL de stream está acessível
  */
 export async function validateStreamUrl(url, type = 'live') {
   const config = STREAM_CONFIG[type] || STREAM_CONFIG.live;
-  const isNative = Capacitor.isNativePlatform();
 
   try {
-    if (isNative) {
-      const response = await CapacitorHttp.get({
-        url,
-        headers: config.headers,
-        connectTimeout: 10000,
-        readTimeout: 10000
-      });
-      return response.status >= 200 && response.status < 400;
-    }
-
     const res = await fetch(url, { 
       method: 'HEAD',
-      headers: config.headers
+      headers: config.headers,
+      signal: AbortSignal.timeout(10000)
     });
     return res.ok;
   } catch {
-    return false;
+    // Try proxy
+    try {
+      const proxyUrl = PUBLIC_PROXIES[0] + encodeURIComponent(url);
+      const res = await fetch(proxyUrl, {
+        method: 'HEAD',
+        signal: AbortSignal.timeout(10000)
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
   }
 }
 

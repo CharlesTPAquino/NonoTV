@@ -1,7 +1,8 @@
 import { SyncManager } from './SyncManager';
+import { recordMetric } from './SmartServerOrchestrator';
 
 const DEFAULT_CONFIG = {
-  maxRetries: 1,
+  maxRetries: 2,
   baseDelay: 2000,
   maxDelay: 15000,
   backoffMultiplier: 2,
@@ -17,9 +18,11 @@ export class RetryService {
 
   async executeWithRetry(fn, sourceId, sourceName = 'Unknown') {
     const { maxRetries, baseDelay, backoffMultiplier } = this.config;
+    const startTime = Date.now();
     
     if (SyncManager.isSourceBlocked(sourceId)) {
       console.log(`[RetryService] Fonte ${sourceName} está bloqueada pelo circuit breaker`);
+      recordMetric('circuit_breaker', 0, false);
       throw new Error('SOURCE_BLOCKED');
     }
 
@@ -27,10 +30,14 @@ export class RetryService {
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
         const result = await fn();
+        const latency = Date.now() - startTime;
+        
         if (attempt > 0) {
-          console.log(`[RetryService] ${sourceName}: Sucesso na tentativa ${attempt + 1}`);
+          console.log(`[RetryService] ${sourceName}: Sucesso na tentativa ${attempt + 1} (latency: ${latency}ms)`);
           SyncManager.resetSourceHealth(sourceId);
         }
+        
+        recordMetric('success', latency, true);
         return result;
       } catch (error) {
         lastError = error;
@@ -49,10 +56,12 @@ export class RetryService {
 
     const failures = SyncManager.incrementSourceFailure(sourceId);
     console.log(`[RetryService] ${sourceName}: Falhas totais: ${failures}`);
+    recordMetric('failure', 0, false);
 
     if (failures >= this.config.circuitBreakerThreshold) {
       console.log(`[RetryService] ${sourceName}: Circuit breaker ativado!`);
       SyncManager.blockSource(sourceId, this.config.circuitBreakerDuration);
+      recordMetric('circuit_breaker', 0, false);
     }
 
     throw lastError;
