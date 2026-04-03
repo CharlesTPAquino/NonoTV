@@ -95,7 +95,7 @@
   .ambient-bg {
     @apply transition-all duration-1000 ease-in-out;
   }
-}
+
   --touch-target: 44px;
   --touch-target-sm: 36px;
   
