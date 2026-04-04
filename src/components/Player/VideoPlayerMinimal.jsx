@@ -45,7 +45,7 @@ const DesignSystem = {
   }
 };
 
-export default function VideoPlayer({ channel, channels, onClose, mode = 'smart', isTransitioning = false, transitionRect = null }) {
+export default function VideoPlayer({ channel, channels, onClose, mode = 'smart' }) {
   const videoRef = useRef(null);
   const containerRef = useRef(null);
   const { playChannel } = usePlayer();
@@ -67,7 +67,7 @@ export default function VideoPlayer({ channel, channels, onClose, mode = 'smart'
   } = useHlsPlayer(channel?.url, videoRef, {
     autoPlay: true,
     onQualitiesFound: () => {}
-  });
+  }, channel);
 
   const { playing, buffering, error, status } = playerState;
 
@@ -335,9 +335,6 @@ export default function VideoPlayer({ channel, channels, onClose, mode = 'smart'
     <div 
       ref={containerRef}
       className="fixed inset-0 z-[100] bg-black flex items-center justify-center"
-      style={{
-        animation: isTransitioning && transitionRect ? 'playerExpand 400ms cubic-bezier(0.4, 0, 0.2, 1) forwards' : 'none',
-      }}
       onClick={handleContainerClick}
       onPointerMove={showControlsTemporarily}
       onPointerDown={showControlsTemporarily}

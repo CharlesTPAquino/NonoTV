@@ -8,8 +8,6 @@ const PlayerContext = createContext();
 export const PlayerProvider = ({ children }) => {
   const [activeChannel, setActiveChannel] = useState(null);
   const [showPlayer, setShowPlayer] = useState(false);
-  const [transitionRect, setTransitionRect] = useState(null);
-  const [isTransitioning, setIsTransitioning] = useState(false);
   const [epgData, setEpgData] = useState(null);
   const [currentProgram, setCurrentProgram] = useState(null);
   const [nextProgram, setNextProgram] = useState(null);
@@ -70,47 +68,28 @@ export const PlayerProvider = ({ children }) => {
     };
   }, [showPlayer, activeChannel]);
 
-  const playChannel = useCallback((channel, rect = null) => {
+  const playChannel = useCallback((channel) => {
     if (activeChannel && watchTime > 10) {
       addToHistory(activeChannel, watchTime);
     }
     
     setActiveChannel(channel);
-    setTransitionRect(rect);
-    setIsTransitioning(true);
     setShowPlayer(true);
     setWatchTime(0);
     
     if (channels && channels.length > 0) {
       prefetchService.prefetchNextChannels(channel, channels, 2);
     }
-
-    // End transition after animation
-    setTimeout(() => setIsTransitioning(false), 400);
   }, [activeChannel, watchTime, addToHistory, channels]);
 
-  const closePlayer = useCallback((e) => {
+  const closePlayer = useCallback(() => {
     if (activeChannel && watchTime > 10) {
       addToHistory(activeChannel, watchTime);
     }
     
-    // If clicked from a card, animate back to it
-    if (e?.detail?.rect) {
-      setTransitionRect(e.detail.rect);
-      setIsTransitioning(true);
-      setTimeout(() => {
-        setShowPlayer(false);
-        setActiveChannel(null);
-        setWatchTime(0);
-        setTransitionRect(null);
-        setIsTransitioning(false);
-      }, 400);
-    } else {
-      setShowPlayer(false);
-      setActiveChannel(null);
-      setWatchTime(0);
-      setTransitionRect(null);
-    }
+    setShowPlayer(false);
+    setActiveChannel(null);
+    setWatchTime(0);
   }, [activeChannel, watchTime, addToHistory]);
 
   return (
@@ -124,8 +103,6 @@ export const PlayerProvider = ({ children }) => {
       currentProgram,
       nextProgram,
       watchTime,
-      isTransitioning,
-      transitionRect,
     }}>
       {children}
     </PlayerContext.Provider>
