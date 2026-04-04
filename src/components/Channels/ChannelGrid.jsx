@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
+import useDeviceProfile from '../../hooks/useDeviceProfile';
 import ChannelCard from './ChannelCard';
 import HeroSection from './HeroSection';
 import ChannelCarousel from './ChannelCarousel';
@@ -13,7 +14,8 @@ const CATEGORY_META = {
 };
 
 export default function ChannelGrid({ channels, activeGroup, activeCategory, setActiveGroup, groups, onPlay, search, isPlayerOpen, channelValidity = {}, isValidating = false }) {
-  const [limit, setLimit] = useState(60);
+  const profile = useDeviceProfile();
+  const [limit, setLimit] = useState(profile.gridLimit || 60);
   const isSearching = search && search.length > 0;
 
   const { groupedAll, featured, standard } = useMemo(() => {
@@ -49,45 +51,64 @@ export default function ChannelGrid({ channels, activeGroup, activeCategory, set
   const isPosterContent = activeCategory === 'movie' || activeCategory === 'series' || activeCategory === 'podcasts';
   const isLiveCategory = activeCategory === 'live';
 
-  // Forçar type 'live' nos canais quando na aba ao vivo
-  const displayChannels = isLiveCategory
-    ? standard.slice(0, limit).map(ch => ({ ...ch, type: 'live' }))
-    : standard.slice(0, limit);
+  const displayChannels = useMemo(() => {
+    const sliced = standard.slice(0, limit);
+    if (isLiveCategory) {
+      return sliced.map(ch => {
+        if (ch.type === 'live') return ch;
+        return { ...ch, type: 'live' };
+      });
+    }
+    return sliced;
+  }, [standard, limit, isLiveCategory]);
+
+  const maxCarousels = profile.carousels || 12;
 
   return (
     <div className="w-full">
       {isHome ? (
-        <div className="space-y-24 animate-in fade-in duration-1000">
-          <HeroSection channels={[...featured, ...standard]} onPlay={onPlay} validity={channelValidity} isPlayerOpen={isPlayerOpen} />
+        <div className="space-y-12 md:space-y-16 lg:space-y-24">
+          <HeroSection 
+            channels={[...featured, ...standard]} 
+            onPlay={onPlay} 
+            validity={channelValidity} 
+            isPlayerOpen={isPlayerOpen}
+            autoRotate={profile.heroAutoRotate}
+            heroInterval={profile.heroInterval}
+          />
           
-          <div className="space-y-16 pb-32">
-            {groupedAll && Object.entries(groupedAll).slice(0, 12).map(([group, items]) => (
+          <div className="space-y-8 md:space-y-12 lg:space-y-16 pb-32">
+            {groupedAll && Object.entries(groupedAll).slice(0, maxCarousels).map(([group, items]) => (
               <div key={group}>
-                <div className="flex items-center justify-between mb-5 px-2 md:px-0">
-                   <h2 className="text-base md:text-lg font-semibold text-white/80 tracking-tight">{group}</h2>
+                <div className="flex items-center justify-between mb-3 md:mb-5 px-2 md:px-0">
+                   <h2 className="text-sm md:text-base font-semibold text-white/80 tracking-tight">{group}</h2>
                    <button onClick={() => setActiveGroup(group)} className="flex items-center gap-1 text-white/25 hover:text-white/50 transition-colors">
                       <span className="text-[8px] font-medium tracking-wide">Ver tudo</span>
                       <ChevronRight size={12} />
                    </button>
                 </div>
-                <ChannelCarousel channels={items} onPlay={onPlay} validity={channelValidity} isPlayerOpen={isPlayerOpen} />
+                <ChannelCarousel 
+                  channels={items} 
+                  onPlay={onPlay} 
+                  validity={channelValidity} 
+                  isPlayerOpen={isPlayerOpen}
+                  maxItems={profile.carouselItems}
+                />
               </div>
             ))}
           </div>
         </div>
       ) : (
         <div className="flex flex-col">
-          {/* Header Centralizado */}
-          <div className="text-center mb-8">
-            <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold text-white/90 tracking-tight leading-tight">
+          <div className="text-center mb-6 md:mb-8">
+            <h2 className="text-lg sm:text-xl md:text-2xl font-semibold text-white/90 tracking-tight leading-tight">
               {isSearching ? search : activeGroup === 'All' ? (CATEGORY_META[activeCategory]?.label || activeCategory) : activeGroup}
             </h2>
-            <p className="text-white/25 text-[8px] font-medium tracking-wide mt-1.5">{standard.length} itens</p>
+            <p className="text-white/25 text-[8px] font-medium tracking-wide mt-1">{standard.length} itens</p>
           </div>
 
-          {/* Botões de Categoria - Scroll horizontal, tamanho do conteúdo */}
           {groups.length > 1 && (
-            <div className="flex items-center gap-1.5 mb-6 overflow-x-auto no-scrollbar">
+            <div className="flex items-center gap-1.5 mb-4 md:mb-6 overflow-x-auto no-scrollbar">
               {groups.slice(0, 20).map((g) => (
                 <button key={g.id} onClick={() => setActiveGroup(g.name)} className={`flex-shrink-0 px-4 py-1.5 rounded-md text-[8px] font-medium tracking-wide transition-all whitespace-nowrap ${activeGroup === g.name ? 'bg-white text-black' : 'bg-white/[0.04] text-white/30 hover:bg-white/[0.08] hover:text-white/60'}`}>
                   {g.name}
@@ -96,24 +117,14 @@ export default function ChannelGrid({ channels, activeGroup, activeCategory, set
             </div>
           )}
 
-          <div className={`grid ${isPosterContent ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6' : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'} gap-4 md:gap-6`}>
-            {displayChannels.map((ch, idx) => (
-              <div
-                key={ch.id}
-                style={{
-                  willChange: 'opacity, transform',
-                  opacity: 0,
-                  transform: 'translateY(8px)',
-                  animation: `staggerFadeIn 300ms ease-out ${Math.min(idx * 25, 500)}ms forwards`,
-                }}
-              >
-                <ChannelCard channel={ch} onPlay={() => onPlay(ch)} isValid={channelValidity[ch.id]} isPlayerOpen={isPlayerOpen} />
-              </div>
+          <div className={`grid ${isPosterContent ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6' : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'} gap-3 md:gap-4 lg:gap-6`}>
+            {displayChannels.map((ch) => (
+              <ChannelCard key={ch.id} channel={ch} onPlay={() => onPlay(ch)} isValid={channelValidity[ch.id]} isPlayerOpen={isPlayerOpen} />
             ))}
           </div>
 
           {standard.length > limit && (
-            <div className="mt-20 flex justify-center pb-32">
+            <div className="mt-16 md:mt-20 flex justify-center pb-32">
               <button onClick={() => setLimit(prev => prev + 60)} className="px-12 py-4 bg-white/5 border border-white/10 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-white/10 transition-all">
                 Carregar Mais
               </button>
