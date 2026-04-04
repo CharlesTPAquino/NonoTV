@@ -3,71 +3,60 @@
 @tailwind utilities;
 
 /* ============================================
-   NONOTV ELITE — Design System v3.0
-   Matte · Depth · Premium
+   NONOTV ELITE — Design System v4.0
+   Matte · Depth · Premium · No Orange
    ============================================ */
 
 :root {
-  /* Background — Matte dark, not pure black */
-  --bg-app: #18181b;
-  --bg-surface: #131316;
-  --bg-card: #0c0c0e;
-  --bg-elevated: #0a0a0c;
+  /* ── Surface Hierarchy (lighter → darker) ── */
+  --surface-app: #1a1a1e;
+  --surface-sidebar: #16161a;
+  --surface-card: #111114;
+  --surface-elevated: #0d0d10;
 
-  /* Accent — Refined silver, no orange */
-  --accent: #a1a1aa;
-  --accent-hover: #d4d4d8;
-  --accent-subtle: rgba(161, 161, 170, 0.06);
-  --accent-border: rgba(161, 161, 170, 0.12);
+  /* ── Accent — Pure white/silver, no orange ── */
+  --accent: #ffffff;
+  --accent-muted: rgba(255, 255, 255, 0.60);
+  --accent-subtle: rgba(255, 255, 255, 0.06);
 
-  /* Text — Precise hierarchy */
-  --text-primary: #f4f4f5;
-  --text-secondary: rgba(244, 244, 245, 0.50);
-  --text-tertiary: rgba(244, 244, 245, 0.25);
-  --text-disabled: rgba(244, 244, 245, 0.12);
+  /* ── Text Hierarchy ── */
+  --text-1: #fafafa;
+  --text-2: rgba(250, 250, 250, 0.55);
+  --text-3: rgba(250, 250, 250, 0.30);
+  --text-4: rgba(250, 250, 250, 0.12);
 
-  /* Borders — Barely there */
-  --border-subtle: rgba(255, 255, 255, 0.04);
-  --border: rgba(255, 255, 255, 0.06);
-  --border-hover: rgba(255, 255, 255, 0.10);
-  --border-active: rgba(255, 255, 255, 0.14);
+  /* ── Borders — Barely visible ── */
+  --border-1: rgba(255, 255, 255, 0.04);
+  --border-2: rgba(255, 255, 255, 0.06);
+  --border-3: rgba(255, 255, 255, 0.10);
 
-  /* Status — Muted, elegant */
-  --success: #4ade80;
-  --error: #f87171;
-  --warning: #fbbf24;
+  /* ── Status — Muted ── */
+  --status-ok: #4ade80;
+  --status-err: #f87171;
 
-  /* 3D Depth — Cards float above background */
-  --shadow-card: 
-    0 1px 2px rgba(0, 0, 0, 0.4),
-    0 4px 12px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.03);
-  --shadow-card-hover: 
-    0 2px 4px rgba(0, 0, 0, 0.5),
-    0 8px 24px rgba(0, 0, 0, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  --shadow-button:
-    0 1px 2px rgba(0, 0, 0, 0.3),
-    0 2px 6px rgba(0, 0, 0, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  --shadow-button-hover:
-    0 2px 4px rgba(0, 0, 0, 0.4),
-    0 4px 12px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  /* ── 3D Depth ── */
+  --depth-1:
+    0 1px 3px rgba(0,0,0,0.40),
+    0 4px 12px rgba(0,0,0,0.25),
+    inset 0 1px 0 rgba(255,255,255,0.03);
+  --depth-2:
+    0 2px 6px rgba(0,0,0,0.50),
+    0 8px 24px rgba(0,0,0,0.35),
+    inset 0 1px 0 rgba(255,255,255,0.04);
+  --depth-btn:
+    0 1px 2px rgba(0,0,0,0.30),
+    0 2px 6px rgba(0,0,0,0.20),
+    inset 0 1px 0 rgba(255,255,255,0.06);
 
-  /* Radius — Tight, precise */
-  --radius-sm: 6px;
-  --radius: 8px;
-  --radius-md: 10px;
-  --radius-lg: 12px;
-  --radius-xl: 14px;
+  /* ── Radius ── */
+  --r-sm: 6px;
+  --r: 8px;
+  --r-md: 10px;
+  --r-lg: 12px;
 
-  /* Transitions — Fast, crisp */
+  /* ── Motion ── */
   --ease: cubic-bezier(0.25, 0.1, 0.25, 1);
-  --ease-out: cubic-bezier(0, 0, 0.2, 1);
-  --duration-fast: 120ms;
-  --duration: 180ms;
-  --duration-slow: 250ms;
+  --dur: 180ms;
 }
 
 @layer base {
@@ -79,194 +68,48 @@
   body {
     @apply overflow-hidden;
     margin: 0;
-    background: var(--bg-app);
-    color: var(--text-primary);
+    background: var(--surface-app);
+    color: var(--text-1);
     font-family: -apple-system, BlinkMacSystemFont, 'Inter', system-ui, sans-serif;
     height: 100vh;
     width: 100vw;
   }
 
-  /* Scrollbar — Minimal */
-  ::-webkit-scrollbar {
-    width: 4px;
-    height: 4px;
-  }
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.06);
-    border-radius: 999px;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.12);
-  }
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 999px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.12); }
 
-  .no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
 }
 
 @layer components {
-  /* ============================================
-     BUTTONS — Solid, 3D, premium
-     ============================================ */
-
-  .btn-solid {
-    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium;
-    background: var(--text-primary);
-    color: var(--bg-card);
-    box-shadow: var(--shadow-button);
-    transition: all var(--duration) var(--ease);
-  }
-  .btn-solid:hover {
-    background: var(--accent-hover);
-    box-shadow: var(--shadow-button-hover);
-    transform: translateY(-1px);
-  }
-  .btn-solid:active {
-    transform: translateY(0);
-    box-shadow: var(--shadow-card);
-  }
-
-  .btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium;
-    background: transparent;
-    color: var(--text-secondary);
-    transition: all var(--duration) var(--ease);
-  }
-  .btn-ghost:hover {
-    background: var(--bg-surface);
-    color: var(--text-primary);
-  }
-
-  /* ============================================
-     CARDS — 3D depth, matte surface
-     ============================================ */
-
-  .card-3d {
-    @apply relative overflow-hidden;
-    background: var(--bg-card);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow-card);
-    transition: all var(--duration) var(--ease);
-  }
-  .card-3d:hover {
-    border-color: var(--border-hover);
-    box-shadow: var(--shadow-card-hover);
-    transform: translateY(-2px);
-  }
-
-  /* ============================================
-     BADGES — Clean, muted, elegant
-     ============================================ */
-
+  /* ── Badges ── */
   .badge {
     @apply inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wider;
   }
-  .badge-live {
-    background: rgba(248, 113, 113, 0.10);
-    color: var(--error);
-  }
-  .badge-4k {
-    background: rgba(74, 222, 128, 0.08);
-    color: var(--success);
-  }
-  .badge-movie {
-    background: rgba(244, 244, 245, 0.06);
-    color: var(--text-secondary);
-  }
-  .badge-series {
-    background: rgba(167, 139, 250, 0.08);
-    color: #a78bfa;
-  }
-  .badge-ai {
-    background: var(--accent-subtle);
-    color: var(--accent);
-  }
+  .badge-live { background: rgba(248,113,113,0.10); color: var(--status-err); }
+  .badge-4k { background: rgba(74,222,128,0.08); color: var(--status-ok); }
+  .badge-muted { background: var(--accent-subtle); color: var(--text-2); }
+  .badge-purple { background: rgba(167,139,250,0.08); color: #a78bfa; }
 
-  /* ============================================
-     INPUTS — Clean, minimal
-     ============================================ */
-
-  .input {
-    @apply w-full px-3 py-2 rounded-lg text-sm outline-none;
-    background: var(--bg-surface);
-    border: 1px solid var(--border-subtle);
-    color: var(--text-primary);
-    transition: all var(--duration) var(--ease);
-  }
-  .input::placeholder {
-    color: var(--text-tertiary);
-  }
-  .input:focus {
-    border-color: var(--border-active);
-    background: var(--bg-card);
-  }
-
-  /* ============================================
-     DIVIDERS — Almost invisible
-     ============================================ */
-
-  .divider {
-    height: 1px;
-    background: var(--border-subtle);
-  }
-
-  /* ============================================
-     NAV ITEMS — Premium, subtle
-     ============================================ */
-
+  /* ── Nav Items (YouTube spacing) ── */
   .nav-item {
-    @apply flex items-center gap-2.5 rounded-lg text-sm font-medium;
-    color: var(--text-tertiary);
-    transition: all var(--duration) var(--ease);
+    @apply flex items-center rounded-xl transition-all duration-[var(--dur)];
+    transition-timing-function: var(--ease);
   }
-  .nav-item:hover {
-    color: var(--text-secondary);
-    background: var(--bg-surface);
-  }
-  .nav-item.active {
-    color: var(--text-primary);
-    background: var(--bg-card);
-    box-shadow: var(--shadow-card);
-  }
+  .nav-item:hover { background: var(--surface-card); color: var(--text-2); }
+  .nav-item.active { background: var(--surface-elevated); color: var(--text-1); box-shadow: var(--depth-1); }
 
-  /* ============================================
-     ANIMATIONS — Fast, crisp
-     ============================================ */
-
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-  @keyframes slideUp {
+  /* ── Animations ── */
+  @keyframes fadeUp {
     from { opacity: 0; transform: translateY(6px); }
     to { opacity: 1; transform: translateY(0); }
   }
-  @keyframes scaleIn {
-    from { opacity: 0; transform: scale(0.96); }
-    to { opacity: 1; transform: scale(1); }
-  }
-
-  .animate-fade-in {
-    animation: fadeIn var(--duration-slow) var(--ease-out);
-  }
-  .animate-slide-up {
-    animation: slideUp var(--duration-slow) var(--ease-out);
-  }
-  .animate-scale-in {
-    animation: scaleIn var(--duration-slow) var(--ease-out);
-  }
-
   .stagger-item {
     will-change: opacity, transform;
     opacity: 0;
-    animation: slideUp 200ms var(--ease-out) forwards;
+    animation: fadeUp 200ms var(--ease) forwards;
   }
 }
