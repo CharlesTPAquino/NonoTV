@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Home, Tv, Film, Clapperboard, Settings, Menu, History, ThumbsUp, PlaySquare, ChevronLeft, ChevronRight, RefreshCw, Activity, Search, Mic, LayoutGrid, Server, CheckCircle, XCircle } from 'lucide-react';
+import { Home, Tv, Film, Clapperboard, Settings, Mic, LayoutGrid, CheckCircle, XCircle, Activity, Search, Zap } from 'lucide-react';
 
 const NAV_ITEMS = [
   { id: 'home',     name: 'Início',     type: 'All',      icon: Home },
@@ -7,12 +7,6 @@ const NAV_ITEMS = [
   { id: 'vod',      name: 'Filmes',     type: 'movie',    icon: Film },
   { id: 'series',   name: 'Séries',     type: 'series',   icon: Clapperboard },
   { id: 'podcasts', name: 'Podcasts',   type: 'podcasts', icon: Mic },
-];
-
-const LIBRARY_ITEMS = [
-  { id: 'history',  name: 'Histórico',   icon: History },
-  { id: 'liked',    name: 'Curtidos',    icon: ThumbsUp },
-  { id: 'playlist', name: 'Playlists',   icon: PlaySquare },
 ];
 
 export default function Sidebar({ activeCategory, setActiveCategory, onOpenSettings, onOpenChannelList, onOpenSync, onOpenServerStatus, search, setSearch, serverStatus }) {
@@ -23,191 +17,164 @@ export default function Sidebar({ activeCategory, setActiveCategory, onOpenSetti
 
   return (
     <>
-      {/* DESKTOP / TV */}
+      {/* DESKTOP / TV — Premium Glass Sidebar */}
       <aside 
-        className={`hidden lg:flex fixed left-0 top-0 h-full bg-[#161618] border-r border-white/[0.04] z-[100] transition-all duration-500 flex flex-col group overflow-hidden ${
-          expanded ? 'w-[260px]' : 'w-[72px]'
+        className={`hidden lg:flex fixed left-0 top-0 h-full z-[100] transition-all duration-500 ease-[cubic-bezier(0.25,0.1,0.25,1)] flex flex-col group overflow-hidden backdrop-blur-[60px] ${
+          expanded ? 'w-[240px]' : 'w-[64px]'
         }`}
+        style={{
+          background: 'linear-gradient(180deg, rgba(18,18,20,0.95) 0%, rgba(12,12,14,0.98) 100%)',
+          borderRight: '1px solid rgba(255,255,255,0.06)',
+        }}
         onMouseEnter={() => setExpanded(true)}
         onMouseLeave={() => setExpanded(false)}
       >
-        {/* Top Glossy Reflection */}
-        <div className="absolute top-0 right-0 w-full h-32 bg-gradient-to-bl from-white/5 to-transparent pointer-events-none" />
-        
-        {/* Brand Header */}
-        <div className={`flex items-center h-24 relative ${expanded ? 'px-8 gap-4' : 'justify-center px-0'}`}>
-          <div className="relative group/logo">
-             <div className="absolute -inset-2 bg-[#F7941D] rounded-2xl blur-lg opacity-20 group-hover/logo:opacity-50 transition-opacity duration-500" />
-             <div className="relative w-12 h-12 bg-gradient-to-br from-[#F7941D] to-[#FBB03B] rounded-2xl flex items-center justify-center shadow-[0_0_20px_#F7941D]/30 border border-white/20">
-               <img src="/logo.png" alt="NonoTV" className="w-8 h-8 object-contain drop-shadow-lg" />
-             </div>
+        {/* Ambient glow behind sidebar */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-0 right-0 w-px h-full bg-gradient-to-b from-transparent via-white/[0.08] to-transparent" />
+        </div>
+
+        {/* Brand */}
+        <div className={`flex items-center shrink-0 ${expanded ? 'px-6 h-20 gap-3' : 'justify-center h-20'}`}>
+          <div className="relative shrink-0">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #F7941D 0%, #FBB03B 100%)' }}>
+              <span className="text-black font-black text-sm">N+</span>
+            </div>
           </div>
           {expanded && (
-            <div className="flex flex-col animate-in fade-in slide-in-from-left-4 duration-500">
-              <span className="text-white font-black text-xl tracking-tighter uppercase leading-none">NonoTV</span>
-              <span className="text-[#F7941D] text-[9px] font-black uppercase tracking-[0.4em] mt-1">Elite 4K</span>
+            <div className="overflow-hidden">
+              <span className="text-white font-semibold text-sm tracking-tight leading-none block">NonoTV</span>
+              <span className="text-white/20 text-[8px] font-medium tracking-[0.2em] uppercase">Elite</span>
             </div>
           )}
         </div>
 
-        {/* Search Integration */}
-        {expanded && (
-          <div className="px-5 mb-6 animate-in fade-in slide-in-from-top-4 duration-500">
-            <div className="relative flex items-center bg-white/5 border border-white/5 rounded-2xl backdrop-blur-xl group-focus-within:border-[#F7941D]/50 transition-all">
-              <Search className="ml-4 text-white/20 group-focus-within:text-[#F7941D] transition-colors" size={18} />
-              <input 
-                type="text" 
-                placeholder="Busca global..." 
-                value={search}
-                onChange={(e) => setSearch && setSearch(e.target.value)}
-                className="w-full h-12 pl-3 pr-4 bg-transparent outline-none text-sm font-bold text-white placeholder:text-white/10 uppercase tracking-widest"
-              />
-            </div>
-          </div>
-        )}
+        {/* Divider */}
+        <div className="mx-4 h-px bg-white/[0.04]" />
 
-        {/* Navigation Content */}
-        <div className="flex-1 overflow-y-auto py-4 custom-scrollbar overflow-x-hidden space-y-8">
-          
-          {/* Main Navigation */}
-          <div className={`space-y-1 ${expanded ? 'px-5' : 'px-4'}`}>
-            {NAV_ITEMS.map(item => {
-              const Icon = item.icon;
-              const isActive = activeCategory === item.type;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveCategory(item.type)}
-                  className={`relative w-full flex items-center rounded-2xl transition-all duration-500 group/btn
-                    ${expanded ? 'px-5 py-4 gap-5' : 'justify-center py-5 px-0'}
-                    ${isActive 
-                      ? 'bg-white text-black shadow-[0_10px_30px_rgba(255,255,255,0.1)]' 
-                      : 'text-white/30 hover:bg-white/5 hover:text-white'
-                    }`}
-                >
-                  {/* Active Indicator Line */}
-                  {!expanded && isActive && (
-                    <div className="absolute left-0 w-1 h-6 bg-[#F7941D] rounded-r-full shadow-[0_0_10px_#F7941D]" />
-                  )}
-                  
-                  <Icon size={24} className={`shrink-0 transition-transform duration-500 ${isActive ? '' : 'group-hover/btn:scale-110'}`} />
-                  
-                  {expanded && (
-                    <span className="text-xs font-black uppercase tracking-[0.2em] flex-1 text-left">{item.name}</span>
-                  )}
+        {/* Navigation */}
+        <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto custom-scrollbar">
+          {NAV_ITEMS.map((item, idx) => {
+            const Icon = item.icon;
+            const isActive = activeCategory === item.type;
+            return (
+              <button
+                key={item.id}
+                onClick={() => setActiveCategory(item.type)}
+                className={`relative w-full flex items-center rounded-xl transition-all duration-300 group/btn ${
+                  expanded ? 'px-3 py-2.5 gap-3' : 'justify-center py-2.5'
+                } ${isActive 
+                  ? 'text-white' 
+                  : 'text-white/35 hover:text-white/60'
+                }`}
+                style={{
+                  background: isActive ? 'rgba(255,255,255,0.08)' : 'transparent',
+                }}
+              >
+                {/* Active indicator */}
+                {isActive && (
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full" style={{ background: 'linear-gradient(180deg, #F7941D, #FBB03B)' }} />
+                )}
+                
+                <Icon size={20} strokeWidth={isActive ? 2.2 : 1.8} className="shrink-0 transition-all duration-300" />
+                
+                {expanded && (
+                  <span className="text-[11px] font-medium tracking-wide truncate">{item.name}</span>
+                )}
+              </button>
+            );
+          })}
+        </nav>
 
-                  {expanded && isActive && (
-                    <div className="w-1.5 h-1.5 bg-black rounded-full" />
-                  )}
-                </button>
-              );
-            })}
-          </div>
+        {/* Divider */}
+        <div className="mx-4 h-px bg-white/[0.04]" />
 
-          {/* Library Section */}
-          <div className={`space-y-4 ${expanded ? 'px-5' : 'px-4'}`}>
+        {/* Bottom Section */}
+        <div className="p-3 space-y-1 shrink-0">
+          {/* All Channels */}
+          <button
+            onClick={onOpenChannelList}
+            className={`w-full flex items-center rounded-xl transition-all duration-300 text-white/35 hover:text-white/60 group/btn ${
+              expanded ? 'px-3 py-2.5 gap-3' : 'justify-center py-2.5'
+            }`}
+          >
+            <LayoutGrid size={20} strokeWidth={1.8} className="shrink-0" />
+            {expanded && <span className="text-[11px] font-medium tracking-wide">Canais</span>}
+          </button>
+
+          {/* Server Status */}
+          <div className={`flex items-center rounded-xl transition-all duration-300 ${
+            expanded ? 'px-3 py-2.5 gap-3' : 'justify-center py-2.5'
+          } ${isOnline ? 'text-green-400/60' : isOffline ? 'text-red-400/60' : 'text-white/20'}`}>
+            {isOnline && <CheckCircle size={16} strokeWidth={1.8} className="shrink-0" />}
+            {isOffline && <XCircle size={16} strokeWidth={1.8} className="shrink-0" />}
+            {!isOnline && !isOffline && <Activity size={16} strokeWidth={1.8} className="shrink-0 animate-pulse" />}
             {expanded && (
-              <h3 className="px-5 text-[10px] font-black text-white/10 uppercase tracking-[0.5em] mb-4">
-                Biblioteca
-              </h3>
+              <span className="text-[11px] font-medium tracking-wide">
+                {isOnline ? 'Online' : isOffline ? 'Offline' : '...'}
+              </span>
             )}
-            <div className="space-y-1">
-              {LIBRARY_ITEMS.map(item => {
-                const Icon = item.icon;
-                return (
-                  <button
-                    key={item.id}
-                    className={`w-full flex items-center transition-all duration-300 rounded-2xl text-white/30 hover:text-white hover:bg-white/5
-                      ${expanded ? 'px-5 py-4 gap-5' : 'justify-center py-5 px-0'}`}
-                  >
-                    <Icon size={22} className="shrink-0" />
-                    {expanded && <span className="text-[10px] font-bold uppercase tracking-[0.2em]">{item.name}</span>}
-                  </button>
-                );
-              })}
-            </div>
           </div>
 
-          {/* Action Center */}
-          <div className={`space-y-1 ${expanded ? 'px-5' : 'px-4'}`}>
-            <button
-              onClick={onOpenChannelList}
-              className={`w-full flex items-center transition-all duration-300 rounded-2xl bg-[#F7941D]/5 text-[#F7941D] hover:bg-[#F7941D]/10 border border-[#F7941D]/10
-                ${expanded ? 'px-5 py-4 gap-5' : 'justify-center py-5 px-0'}`}
-            >
-              <LayoutGrid size={22} className="shrink-0" />
-              {expanded && <span className="text-[10px] font-black uppercase tracking-[0.2em]">Todos os Canais</span>}
-            </button>
-          </div>
-        </div>
-
-        {/* Footer - Server Status + Settings */}
-        <div className={`p-5 mt-auto border-t border-white/5 bg-white/5 backdrop-blur-3xl transition-all duration-500 ${expanded ? 'opacity-100' : 'opacity-100'}`}>
-          <div className={`flex flex-col gap-2 ${expanded ? '' : 'items-center'}`}>
-            {/* Server Status Indicator */}
-            <div className={`flex items-center rounded-xl transition-all ${expanded ? 'px-4 py-3 gap-4 w-full' : 'w-12 h-12 justify-center'}`}>
-              {isOnline && <CheckCircle size={20} className="text-green-500 shrink-0" />}
-              {isOffline && <XCircle size={20} className="text-red-500 shrink-0" />}
-              {!isOnline && !isOffline && <Activity size={20} className="text-white/30 shrink-0" />}
-              {expanded && (
-                <span className={`text-[9px] font-black uppercase tracking-widest ${isOnline ? 'text-green-500' : isOffline ? 'text-red-500' : 'text-white/30'}`}>
-                  {isOnline ? 'Conectado' : isOffline ? 'Desconectado' : 'Verificando'}
-                </span>
-              )}
-            </div>
-            <button
-              onClick={onOpenSettings}
-              className={`flex items-center rounded-xl text-white/30 hover:text-white hover:bg-white/5 transition-all
-                ${expanded ? 'px-4 py-3 gap-4 w-full' : 'w-12 h-12 justify-center'}`}
-              title="Configurações"
-            >
-              <Settings size={20} />
-              {expanded && <span className="text-[9px] font-black uppercase tracking-widest">Ajustes</span>}
-            </button>
-          </div>
+          {/* Settings */}
+          <button
+            onClick={onOpenSettings}
+            className={`w-full flex items-center rounded-xl transition-all duration-300 text-white/35 hover:text-white/60 group/btn ${
+              expanded ? 'px-3 py-2.5 gap-3' : 'justify-center py-2.5'
+            }`}
+          >
+            <Settings size={20} strokeWidth={1.8} className="shrink-0 group-hover/btn:rotate-45 transition-transform duration-500" />
+            {expanded && <span className="text-[11px] font-medium tracking-wide">Ajustes</span>}
+          </button>
         </div>
       </aside>
 
-      {/* MOBILE/TABLET - BOTTOM NAV */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-[#161618] border-t border-white/[0.04] z-[200] flex items-center justify-around px-2 safe-area-bottom">
-        
-        {/* Nav Items */}
-        {NAV_ITEMS.map(item => {
-          const Icon = item.icon;
-          const isActive = activeCategory === item.type;
-          return (
-            <button
-              key={item.id}
-              onClick={() => setActiveCategory(item.type)}
-              className={`relative flex flex-col items-center justify-center w-12 h-full transition-all duration-300
-                ${isActive ? 'text-[#F7941D]' : 'text-white/25'}`}
-            >
-              {isActive && (
-                <div className="absolute -top-[1px] w-6 h-0.5 bg-[#F7941D] rounded-full shadow-[0_0_10px_#F7941D]" />
-              )}
-              <Icon size={22} strokeWidth={isActive ? 2.5 : 2} />
-            </button>
-          );
-        })}
+      {/* MOBILE/TABLET — Bottom Nav */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-[200] safe-area-bottom" style={{
+        background: 'linear-gradient(180deg, rgba(18,18,20,0.97) 0%, rgba(12,12,14,0.99) 100%)',
+        backdropFilter: 'blur(40px)',
+        borderTop: '1px solid rgba(255,255,255,0.06)',
+      }}>
+        <div className="flex items-center justify-around h-16 px-2">
+          {NAV_ITEMS.map(item => {
+            const Icon = item.icon;
+            const isActive = activeCategory === item.type;
+            return (
+              <button
+                key={item.id}
+                onClick={() => setActiveCategory(item.type)}
+                className="relative flex flex-col items-center justify-center w-14 h-full transition-all duration-300"
+              >
+                <div className={`transition-all duration-300 ${isActive ? 'text-[#F7941D]' : 'text-white/30'}`}>
+                  <Icon size={22} strokeWidth={isActive ? 2.2 : 1.8} />
+                </div>
+                {isActive && (
+                  <div className="absolute -top-[1px] w-5 h-[2px] rounded-full" style={{ background: 'linear-gradient(90deg, #F7941D, #FBB03B)' }} />
+                )}
+              </button>
+            );
+          })}
 
-        {/* Server Status */}
-        <button
-          onClick={onOpenServerStatus || onOpenSettings}
-          className={`relative flex flex-col items-center justify-center w-12 h-full transition-all duration-300
-            ${isOnline ? 'text-green-500' : isOffline ? 'text-red-500' : 'text-white/25'}`}
-        >
-          {isOnline && <CheckCircle size={22} />}
-          {isOffline && <XCircle size={22} />}
-          {!isOnline && !isOffline && <Server size={22} />}
-        </button>
+          {/* Server Status */}
+          <button
+            onClick={onOpenServerStatus || onOpenSettings}
+            className={`flex flex-col items-center justify-center w-14 h-full transition-all duration-300 ${
+              isOnline ? 'text-green-400/50' : isOffline ? 'text-red-400/50' : 'text-white/20'
+            }`}
+          >
+            {isOnline && <CheckCircle size={20} strokeWidth={1.8} />}
+            {isOffline && <XCircle size={20} strokeWidth={1.8} />}
+            {!isOnline && !isOffline && <Activity size={20} strokeWidth={1.8} />}
+          </button>
 
-        {/* Settings */}
-        <button
-          onClick={onOpenSettings}
-          className="relative flex flex-col items-center justify-center w-12 h-full text-white/25 transition-all duration-300"
-        >
-          <Settings size={22} />
-        </button>
+          {/* Settings */}
+          <button
+            onClick={onOpenSettings}
+            className="flex flex-col items-center justify-center w-14 h-full text-white/30 transition-all duration-300"
+          >
+            <Settings size={22} strokeWidth={1.8} />
+          </button>
+        </div>
       </nav>
     </>
   );
