@@ -6,6 +6,7 @@ import { SyncManager } from '../services/SyncManager';
 import { retryService } from '../services/RetryService';
 import { prefetchService } from '../services/PrefetchService';
 import { testSourcesParallel, sortSourcesByPerformance, getSourceStatus, testSourceSmart, getMetrics, resetMetrics } from '../services/SmartServerOrchestrator';
+import { detectServerTech, profileServer, getServerProfile } from '../services/ServerTechProfiler';
 import ChannelCacheDB from '../services/ChannelCacheDB';
 import { SmartCache } from '../services/SmartCache';
 import SmartPrefetchService from '../services/SmartPrefetchService';
@@ -33,6 +34,7 @@ export const SourceProvider = ({ children }) => {
   }, []);
 
   const [serverStatuses, setServerStatuses] = useState({});
+  const [serverProfiles, setServerProfiles] = useState({});
   const [fallbackQueue, setFallbackQueue] = useState([]);
 
   const runHealthCheck = useCallback(async () => {
@@ -129,6 +131,17 @@ export const SourceProvider = ({ children }) => {
     setIsLoading(true);
     setActiveSource(source);
     localStorage.setItem('activeSourceUrl', source.url);
+
+    // Detectar tecnologia do servidor
+    const profile = getServerProfile(source.id);
+    if (profile) {
+      console.log(`[SourceContext] Perfil do servidor: ${profile.techName} (${profile.status})`);
+      setServerProfiles(prev => ({ ...prev, [source.id]: profile }));
+    } else {
+      const tech = detectServerTech(source.url);
+      console.log(`[SourceContext] Tecnologia detectada: ${tech.name}`);
+      setServerProfiles(prev => ({ ...prev, [source.id]: { tech: tech.key, techName: tech.name } }));
+    }
 
     const cacheKey = `nono_v3_${btoa(source.url).slice(0,32)}`;
 
@@ -388,6 +401,7 @@ export const SourceProvider = ({ children }) => {
       updateSettings,
       smartPrefetch: SmartPrefetchService,
       serverStatuses,
+      serverProfiles,
       runHealthCheck,
       checkSourceHealth,
       sortedSources: () => sortSourcesByPerformance(sources),
