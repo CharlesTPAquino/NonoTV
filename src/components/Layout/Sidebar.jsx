@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Home, Tv, Film, Clapperboard, Settings, Menu, History, ThumbsUp, PlaySquare, ChevronLeft, ChevronRight, RefreshCw, Activity, Search, Mic, LayoutGrid } from 'lucide-react';
+import { Home, Tv, Film, Clapperboard, Settings, Menu, History, ThumbsUp, PlaySquare, ChevronLeft, ChevronRight, RefreshCw, Activity, Search, Mic, LayoutGrid, Server, CheckCircle, XCircle } from 'lucide-react';
 
 const NAV_ITEMS = [
   { id: 'home',     name: 'Início',     type: 'All',      icon: Home },
-  { id: 'live',     name: 'Ao Vivo',    type: 'live',     icon: Tv },
+  { id: 'live',     name: 'AO VIVO',    type: 'live',     icon: Tv },
   { id: 'vod',      name: 'Filmes',     type: 'movie',    icon: Film },
   { id: 'series',   name: 'Séries',     type: 'series',   icon: Clapperboard },
   { id: 'podcasts', name: 'Podcasts',   type: 'podcasts', icon: Mic },
@@ -15,8 +15,11 @@ const LIBRARY_ITEMS = [
   { id: 'playlist', name: 'Playlists',   icon: PlaySquare },
 ];
 
-export default function Sidebar({ activeCategory, setActiveCategory, onOpenSettings, onOpenChannelList, onOpenSync, onOpenServerStatus, search, setSearch }) {
+export default function Sidebar({ activeCategory, setActiveCategory, onOpenSettings, onOpenChannelList, onOpenSync, onOpenServerStatus, search, setSearch, serverStatus }) {
   const [expanded, setExpanded] = useState(false);
+
+  const isOnline = serverStatus === 'online' || serverStatus === 'connected';
+  const isOffline = serverStatus === 'offline' || serverStatus === 'error';
 
   return (
     <>
@@ -138,20 +141,20 @@ export default function Sidebar({ activeCategory, setActiveCategory, onOpenSetti
           </div>
         </div>
 
-        {/* Footer - Reflective Controls */}
+        {/* Footer - Server Status + Settings */}
         <div className={`p-5 mt-auto border-t border-white/5 bg-white/5 backdrop-blur-3xl transition-all duration-500 ${expanded ? 'opacity-100' : 'opacity-100'}`}>
           <div className={`flex flex-col gap-2 ${expanded ? '' : 'items-center'}`}>
-            {onOpenServerStatus && (
-              <button
-                onClick={onOpenServerStatus}
-                className={`flex items-center rounded-xl text-white/30 hover:text-[#F7941D] hover:bg-white/5 transition-all
-                  ${expanded ? 'px-4 py-3 gap-4 w-full' : 'w-12 h-12 justify-center'}`}
-                title="Status do Servidor"
-              >
-                <Activity size={20} />
-                {expanded && <span className="text-[9px] font-black uppercase tracking-widest">Servidores</span>}
-              </button>
-            )}
+            {/* Server Status Indicator */}
+            <div className={`flex items-center rounded-xl transition-all ${expanded ? 'px-4 py-3 gap-4 w-full' : 'w-12 h-12 justify-center'}`}>
+              {isOnline && <CheckCircle size={20} className="text-green-500 shrink-0" />}
+              {isOffline && <XCircle size={20} className="text-red-500 shrink-0" />}
+              {!isOnline && !isOffline && <Activity size={20} className="text-white/30 shrink-0" />}
+              {expanded && (
+                <span className={`text-[9px] font-black uppercase tracking-widest ${isOnline ? 'text-green-500' : isOffline ? 'text-red-500' : 'text-white/30'}`}>
+                  {isOnline ? 'Conectado' : isOffline ? 'Desconectado' : 'Verificando'}
+                </span>
+              )}
+            </div>
             <button
               onClick={onOpenSettings}
               className={`flex items-center rounded-xl text-white/30 hover:text-white hover:bg-white/5 transition-all
@@ -165,31 +168,48 @@ export default function Sidebar({ activeCategory, setActiveCategory, onOpenSetti
         </div>
       </aside>
 
-      {/* MOBILE - ULTRA SLICK BOTTOM NAVIGATION */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-20 bg-[#050505]/80 backdrop-blur-[50px] border-t border-white/10 z-[200] flex items-center justify-around px-6 safe-area-bottom shadow-[0_-20px_50px_rgba(0,0,0,0.8)]">
-        {/* Reflection */}
-        <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-[#F7941D]/50 to-transparent" />
+      {/* MOBILE/TABLET - BOTTOM NAV (único menu, sem sidebar) */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-[#050505]/90 backdrop-blur-[50px] border-t border-white/5 z-[200] flex items-center justify-around px-2 safe-area-bottom">
+        {/* Reflection Line */}
+        <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-[#F7941D]/30 to-transparent" />
         
-        {NAV_ITEMS.slice(0, 5).map(item => {
+        {/* Nav Items */}
+        {NAV_ITEMS.map(item => {
           const Icon = item.icon;
           const isActive = activeCategory === item.type;
           return (
             <button
               key={item.id}
               onClick={() => setActiveCategory(item.type)}
-              className={`relative flex flex-col items-center justify-center gap-1.5 w-16 h-full transition-all duration-500
-                ${isActive ? 'text-[#F7941D] -translate-y-1' : 'text-white/20'}`}
+              className={`relative flex flex-col items-center justify-center w-12 h-full transition-all duration-300
+                ${isActive ? 'text-[#F7941D]' : 'text-white/25'}`}
             >
               {isActive && (
-                <div className="absolute -top-1 w-8 h-1 bg-[#F7941D] rounded-full shadow-[0_0_15px_#F7941D]" />
+                <div className="absolute -top-[1px] w-6 h-0.5 bg-[#F7941D] rounded-full shadow-[0_0_10px_#F7941D]" />
               )}
-              <Icon size={24} strokeWidth={isActive ? 2.5 : 2} />
-              <span className={`text-[8px] font-black uppercase tracking-[0.2em] ${isActive ? 'opacity-100' : 'opacity-40'}`}>
-                {item.name}
-              </span>
+              <Icon size={22} strokeWidth={isActive ? 2.5 : 2} />
             </button>
           );
         })}
+
+        {/* Server Status */}
+        <button
+          onClick={onOpenServerStatus || onOpenSettings}
+          className={`relative flex flex-col items-center justify-center w-12 h-full transition-all duration-300
+            ${isOnline ? 'text-green-500' : isOffline ? 'text-red-500' : 'text-white/25'}`}
+        >
+          {isOnline && <CheckCircle size={22} />}
+          {isOffline && <XCircle size={22} />}
+          {!isOnline && !isOffline && <Server size={22} />}
+        </button>
+
+        {/* Settings */}
+        <button
+          onClick={onOpenSettings}
+          className="relative flex flex-col items-center justify-center w-12 h-full text-white/25 transition-all duration-300"
+        >
+          <Settings size={22} />
+        </button>
       </nav>
     </>
   );

@@ -314,6 +314,13 @@ export default function SettingsPanel({
                     }`} />
                   </button>
                 </div>
+
+                {/* App Version */}
+                <div className="flex flex-col items-center justify-center p-6 bg-white/5 border border-white/5 rounded-[1.5rem] mt-6">
+                  <span className="text-white/20 text-[9px] font-black uppercase tracking-[0.5em] mb-2">Versão do App</span>
+                  <span className="text-[#F7941D] text-sm font-black tracking-tighter">NonoTV Elite 4K v4.9</span>
+                  <span className="text-white/10 text-[8px] font-bold uppercase tracking-widest mt-1">Build {new Date().toLocaleDateString('pt-BR')}</span>
+                </div>
               </div>
             )}
 
