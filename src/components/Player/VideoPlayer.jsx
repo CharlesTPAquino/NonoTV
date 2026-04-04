@@ -31,7 +31,7 @@ export default function VideoPlayer({ channel, channels, onClose }) {
   } = useHlsPlayer(channel?.url, videoRef, {
     autoPlay: true,
     onQualitiesFound: (levs) => setQualities(levs)
-  });
+  }, channel);
 
   const { 
     playing, buffering, error, status,

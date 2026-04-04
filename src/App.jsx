@@ -224,13 +224,7 @@ export default function App() {
       </div>
 
       {showPlayer && activeChannel && (
-        <VideoPlayerMinimal 
-          channel={activeChannel} 
-          channels={filteredChannels} 
-          onClose={closePlayer}
-          isTransitioning={usePlayer().isTransitioning}
-          transitionRect={usePlayer().transitionRect}
-        />
+        <VideoPlayerMinimal channel={activeChannel} channels={filteredChannels} onClose={closePlayer} />
       )}
 
       <Suspense fallback={null}>

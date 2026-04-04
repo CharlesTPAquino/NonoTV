@@ -72,7 +72,7 @@ export default function useHlsPlayer(url, videoRef, options = {}, channel = null
     }
   }, []);
 
-  const initHls = useCallback(async (video, src) => {
+  const initHls = useCallback((video, src) => {
     destroyHls();
 
     const warmHls = prefetchService.getWarmHls(src);
@@ -102,18 +102,18 @@ export default function useHlsPlayer(url, videoRef, options = {}, channel = null
     const isLive = !isVod;
 
     // Google Video Stitcher — tenta obter manifest otimizado para play instantâneo
-    let loadUrl = src;
-    try {
-      loadUrl = await aiService.getStitchedManifest(src, { name: channel?.name, group: channel?.group });
+    aiService.getStitchedManifest(src, { name: channel?.name, group: channel?.group }).then(loadUrl => {
       if (loadUrl !== src) {
         console.log('[Stitcher] Manifest otimizado recebido');
-      } else {
-        console.log('[Stitcher] Fallback para URL original');
       }
-    } catch {
+      setupHls(video, loadUrl, src, type, deviceProfile, tier, isLive);
+    }).catch(() => {
       console.log('[Stitcher] Erro, usando URL original');
-    }
+      setupHls(video, src, src, type, deviceProfile, tier, isLive);
+    });
+  }, [destroyHls, update]);
 
+  const setupHls = useCallback((video, loadUrl, originalSrc, type, deviceProfile, tier, isLive) => {
     // P4: Auto-Quality Selector — detecta conexão E hardware
     const autoConfig = aiService.getAutoQualityConfig(isLive);
     const deviceConfig = {
@@ -135,11 +135,21 @@ export default function useHlsPlayer(url, videoRef, options = {}, channel = null
 
     const isDev = import.meta.env.DEV;
     if (isDev) {
-      loadUrl = `http://localhost:3131/?url=${encodeURIComponent(src)}`;
+      loadUrl = `http://localhost:3131/?url=${encodeURIComponent(originalSrc)}`;
     }
 
     hls.loadSource(loadUrl);
     hls.attachMedia(video);
+
+    hls.on(Hls.Events.LEVEL_SWITCHED, (_, data) => {
+      const level = hls.levels[data.level];
+      if (level) {
+        const height = level.height;
+        const label = height >= 2160 ? '4K' : height >= 1080 ? '1080p' : height >= 720 ? '720p' : `${height}p`;
+        qualityRef.current = label;
+        update({ quality: label });
+      }
+    });
 
     hls.on(Hls.Events.MANIFEST_PARSED, () => {
       update({ buffering: false, status: 'ready' });
@@ -152,11 +162,9 @@ export default function useHlsPlayer(url, videoRef, options = {}, channel = null
       else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) hls.recoverMediaError();
       else {
         destroyHls();
-        setTimeout(() => initHlsRef.current?.(video, src), 2000);
+        setTimeout(() => initHlsRef.current?.(video, originalSrc), 2000);
       }
     });
-
-    return () => destroyHls();
   }, [destroyHls, update]);
 
   useEffect(() => { initHlsRef.current = initHls; }, [initHls]);
@@ -175,18 +183,16 @@ export default function useHlsPlayer(url, videoRef, options = {}, channel = null
     video.addEventListener('canplay', onPlaying);
 
     const type = detectStreamType(url);
-    let cleanupHls = null;
 
     if (type === 'direct') {
       video.src = url;
       video.load();
       video.play().catch(() => {});
     } else {
-      cleanupHls = initHlsRef.current?.(video, url);
+      initHlsRef.current?.(video, url);
     }
 
     return () => {
-      if (cleanupHls) cleanupHls();
       video.removeEventListener('playing', onPlaying);
       video.removeEventListener('waiting', onWaiting);
       video.removeEventListener('canplay', onPlaying);
@@ -194,8 +200,9 @@ export default function useHlsPlayer(url, videoRef, options = {}, channel = null
         video.removeAttribute('src');
         video.load();
       }
+      destroyHls();
     };
-  }, [url]);
+  }, [url, destroyHls]);
 
   const togglePlay = useCallback(() => {
     const v = videoRef.current;
