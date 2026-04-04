@@ -552,4 +552,16 @@
   .color-transition {
     transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
   }
+
+  /* Staggered Entry Animation (lightweight) */
+  @keyframes staggerFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 }

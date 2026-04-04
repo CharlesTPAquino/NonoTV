@@ -8,6 +8,14 @@ function getContentType(channel) {
   return 'live';
 }
 
+function getQualityBadge(name) {
+  if (!name) return null;
+  if (/4K|UHD/i.test(name)) return { label: '4K', color: 'bg-[#00E5FF]/90 text-black' };
+  if (/FHD|1080/i.test(name)) return { label: 'FHD', color: 'bg-blue-500/90 text-white' };
+  if (/HD|720/i.test(name)) return { label: 'HD', color: 'bg-emerald-500/90 text-white' };
+  return null;
+}
+
 function ChannelCard({ channel, onPlay, isValid, isPlayerOpen }) {
   if (!channel || !channel.name) return null;
   
@@ -17,6 +25,7 @@ function ChannelCard({ channel, onPlay, isValid, isPlayerOpen }) {
   const contentType = getContentType(channel);
   const isPoster = contentType === 'movie' || contentType === 'series';
   const isLive = contentType === 'live';
+  const quality = getQualityBadge(channel.name);
 
   const aspectClass = isLive ? 'aspect-video' : 'aspect-[2/3]';
   const containerRadius = isLive ? 'rounded-xl' : 'rounded-xl';
@@ -60,8 +69,8 @@ function ChannelCard({ channel, onPlay, isValid, isPlayerOpen }) {
         {/* Subtle bottom gradient */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent z-10" />
 
-        {/* Type Badge */}
-        <div className="absolute top-2.5 left-2.5 z-20">
+        {/* Type Badge + Quality */}
+        <div className="absolute top-2.5 left-2.5 z-20 flex items-center gap-1.5">
           {isLive && (
             <div className="flex items-center gap-1 bg-red-600/90 backdrop-blur-sm px-2 py-0.5 rounded-md">
               <div className="w-1 h-1 rounded-full bg-white" />
@@ -77,6 +86,11 @@ function ChannelCard({ channel, onPlay, isValid, isPlayerOpen }) {
           {contentType === 'series' && (
             <div className="flex items-center gap-1 bg-indigo-500/90 backdrop-blur-sm px-2 py-0.5 rounded-md text-white font-bold uppercase tracking-wide text-[7px]">
               <span>Série</span>
+            </div>
+          )}
+          {quality && (
+            <div className={`px-1.5 py-0.5 rounded-md font-bold text-[7px] uppercase tracking-wide ${quality.color}`}>
+              {quality.label}
             </div>
           )}
         </div>

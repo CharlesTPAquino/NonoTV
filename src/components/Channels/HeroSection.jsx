@@ -15,6 +15,20 @@ const cleanChannelName = (name) => {
 export default function HeroSection({ channels, onPlay, validity = {}, isPlayerOpen = false }) {
   const [featuredIndex, setFeaturedIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const containerRef = React.useRef(null);
+  const [parallaxY, setParallaxY] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      if (rect.bottom > 0 && rect.top < 0) {
+        setParallaxY(window.scrollY * 0.3);
+      }
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const featured = useMemo(() => {
     if (!channels || channels.length === 0) return [];
@@ -44,15 +58,16 @@ export default function HeroSection({ channels, onPlay, validity = {}, isPlayerO
   if (!current) return null;
 
   return (
-    <div className="relative w-full aspect-[21/9] min-h-[400px] md:min-h-[500px] rounded-[2rem] md:rounded-[3rem] overflow-hidden mb-16 group bg-[#050505] shadow-[0_30px_100px_rgba(0,0,0,0.8)] border border-white/5 animate-in fade-in zoom-in-95 duration-1000">
+    <div ref={containerRef} className="relative w-full aspect-[21/9] min-h-[400px] md:min-h-[500px] rounded-[2rem] md:rounded-[3rem] overflow-hidden mb-16 group bg-[#050505] shadow-[0_30px_100px_rgba(0,0,0,0.8)] border border-white/5">
       
-      {/* Background Layer */}
+      {/* Background Layer with Parallax */}
       <div className={`absolute inset-0 transition-all duration-1000 ease-in-out ${isTransitioning ? 'opacity-0 scale-110' : 'opacity-100 scale-100'}`}>
         {current.logo ? (
-          <div className="relative w-full h-full">
+          <div className="relative w-full h-full overflow-hidden">
             <img 
               src={current.logo} 
               className="w-full h-full object-cover brightness-[0.4] blur-[2px] scale-110"
+              style={{ transform: `translateY(${parallaxY}px) scale(1.1)` }}
               alt=""
             />
             {/* Center Logo Floating */}
