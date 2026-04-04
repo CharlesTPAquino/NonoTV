@@ -7,79 +7,42 @@ import { prefetchService } from '../services/PrefetchService';
 import { detectServerTech, TECH_PROFILES } from '../services/ServerTechProfiler';
 
 /**
- * NonoTV — Hardware-Aware Turbo Player v4.8 + Server Tech Aware
- * Adapta a performance ao dispositivo E à tecnologia do servidor.
+ * NonoTV — Hardware-Aware Turbo Player v5.0
+ * P3: AI Metadata Enrichment integrado
+ * P4: Auto-Quality Selector (adapta resolução ao bandwidth em tempo real)
  */
-
-const CONFIG_PROFILES = {
-  live: {
-    enableWorker: true,
-    lowLatencyMode: false,
-    backBufferLength: 5,
-    maxBufferLength: 12,
-    maxMaxBufferLength: 18,
-    maxBufferSize: 20 * 1000 * 1000,
-    manifestLoadingMaxRetry: 15,
-    levelLoadingMaxRetry: 15,
-    fragLoadingMaxRetry: 20,
-    liveSyncDurationCount: 4,
-    liveMaxLatencyDurationCount: 8,
-    abrBandWidthFactor: 0.8,
-    abrBandWidthUpFactor: 0.5
-  },
-  vod: {
-    enableWorker: true,
-    lowLatencyMode: false,
-    backBufferLength: 30,
-    maxBufferLength: 60,
-    maxMaxBufferLength: 90,
-    maxBufferSize: 60 * 1000 * 1000,
-    manifestLoadingMaxRetry: 10,
-    fragLoadingMaxRetry: 10,
-    abrBandWidthFactor: 0.9,
-    abrBandWidthUpFactor: 0.7
-  }
-};
 
 function detectStreamType(url) {
   if (!url) return 'live';
   const lower = url.toLowerCase();
   
-  // Server Tech Detection first
   const serverTech = detectServerTech(url);
   
-  // TS Direct streams → HLS.js
   if (serverTech.key === 'TS_DIRECT' || lower.includes('.ts') || lower.includes('output=ts')) {
     return 'hls-ts';
   }
   
-  // VOD MP4/MKV → direct play
   if (serverTech.key === 'VOD_MP4' || lower.includes('.mp4') || lower.includes('.mkv')) {
     return 'direct';
   }
   
-  // HLS Direct → HLS.js
   if (serverTech.key === 'HLS_DIRECT' || lower.includes('.m3u8') || lower.includes('output=m3u8')) {
     return 'hls';
   }
   
-  // Xtream → depends on content type
   if (serverTech.key === 'XTREAM') {
     const type = getGlobalStreamType(url);
     if (type === 'movie' || type === 'series') {
-      // VOD via Xtream can be .ts or .mp4
       if (lower.includes('.mp4') || lower.includes('.mkv')) return 'direct';
-      return 'hls'; // Xtream VOD often uses HLS
+      return 'hls';
     }
-    return 'hls'; // Live via Xtream
+    return 'hls';
   }
   
-  // MAG/Stalker → TS streams via HLS.js
   if (serverTech.key === 'MAG' || serverTech.key === 'ENIGMA') {
     return 'hls-ts';
   }
   
-  // Fallback: detect by extension
   if (lower.includes('.ts') || lower.includes('.mp4') || lower.includes('.mkv')) return 'direct';
   const type = getGlobalStreamType(url);
   return (type === 'movie' || type === 'series') ? 'hls' : 'live';
@@ -87,12 +50,13 @@ function detectStreamType(url) {
 
 export default function useHlsPlayer(url, videoRef, options = {}) {
   const [playerState, setPlayerState] = useState({
-    playing: false, buffering: true, error: null, status: 'idle'
+    playing: false, buffering: true, error: null, status: 'idle', quality: 'auto'
   });
 
   const hlsRef = useRef(null);
   const optionsRef = useRef(options);
   const initHlsRef = useRef(null);
+  const qualityRef = useRef('auto');
 
   useEffect(() => { optionsRef.current = options; }, [options]);
 
@@ -100,9 +64,6 @@ export default function useHlsPlayer(url, videoRef, options = {}) {
 
   const destroyHls = useCallback(() => {
     if (hlsRef.current) {
-      // Se a instância for do prefetch, não destruímos totalmente aqui para permitir reuso rápido
-      // apenas paramos o download se não for o canal ativo. 
-      // Mas para segurança v4.8, vamos destruir apenas se não for a instância quente.
       hlsRef.current.stopLoad();
       hlsRef.current.detachMedia();
       hlsRef.current.destroy();
@@ -113,7 +74,6 @@ export default function useHlsPlayer(url, videoRef, options = {}) {
   const initHls = useCallback((video, src) => {
     destroyHls();
 
-    // Zapping Instantâneo: Checa se canal já foi prefetched
     const warmHls = prefetchService.getWarmHls(src);
     if (warmHls) {
       console.log('[Turbo-Player] Zapping Instantâneo: Reaproveitando buffer quente.');
@@ -135,25 +95,38 @@ export default function useHlsPlayer(url, videoRef, options = {}) {
     }
 
     const type = detectStreamType(src);
-    const profile = detectDeviceProfile();
+    const deviceProfile = detectDeviceProfile();
     const isVod = type === 'direct';
-    const baseConfig = isVod ? CONFIG_PROFILES.vod : CONFIG_PROFILES.live;
-    
-    console.log(`[Turbo-Player] Server Tech: ${type} | Device: ${profile.label}`);
-    
-    // Mescla perfil de hardware com perfil de conteúdo
-    const finalConfig = {
-      ...baseConfig,
-      maxBufferLength: Math.min(baseConfig.maxBufferLength, profile.maxBuffer),
-      abrBandWidthFactor: profile.abrFactor,
-      enableWorker: true
-    };
+    const isLive = !isVod;
 
+    // P4: Auto-Quality Selector — detecta conexão e aplica perfil ótimo
+    const autoConfig = aiService.getAutoQualityConfig(isLive);
+    const deviceConfig = {
+      maxBufferLength: Math.min(autoConfig.maxBufferLength, deviceProfile.maxBuffer),
+      abrBandWidthFactor: deviceProfile.abrFactor,
+    };
+    
+    const finalConfig = { ...autoConfig, ...deviceConfig, enableWorker: true };
+    
+    const conn = aiService.detectConnectionQuality();
+    console.log(`[Turbo-Player] ${type} | ${deviceProfile.label} | ${conn.effectiveType} (${conn.downlink}Mbps)`);
+    
     const hls = new Hls(finalConfig);
     hlsRef.current = hls;
     
     video.setAttribute('playsinline', '');
     video.style.transform = 'translateZ(0)';
+
+    // P4: Monitorar nível de qualidade atual
+    hls.on(Hls.Events.LEVEL_SWITCHED, (_, data) => {
+      const level = hls.levels[data.level];
+      if (level) {
+        const height = level.height;
+        const label = height >= 2160 ? '4K' : height >= 1080 ? '1080p' : height >= 720 ? '720p' : `${height}p`;
+        qualityRef.current = label;
+        update({ quality: label });
+      }
+    });
 
     const isDev = import.meta.env.DEV;
     const loadUrl = isDev ? `http://localhost:3131/?url=${encodeURIComponent(src)}` : src;
@@ -198,12 +171,10 @@ export default function useHlsPlayer(url, videoRef, options = {}) {
     let cleanupHls = null;
 
     if (type === 'direct') {
-      // VOD MP4/MKV: Native playback
       video.src = url;
       video.load();
       video.play().catch(() => {});
     } else {
-      // HLS (live, hls, hls-ts): HLS.js
       cleanupHls = initHlsRef.current?.(video, url);
     }
 
