@@ -93,10 +93,17 @@ export default function useHlsPlayer(url, videoRef, options = {}) {
   const hlsRef = useRef(null);
   const optionsRef = useRef(options);
   const initHlsRef = useRef(null);
+  const playerStateRef = useRef({ status: 'idle' });
 
   useEffect(() => { optionsRef.current = options; }, [options]);
 
-  const update = useCallback((patch) => setPlayerState(s => ({ ...s, ...patch })), []);
+  const update = useCallback((patch) => {
+    setPlayerState(s => {
+      const next = { ...s, ...patch };
+      playerStateRef.current = next;
+      return next;
+    });
+  }, []);
 
   const destroyHls = useCallback(() => {
     if (hlsRef.current) {
@@ -171,12 +178,47 @@ export default function useHlsPlayer(url, videoRef, options = {}) {
       if (data.type === Hls.ErrorTypes.NETWORK_ERROR) hls.startLoad();
       else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) hls.recoverMediaError();
       else {
+        // Fatal error: try native playback as fallback
+        console.log('[HLS] Fatal error, tentando native playback');
         destroyHls();
-        setTimeout(() => initHlsRef.current?.(video, src), 2000);
+        try {
+          video.src = src;
+          video.load();
+          video.play().catch(() => {
+            update({ error: 'Sinal indisponível', buffering: false });
+          });
+          update({ buffering: false, status: 'ready', engine: 'native-fallback' });
+        } catch (e) {
+          update({ error: 'Erro ao reproduzir', buffering: false });
+        }
       }
     });
 
-    return () => destroyHls();
+    // Timeout fallback: se não iniciar em 8s, tenta native
+    const timeout = setTimeout(() => {
+      if (hlsRef.current === hls && playerStateRef.current.status !== 'ready') {
+        console.log('[HLS] Timeout, tentando native playback');
+        destroyHls();
+        try {
+          video.src = src;
+          video.load();
+          video.play().catch(() => {
+            update({ error: 'Sinal indisponível', buffering: false });
+          });
+          update({ buffering: false, status: 'ready', engine: 'native-timeout' });
+        } catch (e) {
+          update({ error: 'Erro ao reproduzir', buffering: false });
+        }
+      }
+    }, 8000);
+
+    const origDestroy = destroyHls;
+    const safeDestroy = () => {
+      clearTimeout(timeout);
+      origDestroy();
+    };
+
+    return () => safeDestroy();
   }, [destroyHls, update]);
 
   useEffect(() => { initHlsRef.current = initHls; }, [initHls]);

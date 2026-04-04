@@ -13,7 +13,14 @@ const TECH_PROFILES = {
     name: 'Xtream Codes API',
     indicators: ['/player_api.php', '/get.php', '/xmltv.php', 'username=', 'password='],
     streamFormats: ['m3u8', 'ts', 'mp4'],
-    authMethod: 'query-params'
+    authMethod: 'query-params',
+    // URLs sem extensão precisam de ?output=m3u8 para HLS.js funcionar
+    urlFix: (url) => {
+      if (!url.includes('?output=') && !/\.(m3u8|ts|mp4|mkv)(\?|$)/i.test(url)) {
+        return url.includes('?') ? `${url}&output=m3u8` : `${url}?output=m3u8`;
+      }
+      return url;
+    }
   },
   MAG: {
     name: 'MAG Portal (Stalker)',
@@ -78,7 +85,7 @@ function setCache(profiles) {
 }
 
 /**
- * Detecta a tecnologia do servidor baseado na URL
+ * Detecta a tecnologia do servidor baseado na URL da fonte
  */
 export function detectServerTech(url) {
   if (!url) return TECH_PROFILES.UNKNOWN;
@@ -93,6 +100,33 @@ export function detectServerTech(url) {
   }
   
   return TECH_PROFILES.UNKNOWN;
+}
+
+/**
+ * Detecta a tecnologia baseado nas URLs dos canais (quando a fonte é M3U raw)
+ */
+export function detectTechFromChannels(channels) {
+  if (!channels || channels.length === 0) return null;
+  
+  // Pegar amostra das primeiras 10 URLs
+  const sample = channels.slice(0, 10).map(ch => ch.url).filter(Boolean);
+  if (sample.length === 0) return null;
+  
+  // Contar quantas URLs parecem Xtream (sem extensão, com path numérico)
+  let xtreamCount = 0;
+  for (const url of sample) {
+    const lower = url.toLowerCase();
+    const hasExtension = /\.(m3u8|ts|mp4|mkv)(\?|$)/i.test(lower);
+    const isXtreamStyle = !hasExtension && /^https?:\/\/[^/]+\/[\w]+\/[\w]+\/\d+/.test(lower);
+    if (isXtreamStyle) xtreamCount++;
+  }
+  
+  // Se maioria parece Xtream, aplicar fix
+  if (xtreamCount >= sample.length * 0.5) {
+    return 'XTREAM';
+  }
+  
+  return null;
 }
 
 /**
@@ -199,11 +233,59 @@ export function clearProfileCache() {
   localStorage.removeItem(CACHE_KEY);
 }
 
+/**
+ * Normaliza URL de canal baseado na tecnologia do servidor.
+ * 
+ * Ex: Ramys (Xtream) gera URLs sem extensão como:
+ *   http://server:80/user/pass/62169
+ * 
+ * O HLS.js precisa de ?output=m3u8 para funcionar:
+ *   http://server:80/user/pass/62169?output=m3u8
+ */
+export function normalizeChannelUrl(channelUrl, serverTech) {
+  if (!channelUrl || !serverTech) return channelUrl;
+  
+  const profile = TECH_PROFILES[serverTech] || TECH_PROFILES.UNKNOWN;
+  if (profile.urlFix) {
+    return profile.urlFix(channelUrl);
+  }
+  
+  return channelUrl;
+}
+
+/**
+ * Normaliza TODOS os canais de uma fonte baseado na tecnologia detectada.
+ */
+export function normalizeAllChannels(channels, serverTech) {
+  if (!channels || !serverTech) return channels;
+  
+  const profile = TECH_PROFILES[serverTech] || TECH_PROFILES.UNKNOWN;
+  if (!profile.urlFix) return channels;
+  
+  let fixedCount = 0;
+  const normalized = channels.map(ch => {
+    const newUrl = profile.urlFix(ch.url);
+    if (newUrl !== ch.url) {
+      fixedCount++;
+      return { ...ch, url: newUrl };
+    }
+    return ch;
+  });
+  
+  if (fixedCount > 0) {
+    console.log(`[ServerTech] ${fixedCount}/${channels.length} URLs normalizadas para ${serverTech}`);
+  }
+  
+  return normalized;
+}
+
 export default {
   detectServerTech,
   profileServer,
   profileAllSources,
   getServerProfile,
   clearProfileCache,
+  normalizeChannelUrl,
+  normalizeAllChannels,
   TECH_PROFILES
 };
