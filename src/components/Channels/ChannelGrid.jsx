@@ -47,38 +47,12 @@ export default function ChannelGrid({ channels, activeGroup, activeCategory, set
 
   const isHome = activeCategory === 'All' && activeGroup === 'All' && !isSearching;
   const isPosterContent = activeCategory === 'movie' || activeCategory === 'series' || activeCategory === 'podcasts';
+  const isLiveCategory = activeCategory === 'live';
 
-  if (standard.length === 0 && !isHome) {
-    if (isValidating || (channels.length === 0 && !isSearching)) {
-      return (
-        <div className="py-12 animate-in fade-in duration-700">
-           <ChannelGridSkeleton isPoster={isPosterContent} count={18} />
-        </div>
-      );
-    }
-    const meta = CATEGORY_META[activeCategory];
-    const Icon = meta?.icon || Tv;
-    return (
-      <div className="flex flex-col items-center justify-center py-40 space-y-8 animate-in fade-in zoom-in-95 duration-1000">
-        <div className="relative group">
-          <div className="absolute inset-0 bg-[#F7941D] rounded-[2.5rem] blur-3xl opacity-10 group-hover:opacity-20 transition-opacity" />
-          <div className="relative w-32 h-32 rounded-[2.5rem] bg-[#050505] border border-white/10 flex items-center justify-center shadow-2xl reflective-glass">
-            <Icon size={48} className="text-[#F7941D]/40" />
-          </div>
-        </div>
-        <div className="text-center space-y-3">
-          <h3 className="text-white font-black uppercase tracking-[0.5em] text-sm">
-            {isSearching ? 'Sem correspondências' : meta?.label || 'Conteúdo Premium'}
-          </h3>
-          <p className="text-white/20 text-[10px] font-bold uppercase tracking-[0.2em] max-w-sm mx-auto leading-relaxed">
-            {isSearching ? `Não encontramos resultados para "${search}" em nosso sinal atual.` : meta?.hint || 'Conecte seu servidor IPTV para liberar o acesso Elite.'}
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  const displayChannels = standard.slice(0, limit);
+  // Forçar type 'live' nos canais quando na aba ao vivo
+  const displayChannels = isLiveCategory
+    ? standard.slice(0, limit).map(ch => ({ ...ch, type: 'live' }))
+    : standard.slice(0, limit);
 
   return (
     <div className="w-full">

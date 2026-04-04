@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { X, Server, Wifi, Heart, History, Upload, Download, RefreshCw, Settings, ChevronRight, Activity, Cloud, Bug, Shield, Database, Zap } from 'lucide-react';
+import { X, Server, Wifi, Heart, History, Upload, Download, RefreshCw, Settings, ChevronRight, Activity, Cloud, Bug, Shield, Database, Zap, Sparkles } from 'lucide-react';
 import ServerHealthDashboard from './ServerHealthDashboard';
 import SyncTab from './SyncTab';
 import DiagnosticPanel from './DiagnosticPanel';
+import { aiService } from '../../services/AIService';
 
 /**
  * PAINEL DE CONFIGURAÇÕES - REDESIGN ULTRA ELITE 4K
@@ -16,6 +17,9 @@ export default function SettingsPanel({
   getSettings, updateSettings, initialTab = 'sources'
 }) {
   const [activeTab, setActiveTab] = useState(initialTab);
+  const [aiEnriching, setAiEnriching] = useState(false);
+  const [aiProgress, setAiProgress] = useState(null);
+  const [aiEnrichedCount, setAiEnrichedCount] = useState(0);
   
   React.useEffect(() => {
     if (isOpen && initialTab) {
@@ -55,6 +59,7 @@ export default function SettingsPanel({
   const tabs = [
     { id: 'sources',    label: 'Fontes',      icon: Database },
     { id: 'status',     label: 'Sinal',       icon: Activity },
+    { id: 'ai',         label: 'AI Hub',       icon: Sparkles },
     { id: 'favorites',  label: 'Favoritos',   icon: Heart },
     { id: 'history',    label: 'Histórico',   icon: History },
     { id: 'settings',   label: 'Ajustes',     icon: Settings },
@@ -275,6 +280,103 @@ export default function SettingsPanel({
                       </div>
                     </div>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'ai' && (
+              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <div className="p-6 bg-gradient-to-br from-[#F7941D]/10 to-transparent border border-[#F7941D]/20 rounded-[1.5rem]">
+                  <div className="flex items-center gap-3 mb-4">
+                    <Sparkles size={24} className="text-[#F7941D]" />
+                    <div>
+                      <p className="font-black text-white text-sm uppercase tracking-widest">AI Metadata Enrichment</p>
+                      <p className="text-white/30 text-[9px] font-bold uppercase mt-1">Gemini 1.5 Flash</p>
+                    </div>
+                  </div>
+                  <p className="text-white/40 text-xs leading-relaxed">
+                    Gera descrições automáticas para canais e filmes sem EPG usando inteligência artificial. 
+                    Cada canal recebe uma descrição única e contextual.
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between p-6 bg-white/5 border border-white/5 rounded-[1.5rem]">
+                  <div>
+                    <p className="font-black text-white text-xs uppercase tracking-widest">Ativar AI</p>
+                    <p className="text-white/20 text-[9px] font-bold uppercase mt-1">Enriquecer metadados automaticamente</p>
+                  </div>
+                  <button
+                    onClick={() => updateSettings({ aiEnrichment: !settings.aiEnrichment })}
+                    className={`w-12 h-7 rounded-full transition-all p-1 ${
+                      settings.aiEnrichment ? 'bg-[#F7941D]' : 'bg-white/10'
+                    }`}
+                  >
+                    <div className={`w-5 h-5 bg-white rounded-full transition-transform shadow-xl ${
+                      settings.aiEnrichment ? 'translate-x-5' : 'translate-x-0'
+                    }`} />
+                  </button>
+                </div>
+
+                <button
+                  onClick={async () => {
+                    if (aiEnriching) return;
+                    setAiEnriching(true);
+                    setAiEnrichedCount(0);
+                    try {
+                      const channels = onExportChannels?.() || [];
+                      const enriched = await aiService.batchEnrichMetadata(
+                        channels, 10,
+                        (done, total) => {
+                          setAiProgress({ done, total });
+                          setAiEnrichedCount(done);
+                        }
+                      );
+                      setAiEnrichedCount(enriched.filter(c => c.aiEnriched).length);
+                    } catch (e) {
+                      console.error('[AI] Erro:', e);
+                    } finally {
+                      setAiEnriching(false);
+                      setAiProgress(null);
+                    }
+                  }}
+                  disabled={aiEnriching}
+                  className={`w-full flex items-center justify-center gap-3 px-6 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all ${
+                    aiEnriching
+                      ? 'bg-white/5 text-white/20 cursor-not-allowed'
+                      : 'bg-[#F7941D] text-black hover:scale-[1.02] shadow-[0_10px_30px_rgba(247,148,29,0.3)]'
+                  }`}
+                >
+                  {aiEnriching ? (
+                    <>
+                      <RefreshCw size={16} className="animate-spin" />
+                      {aiProgress ? `Enriquecendo ${aiProgress.done}/${aiProgress.total}` : 'Processando...'}
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles size={16} />
+                      Enriquecer Todos com IA
+                    </>
+                  )}
+                </button>
+
+                {aiEnrichedCount > 0 && (
+                  <div className="text-center p-4 bg-green-500/10 border border-green-500/20 rounded-xl">
+                    <p className="text-green-400 text-xs font-bold">{aiEnrichedCount} canais enriquecidos com sucesso</p>
+                  </div>
+                )}
+
+                <div className="p-4 bg-white/5 border border-white/5 rounded-xl">
+                  <p className="text-white/20 text-[9px] font-bold uppercase tracking-widest">Cache AI</p>
+                  <p className="text-white/40 text-[8px] mt-1">Metadados em cache por 7 dias</p>
+                  <button
+                    onClick={() => {
+                      localStorage.removeItem('nono_ai_metadata');
+                      setAiEnrichedCount(0);
+                    }}
+                    className="mt-2 text-red-400/50 hover:text-red-400 text-[9px] font-black uppercase tracking-widest"
+                  >
+                    Limpar Cache AI
+                  </button>
                 </div>
               </div>
             )}
