@@ -1,5 +1,7 @@
-import React, { useState, memo } from 'react';
+import React, { useState, useRef, useEffect, memo } from 'react';
 import { Play, Film } from 'lucide-react';
+
+let HlsClass = null;
 
 function getContentType(channel) {
   const type = channel.type || 'live';
@@ -21,6 +23,13 @@ function ChannelCard({ channel, onPlay, isValid, isPlayerOpen }) {
   
   const [isHovered, setIsHovered] = useState(false);
   const [imgError, setImgError] = useState(false);
+  const [isInView, setIsInView] = useState(false);
+  const [hlsReady, setHlsReady] = useState(false);
+  
+  const videoRef = useRef(null);
+  const hlsRef = useRef(null);
+  const cardRef = useRef(null);
+  const hoverTimerRef = useRef(null);
 
   const contentType = getContentType(channel);
   const isPoster = contentType === 'movie' || contentType === 'series';
@@ -29,10 +38,108 @@ function ChannelCard({ channel, onPlay, isValid, isPlayerOpen }) {
 
   const aspectClass = isLive ? 'aspect-video' : 'aspect-[2/3]';
 
+  // Lazy load HLS.js
+  useEffect(() => {
+    if (!HlsClass) {
+      import('hls.js').then((module) => {
+        HlsClass = module.default;
+        setHlsReady(true);
+      }).catch(() => {});
+    } else {
+      setHlsReady(true);
+    }
+  }, []);
+
+  // IntersectionObserver — só carrega preview quando visível
+  useEffect(() => {
+    const el = cardRef.current;
+    if (!el || !isLive) return;
+    
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsInView(entry.isIntersecting),
+      { threshold: 0.3, rootMargin: '200px' }
+    );
+    
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [isLive]);
+
+  // Video preview — só inicia se: hover + visível + HLS pronto + não player aberto
+  useEffect(() => {
+    if (!isHovered || !isInView || !hlsReady || isPlayerOpen || !videoRef.current || !isLive) {
+      // Cleanup
+      if (hoverTimerRef.current) {
+        clearTimeout(hoverTimerRef.current);
+        hoverTimerRef.current = null;
+      }
+      if (hlsRef.current) {
+        hlsRef.current.destroy();
+        hlsRef.current = null;
+      }
+      if (videoRef.current) {
+        videoRef.current.pause();
+        videoRef.current.removeAttribute('src');
+        videoRef.current.load();
+      }
+      return;
+    }
+
+    // Debounce 400ms — só inicia se o hover persistir
+    hoverTimerRef.current = setTimeout(() => {
+      const video = videoRef.current;
+      if (!video || !HlsClass) return;
+
+      if (HlsClass.isSupported()) {
+        const hls = new HlsClass({
+          maxBufferLength: 2,
+          maxMaxBufferLength: 4,
+          manifestLoadingMaxRetry: 1,
+          levelLoadingMaxRetry: 1,
+          fragLoadingMaxRetry: 1,
+          enableWorker: true,
+          backBufferLength: 0,
+          startLevel: -1,
+          testBandwidth: false
+        });
+        hlsRef.current = hls;
+        hls.loadSource(channel.url);
+        hls.attachMedia(video);
+
+        hls.on(HlsClass.Events.MANIFEST_PARSED, () => {
+          video.play().catch(() => {});
+        });
+
+        hls.on(HlsClass.Events.ERROR, (_, data) => {
+          if (data.fatal) {
+            hls.destroy();
+            hlsRef.current = null;
+          }
+        });
+      }
+    }, 400);
+
+    return () => {
+      if (hoverTimerRef.current) {
+        clearTimeout(hoverTimerRef.current);
+        hoverTimerRef.current = null;
+      }
+      if (hlsRef.current) {
+        hlsRef.current.destroy();
+        hlsRef.current = null;
+      }
+      if (videoRef.current) {
+        videoRef.current.pause();
+        videoRef.current.removeAttribute('src');
+        videoRef.current.load();
+      }
+    };
+  }, [isHovered, isInView, hlsReady, isPlayerOpen, isLive, channel.url]);
+
   const handleClick = () => { setIsHovered(false); onPlay(channel); };
 
   return (
     <button
+      ref={cardRef}
       onClick={handleClick}
       onMouseEnter={() => !isPlayerOpen && setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -45,6 +152,17 @@ function ChannelCard({ channel, onPlay, isValid, isPlayerOpen }) {
         
         {/* Artwork Area */}
         <div className={`relative ${isLive ? 'flex-1 min-h-0' : 'absolute inset-0'} overflow-hidden`}>
+          {/* Video Preview (Live only) */}
+          {isLive && (
+            <video
+              ref={videoRef}
+              muted
+              playsInline
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          )}
+
+          {/* Logo Image */}
           {!imgError && channel.logo ? (
             <img
               src={channel.logo}
@@ -53,7 +171,7 @@ function ChannelCard({ channel, onPlay, isValid, isPlayerOpen }) {
               onError={() => setImgError(true)}
               className={`w-full h-full transition-all duration-300 ${
                 isPoster ? 'object-cover' : 'object-contain p-4'
-              } ${isHovered ? 'scale-105' : 'scale-100'}`}
+              } ${isHovered && isLive ? 'opacity-0' : 'opacity-100'} ${isHovered ? 'scale-105' : 'scale-100'}`}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-[#252528]">
