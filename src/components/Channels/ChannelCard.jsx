@@ -1,8 +1,5 @@
-import React, { useState, useRef, useEffect, memo } from 'react';
+import React, { useState, memo } from 'react';
 import { Play, Star, Clock, Film, Tv, Info, Zap } from 'lucide-react';
-import { prefetchService } from '../../services/PrefetchService';
-
-let HlsClass = null;
 
 /**
  * Extrai badges de qualidade do nome do canal
@@ -27,9 +24,6 @@ function ChannelCard({ channel, onPlay, isValid, isPlayerOpen }) {
   
   const [isHovered, setIsHovered] = useState(false);
   const [imgError, setImgError] = useState(false);
-  const [hlsLoaded, setHlsLoaded] = useState(false);
-  const videoRef = useRef(null);
-  const hlsRef = useRef(null);
 
   const contentType = getContentType(channel);
   const isPoster = contentType === 'movie' || contentType === 'series';
@@ -39,73 +33,6 @@ function ChannelCard({ channel, onPlay, isValid, isPlayerOpen }) {
   // Layout dinâmico: 16:9 para LIVE, 2:3 para VOD
   const aspectClass = isLive ? 'aspect-video' : 'aspect-[2/3]';
   const containerRadius = isLive ? 'rounded-2xl' : 'rounded-[1.5rem] md:rounded-[2rem]';
-
-  useEffect(() => {
-    if (isPlayerOpen) {
-      setIsHovered(false);
-      if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null; }
-    }
-  }, [isPlayerOpen]);
-
-  useEffect(() => {
-    if (!HlsClass) {
-      import('hls.js').then((module) => {
-        HlsClass = module.default;
-        setHlsLoaded(true);
-      });
-    } else {
-      setHlsLoaded(true);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!isHovered || isPlayerOpen || !videoRef.current || !hlsLoaded || !HlsClass || isPoster) return;
-    
-    // Debounce: Inicia preview apenas se o usuário parar o mouse/foco por 300ms
-    const timer = setTimeout(() => {
-      const video = videoRef.current;
-      if (!video) return;
-
-      if (HlsClass.isSupported()) {
-        const hls = new HlsClass({ 
-          maxBufferLength: 2, 
-          maxMaxBufferLength: 5,
-          manifestLoadingMaxRetry: 1,
-          enableWorker: true,
-          backBufferLength: 0 // Libera memória de frames passados imediatamente
-        });
-        hlsRef.current = hls;
-        hls.loadSource(channel.url);
-        hls.attachMedia(video);
-        
-        // Zapping Predictor: Inicia prefetch completo em background
-        prefetchService.prefetchChannel(channel);
-
-        hls.on(HlsClass.Events.MANIFEST_PARSED, () => {
-          video.play().catch(() => {});
-        });
-      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        video.src = channel.url;
-        video.play().catch(() => {});
-      }
-    }, 300);
-
-    return () => {
-      clearTimeout(timer);
-      if (hlsRef.current) {
-        hlsRef.current.stopLoad();
-        hlsRef.current.detachMedia();
-        hlsRef.current.destroy();
-        hlsRef.current = null;
-      }
-      const video = videoRef.current;
-      if (video) {
-        video.pause();
-        video.removeAttribute('src');
-        video.load(); // Força liberação do buffer de hardware
-      }
-    };
-  }, [isHovered, channel.url, isPlayerOpen, hlsLoaded, isPoster]);
 
   const handleClick = () => { setIsHovered(false); onPlay(channel); };
 
@@ -134,7 +61,7 @@ function ChannelCard({ channel, onPlay, isValid, isPlayerOpen }) {
               alt={channel.name}
               loading="lazy"
               onError={() => setImgError(true)}
-              className={`w-full h-full transition-all duration-700 ${
+              className={`w-full h-full transition-all duration-500 ${
                 isPoster ? 'object-cover' : 'object-contain p-6'
               } ${isHovered ? 'scale-110 brightness-[0.4] blur-[2px]' : 'scale-100 brightness-[0.85]'}`}
             />
@@ -147,18 +74,6 @@ function ChannelCard({ channel, onPlay, isValid, isPlayerOpen }) {
             </div>
           )}
         </div>
-
-        {/* Video Preview Overlay (Live only) */}
-        {isHovered && !isPlayerOpen && hlsLoaded && isLive && (
-          <div className="absolute inset-0 z-10 bg-black/40">
-             <video ref={videoRef} muted autoPlay playsInline className="w-full h-full object-cover brightness-[0.6]" />
-          </div>
-        )}
-
-        {/* Dynamic Glow for LIVE */}
-        {isLive && isHovered && (
-          <div className="absolute inset-0 z-20 border-2 border-red-600/50 animate-pulse" />
-        )}
 
         {/* Content Overlays */}
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-20" />
