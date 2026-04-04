@@ -89,13 +89,11 @@ export default function ChannelGrid({ channels, activeGroup, activeCategory, set
           <div className="space-y-16 pb-32">
             {groupedAll && Object.entries(groupedAll).slice(0, 12).map(([group, items]) => (
               <div key={group}>
-                <div className="flex items-center justify-between mb-6 px-2 md:px-0">
-                   <div>
-                     <h2 className="text-white font-black text-lg md:text-xl lg:text-2xl tracking-tight uppercase">{group}</h2>
-                   </div>
-                   <button onClick={() => setActiveGroup(group)} className="flex items-center gap-1 text-white/30 hover:text-[#F7941D] transition-colors">
-                      <span className="text-[9px] font-black uppercase tracking-widest">Ver Tudo</span>
-                      <ChevronRight size={14} />
+                <div className="flex items-center justify-between mb-5 px-2 md:px-0">
+                   <h2 className="text-base md:text-lg font-semibold text-white/80 tracking-tight">{group}</h2>
+                   <button onClick={() => setActiveGroup(group)} className="flex items-center gap-1 text-white/25 hover:text-white/50 transition-colors">
+                      <span className="text-[8px] font-medium tracking-wide">Ver tudo</span>
+                      <ChevronRight size={12} />
                    </button>
                 </div>
                 <ChannelCarousel channels={items} onPlay={onPlay} validity={channelValidity} isPlayerOpen={isPlayerOpen} />
@@ -107,17 +105,17 @@ export default function ChannelGrid({ channels, activeGroup, activeCategory, set
         <div className="flex flex-col">
           {/* Header Centralizado */}
           <div className="text-center mb-8">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-white uppercase tracking-tight leading-tight">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold text-white/90 tracking-tight leading-tight">
               {isSearching ? search : activeGroup === 'All' ? (CATEGORY_META[activeCategory]?.label || activeCategory) : activeGroup}
             </h2>
-            <p className="text-white/20 text-[9px] font-black uppercase tracking-[0.3em] mt-2">{standard.length} Itens Disponíveis</p>
+            <p className="text-white/25 text-[8px] font-medium tracking-wide mt-1.5">{standard.length} itens</p>
           </div>
 
           {/* Botões de Categoria - Scroll horizontal, tamanho do conteúdo */}
           {groups.length > 1 && (
-            <div className="flex items-center gap-2 mb-8 overflow-x-auto no-scrollbar">
+            <div className="flex items-center gap-1.5 mb-6 overflow-x-auto no-scrollbar">
               {groups.slice(0, 20).map((g) => (
-                <button key={g.id} onClick={() => setActiveGroup(g.name)} className={`flex-shrink-0 px-5 py-2 rounded-lg text-[9px] font-bold uppercase tracking-wide transition-all whitespace-nowrap ${activeGroup === g.name ? 'bg-white text-black' : 'bg-white/[0.04] text-white/30 hover:bg-white/[0.08] hover:text-white/60'}`}>
+                <button key={g.id} onClick={() => setActiveGroup(g.name)} className={`flex-shrink-0 px-4 py-1.5 rounded-md text-[8px] font-medium tracking-wide transition-all whitespace-nowrap ${activeGroup === g.name ? 'bg-white text-black' : 'bg-white/[0.04] text-white/30 hover:bg-white/[0.08] hover:text-white/60'}`}>
                   {g.name}
                 </button>
               ))}
