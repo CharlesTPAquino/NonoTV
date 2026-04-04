@@ -162,7 +162,7 @@ export default function App() {
   }
 
   return (
-    <div className={`h-screen w-screen bg-[#0a0a0c] text-white font-inter overflow-hidden relative selection:bg-[#F7941D]/30 transition-colors duration-500`}>
+    <div className="h-screen w-screen bg-black text-white overflow-hidden relative">
 
       <div className="h-full w-full relative z-10 flex">
         <Sidebar 
