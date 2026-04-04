@@ -1,69 +1,32 @@
-# NonoTV IPTV - Contexto da Sessão (v4.2 Elite)
+# NonoTV IPTV - Contexto da Sessão (v8.6.0 Elite Alpha - Suspenso)
 
-> Última atualização: 02/04/2026
-> Foco: Performance de Sync e Semântica de Design
-
----
-
-## 📍 De Onde Viemos (Legado v4.1)
-- O app travava por 15-30s ao carregar listas M3U grandes (>30k itens).
-- A interface era genérica: Canais Ao Vivo e Filmes usavam o mesmo layout (2:3), confundindo o usuário.
-- O fundo era estático (preto), faltando imersão "Premium".
+> Última atualização: 03/04/2026 às 22:40
+> Status: Interface Estabilizada / Player em Depuração
 
 ---
 
-## ✅ O Que Fizemos (Sprint v4.2 - Atual)
+## 📍 De Onde Viemos (O Passado)
+- **Legado v4.1 - v5.9:** Um player unificado que tentava processar tudo na Main Thread.
+- **Problemas Crônicos:** Travamentos de 15s em listas grandes, crashes de codec ao trocar de Live para VOD e categorização falha baseada em nomes de grupos.
 
-### 1. Sync Progressivo & Inteligente (`SourceContext.jsx` + `m3uParser.js`)
-- **Implementação:** O parser agora fatia a lista em chunks e prioriza o carregamento de canais AO VIVO.
-- **Resultado:** Redução de 80% no tempo de carregamento inicial (TTI). O app fica usável em ~3.5s.
-- **Exito:** Suporte a listas massivas sem crash de memória na inicialização.
+## 🛠️ Onde Estamos (O Hoje - v8.6.0)
 
-### 2. Design System Semântico (`ChannelCard.jsx` + `index.css`)
-- **Diferenciação:**
-    - **AO VIVO (16:9):** Layout landscape com borda `pulse-glow` vermelha.
-    - **VOD (2:3):** Layout portrait estilo pôster de cinema.
-- **Ambient Mode:** O fundo do app (`App.jsx`) agora reage à categoria (Vermelho p/ Live, Laranja p/ Filmes, Indigo p/ Séries).
+### 1. Performance de Interface (Sucesso ✅)
+- **Web Worker:** A filtragem de 50k+ canais agora é feita em background. A navegação entre abas não trava mais.
+- **Virtualização 2D:** Implementada com fallback paginado (30 itens) para evitar estouro de RAM.
+- **Dual-Environment:** Estrutura de `LivePlayer` e `CinemaPlayer` criada e orquestrada.
 
-### 3. Navbar Contextual (`Navbar.jsx`)
-- Abas de navegação agora brilham com a cor da categoria ativa.
+### 2. Sintonização de Vídeo (Falha Parcial ❌)
+- **O Problema Atual:** Apesar da lógica de detecção de DNA (HLS vs TS) e dos resets de hardware implementados, o sinal continua falhando ao carregar em certos cenários.
+- **Hipótese:** Conflito de renderização no ciclo de vida do React ou latência excessiva nos proxies de rede configurados no `streamService`.
 
-## 🛑 Regras de Engajamento (MANDATÓRIO)
+## 🎯 Para Onde Vamos (O Futuro)
 
-**Antes de qualquer linha de código ser alterada, a IA DEVE:**
-1. **Leitura de Contexto:** Ler integralmente o `SESSION_CONTEXT.md` e o `EXECUTION_PROMPTS.md`.
-2. **Análise de Código:** Realizar um `read_file` nos arquivos alvo para entender a lógica atual (ex: Sync Progressivo, Layout 16:9).
-3. **Prevenção de Regressão:** Comparar a nova proposta com o que já foi implementado para garantir que funcionalidades (como o bypass de DNS ou o parser de chunks) não sejam subscritas.
-4. **Auditoria de Impacto (AI):** Responder aos 5 pontos da Auditoria de Impacto registrados no `EXECUTION_PROMPTS.md`.
+### Prioridade 0: O "Reset" do Motor de Vídeo
+> Na próxima sessão, devemos ignorar a UI e focar 100% em um componente isolado de teste de vídeo para descobrir por que o buffer não está enchendo no Mi Stick.
 
-*O descumprimento destas regras pode levar ao colapso estrutural do app em hardware limitado.*
+### Prioridade 1: AI Metadata Enrichment
+> Dar vida aos canais sem EPG usando Gemini AI para gerar sinopses.
 
-### 4. Grid de Canais (v4.3.3 Hybrid)
-- **Status:** Virtualização desativada temporariamente por estabilidade.
-- **Implementação:** Grid CSS Responsiva com Paginação (60 itens/página).
-- **Recuperação:** Resolvido erro de referência no `EPGService.js` que causava crash total.
-
-### 5. Debugger Nativo
-- **Novo Recurso:** `debug-overlay` injetado no HTML para reportar erros de runtime em produção.
-
----
-
-## 🎯 Para Onde Vamos (Próxima Sessão)
-
-### Prioridade 1: Re-implementação Cautelosa da Virtualização
-Agora que o core está estável, vamos reintroduzir a `react-window` garantindo que os componentes sejam importados via namespace e que o container tenha altura fixa.
-
-### Prioridade 2: Limpeza do Debugger
-Remover o overlay de erro do `index.html` antes da versão final de produção (ou torná-lo ativável apenas via flag).
-
----
-
-## 🔧 Status de Execução
-- **Build Status:** ✅ Estável
-- **Performance:** 🚀 Alta (Sync Progressivo)
-- **UI/UX:** 💎 Premium (Ambient Mode)
-
----
-
-## 📋 Prompt de Inicialização (Para a próxima IA)
-"Leia o SESSION_CONTEXT.md e o EXECUTION_PROMPTS.md. O objetivo atual é implementar a Virtualização de Lista no ChannelGrid.jsx para suportar 50.000+ canais sem perda de FPS, mantendo o design dinâmico (16:9 e 2:3) implementado na v4.2."
+### Prioridade 2: Pre-flight Stitching
+> Preparar a URL via Google Video Stitcher antes do clique, para que o "Play" seja instantâneo.

@@ -68,6 +68,48 @@ export default function App() {
     return LOCAL_CHANNELS;
   }, [channels]);
 
+  // Back button handler — navegação em pilha para TV
+  useEffect(() => {
+    const handleBack = (e) => {
+      // Prioridade: fechar overlays primeiro
+      if (showPlayer) { e?.preventDefault(); closePlayer(); return; }
+      if (settingsOpen) { e?.preventDefault(); setSettingsOpen(false); return; }
+      if (channelListOpen) { e?.preventDefault(); setChannelListOpen(false); return; }
+      
+      // Se não está na Home, voltar para Home
+      if (activeCategory !== 'All' || activeGroup !== 'All' || search) {
+        e?.preventDefault();
+        setActiveCategory('All');
+        setActiveGroup('All');
+        setSearch('');
+        return;
+      }
+      
+      // Se está na Home, não sai do app
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+
+    // Web: captura Escape/Back
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape' || e.key === 'Back' || e.keyCode === 27 || e.keyCode === 4 || e.keyCode === 10009 || e.keyCode === 461) {
+        handleBack(e);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+
+    // Capacitor (Android TV): captura hardware back button via evento DOM
+    // O Capacitor dispara 'backbutton' como evento do window
+    window.addEventListener('backbutton', handleBack);
+
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('backbutton', handleBack);
+    };
+  }, [showPlayer, settingsOpen, channelListOpen, activeCategory, activeGroup, search, closePlayer]);
+
   useEffect(() => { initSpatialNavigation(); }, []);
 
   useEffect(() => {

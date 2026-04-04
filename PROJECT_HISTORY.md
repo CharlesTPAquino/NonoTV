@@ -192,11 +192,38 @@ O projeto possui 20+ agentes e 36 skills configurados no `.agent/`:
 
 | Versão | Data | Mudanças |
 |--------|------|----------|
-| 4.1 | 28/03/2026 | AI + Player Minimal |
-| 4.0 | Earlier | Sync System + EPG |
-| 3.1 | Earlier | Rewrite completa |
+| 8.0 | 03/04/2026 | Arquitetura Dual-Environment (Live vs Cinema), Codec DNA Detection |
+| 6.0 | 03/04/2026 | Virtualização de Grid (50k+ canais), Fallback Resiliente |
+| 4.7 | 03/04/2026 | AI Engine + Zapping + VOD |
+| 4.1 | 28/03/2026 | Legado: Player Unificado |
+
+---
+
+## 🏛️ Contextualização Estratégica (A Evolução NonoTV)
+
+### 🔴 O PASSADO (Legado v4.1 - v5.9)
+- **O Problema:** O app tratava TV Ao Vivo e Filmes no mesmo componente. Isso causava conflitos de codec (HLS vs MP4) que travavam o Mi Stick.
+- **Categorização:** Baseada apenas em nomes de grupos. Canais que passavam filmes 24h eram jogados na aba de Cinema, confundindo o usuário.
+- **Performance:** Travamentos de 15s ao carregar listas grandes e "telas pretas" constantes por falhas no motor de sintonização.
+
+### 🟢 O HOJE (v8.0 Elite - Alpha)
+- **Arquitetura Dual-Environment:** Criamos dois universos independentes dentro do app.
+    - **LivePlayer:** Foco em baixa latência e Zapping (troca rápida de canais via D-Pad).
+    - **CinemaPlayer:** Interface estilo Netflix com Barra de Progresso (Seek), Avanço/Retrocesso e Hard Reset de Codecs entre sessões.
+- **Detecção por DNA:** O sistema agora analisa a extensão da URL (`.mp4` vs `.m3u8`). Se é arquivo, é Cinema. Se é transmissão, é Live.
+- **Resiliência:** Implementado ErrorBoundary global e Fallback de Grid. O app detecta falhas e se recupera sozinho sem precisar reiniciar o APK.
+
+### 🔵 PARA ONDE VAMOS (v8.1+)
+- **AI Metadata Enrichment:** Integração profunda com Gemini AI para gerar sinopses e posters para canais que não possuem EPG.
+- **Stitcher Pre-Flight:** Preparação de sinal no servidor (Google Cloud) para que o play no Mi Stick seja instantâneo, eliminando o tempo de "Sintonizando".
+- **Multi-Áudio & Legendas:** Suporte avançado para arquivos MKV/MP4 no CinemaPlayer.
+
+---
+
+## 📝 Sessão de Desenvolvimento: 03/04/2026 (v8.0 Elite)
+... (mantém notas técnicas da v8.0)
 
 ---
 
 *Documento criado em 28/03/2026*
-*Atualizado pelo opencode AI Assistant*
+*Atualizado em 03/04/2026 pelo opencode AI Assistant*
