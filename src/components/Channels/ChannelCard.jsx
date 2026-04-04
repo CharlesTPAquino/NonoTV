@@ -1,5 +1,5 @@
 import React, { useState, memo } from 'react';
-import { Play, Film, Tv } from 'lucide-react';
+import { Play, Film } from 'lucide-react';
 
 function getContentType(channel) {
   const type = channel.type || 'live';
@@ -28,7 +28,6 @@ function ChannelCard({ channel, onPlay, isValid, isPlayerOpen }) {
   const quality = getQualityBadge(channel.name);
 
   const aspectClass = isLive ? 'aspect-video' : 'aspect-[2/3]';
-  const containerRadius = isLive ? 'rounded-xl' : 'rounded-xl';
 
   const handleClick = () => { setIsHovered(false); onPlay(channel); };
 
@@ -42,10 +41,10 @@ function ChannelCard({ channel, onPlay, isValid, isPlayerOpen }) {
       className="group relative flex flex-col w-full text-left outline-none transition-all duration-300 select-none"
     >
       {/* Main Container */}
-      <div className={`relative ${aspectClass} w-full ${containerRadius} overflow-hidden bg-[#252528] border border-white/[0.06] group-hover:border-white/[0.12] transition-all duration-300 flex flex-col`}>
+      <div className={`relative ${aspectClass} w-full rounded-xl overflow-hidden bg-[#252528] border border-white/[0.06] group-hover:border-white/[0.10] transition-all duration-300 ${isLive ? 'flex flex-col' : ''}`}>
         
-        {/* Artwork Area - fills remaining space above info bar */}
-        <div className="relative flex-1 min-h-0 overflow-hidden">
+        {/* Artwork Area */}
+        <div className={`relative ${isLive ? 'flex-1 min-h-0' : 'absolute inset-0'} overflow-hidden`}>
           {!imgError && channel.logo ? (
             <img
               src={channel.logo}
@@ -53,21 +52,22 @@ function ChannelCard({ channel, onPlay, isValid, isPlayerOpen }) {
               loading="lazy"
               onError={() => setImgError(true)}
               className={`w-full h-full transition-all duration-300 ${
-                isPoster ? 'object-cover' : 'object-contain p-3'
+                isPoster ? 'object-cover' : 'object-contain p-4'
               } ${isHovered ? 'scale-105' : 'scale-100'}`}
             />
           ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center p-4 bg-[#252528]">
-              <Tv className="w-7 h-7 text-white/[0.08] mb-2" />
-              <span className="text-white/[0.15] text-[7px] font-bold text-center uppercase tracking-widest line-clamp-2">
-                {channel.name}
-              </span>
+            <div className="w-full h-full flex items-center justify-center bg-[#252528]">
+              <div className="w-8 h-8 rounded-full bg-white/[0.04] flex items-center justify-center">
+                <svg className="w-4 h-4 text-white/[0.10]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
+                </svg>
+              </div>
             </div>
           )}
 
-          {/* Subtle gradient only for poster content */}
+          {/* Gradient: subtle for poster */}
           {isPoster && (
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
           )}
 
           {/* Type Badge - Top Left */}
@@ -75,17 +75,17 @@ function ChannelCard({ channel, onPlay, isValid, isPlayerOpen }) {
             {isLive && (
               <div className="flex items-center gap-1 bg-red-600/90 backdrop-blur-sm px-1.5 py-0.5 rounded">
                 <div className="w-1 h-1 rounded-full bg-white" />
-                <span className="text-white text-[6px] font-bold uppercase tracking-wide">Ao Vivo</span>
+                <span className="text-white text-[6px] font-semibold uppercase tracking-wider">Ao Vivo</span>
               </div>
             )}
             {contentType === 'movie' && (
-              <div className="flex items-center gap-1 bg-white/90 text-black px-1.5 py-0.5 rounded font-bold uppercase tracking-wide text-[6px]">
+              <div className="flex items-center gap-1 bg-white/90 text-black px-1.5 py-0.5 rounded font-semibold uppercase tracking-wider text-[6px]">
                 <Film size={7} className="fill-black" />
                 <span>Filme</span>
               </div>
             )}
             {contentType === 'series' && (
-              <div className="flex items-center gap-1 bg-indigo-500/90 backdrop-blur-sm px-1.5 py-0.5 rounded text-white font-bold uppercase tracking-wide text-[6px]">
+              <div className="flex items-center gap-1 bg-indigo-500/90 backdrop-blur-sm px-1.5 py-0.5 rounded text-white font-semibold uppercase tracking-wider text-[6px]">
                 <span>Série</span>
               </div>
             )}
@@ -94,7 +94,7 @@ function ChannelCard({ channel, onPlay, isValid, isPlayerOpen }) {
           {/* Quality Badge - Top Right */}
           {quality && (
             <div className="absolute top-2 right-2 z-10">
-              <div className={`px-1.5 py-0.5 rounded font-bold text-[6px] uppercase tracking-wide ${quality.color}`}>
+              <div className={`px-1.5 py-0.5 rounded font-semibold text-[6px] uppercase tracking-wider ${quality.color}`}>
                 {quality.label}
               </div>
             </div>
@@ -108,17 +108,19 @@ function ChannelCard({ channel, onPlay, isValid, isPlayerOpen }) {
               <Play size={16} className="fill-black ml-0.5 text-black" />
             </div>
           </div>
-        </div>
 
-        {/* Info Bar - Solid background, always below artwork */}
-        <div className="shrink-0 px-2.5 py-1.5 bg-[#1e1e21] border-t border-white/[0.04]">
-          <h3 className="font-bold text-[10px] text-white/90 leading-tight line-clamp-2 group-hover:text-white transition-colors">
-            {channel.name}
-          </h3>
-          {channel.group && (
-            <p className="text-white/30 text-[7px] font-medium uppercase tracking-wide mt-0.5 truncate">
-              {channel.group}
-            </p>
+          {/* Info Area */}
+          {isPoster ? null : (
+            <div className="shrink-0 px-2.5 py-1.5 bg-[#1a1a1d]">
+              <h3 className="font-medium text-[10px] text-white/80 leading-snug line-clamp-2">
+                {channel.name}
+              </h3>
+              {channel.group && (
+                <p className="text-white/30 text-[7px] font-medium mt-0.5 truncate">
+                  {channel.group}
+                </p>
+              )}
+            </div>
           )}
         </div>
       </div>
