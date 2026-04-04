@@ -6,7 +6,7 @@ import { SyncManager } from '../services/SyncManager';
 import { retryService } from '../services/RetryService';
 import { prefetchService } from '../services/PrefetchService';
 import { testSourcesParallel, sortSourcesByPerformance, getSourceStatus, testSourceSmart, getMetrics, resetMetrics } from '../services/SmartServerOrchestrator';
-import { detectServerTech, profileServer, getServerProfile, normalizeAllChannels, detectTechFromChannels } from '../services/ServerTechProfiler';
+import { detectServerTech, profileServer, getServerProfile } from '../services/ServerTechProfiler';
 import ChannelCacheDB from '../services/ChannelCacheDB';
 import { SmartCache } from '../services/SmartCache';
 import SmartPrefetchService from '../services/SmartPrefetchService';
@@ -148,18 +148,8 @@ export const SourceProvider = ({ children }) => {
     const cachedDB = await ChannelCacheDB.get(source.id);
     if (cachedDB && cachedDB.channels && cachedDB.channels.length > 0) {
       console.log('[SourceContext] Cache IndexedDB encontrado:', cachedDB.channelCount, 'canais');
-      
-      // Normalizar URLs do cache baseado na tecnologia
-      const profile = getServerProfile(source.id);
-      let cachedChannels = cachedDB.channels;
-      let serverTech = profile?.tech || detectTechFromChannels(cachedChannels);
-      
-      if (serverTech) {
-        cachedChannels = normalizeAllChannels(cachedDB.channels, serverTech);
-      }
-      
-      setChannels(cachedChannels);
-      setSyncStatus(`Carregado do cache: ${cachedChannels.length} canais`);
+      setChannels(cachedDB.channels);
+      setSyncStatus(`Carregado do cache: ${cachedDB.channelCount} canais`);
       setTimeout(() => setSyncStatus(null), 1500);
 
       SourcePrefetchService.prefetchSource(source).catch(() => {});
@@ -169,15 +159,7 @@ export const SourceProvider = ({ children }) => {
     if (cached) {
       try {
         const parsed = JSON.parse(cached);
-        if (parsed.length > 0 && channels.length === 0) {
-          // Normalizar URLs do localStorage cache
-          const profile = getServerProfile(source.id);
-          const serverTech = profile?.tech || detectTechFromChannels(parsed);
-          const normalizedChannels = serverTech 
-            ? normalizeAllChannels(parsed, serverTech) 
-            : parsed;
-          setChannels(normalizedChannels);
-        }
+        if (parsed.length > 0 && channels.length === 0) setChannels(parsed);
       } catch {
         // Silent fail for cache parse
       }
@@ -204,26 +186,8 @@ export const SourceProvider = ({ children }) => {
       if (!parsed || parsed.length === 0) throw new Error('Lista parseada está vazia');
 
       // Auditoria: Garantir que apenas canais válidos entrem no state
-      let validChannels = parsed.filter(ch => ch && ch.name && ch.name.trim());
+      const validChannels = parsed.filter(ch => ch && ch.name && ch.name.trim());
       console.log(`[SourceContext] ${validChannels.length} canais válidos carregados.`);
-      
-      // Server Tech: Normalizar URLs baseado na tecnologia do servidor
-      let serverTech = null;
-      const profile = getServerProfile(source.id);
-      if (profile && profile.tech) {
-        serverTech = profile.tech;
-        console.log(`[SourceContext] Tecnologia detectada (perfil): ${profile.techName}`);
-      } else {
-        // Fallback: detectar tecnologia pelas URLs dos canais
-        serverTech = detectTechFromChannels(validChannels);
-        if (serverTech) {
-          console.log(`[SourceContext] Tecnologia detectada (canais): ${serverTech}`);
-        }
-      }
-      
-      if (serverTech) {
-        validChannels = normalizeAllChannels(validChannels, serverTech);
-      }
       
       if (validChannels.length === 0) throw new Error('Nenhum canal válido encontrado');
 
