@@ -4,10 +4,11 @@ import { aiService } from '../services/AIService';
 import { detectStreamType as getGlobalStreamType } from '../services/streamService';
 import { detectDeviceProfile } from '../services/SmartServerOrchestrator';
 import { prefetchService } from '../services/PrefetchService';
+import { detectServerTech, TECH_PROFILES } from '../services/ServerTechProfiler';
 
 /**
- * NonoTV — Hardware-Aware Turbo Player v4.8
- * Adapta a performance ao dispositivo e suporta Zapping Instantâneo.
+ * NonoTV — Hardware-Aware Turbo Player v4.8 + Server Tech Aware
+ * Adapta a performance ao dispositivo E à tecnologia do servidor.
  */
 
 const CONFIG_PROFILES = {
@@ -43,9 +44,45 @@ const CONFIG_PROFILES = {
 function detectStreamType(url) {
   if (!url) return 'live';
   const lower = url.toLowerCase();
+  
+  // Server Tech Detection first
+  const serverTech = detectServerTech(url);
+  
+  // TS Direct streams → HLS.js
+  if (serverTech.key === 'TS_DIRECT' || lower.includes('.ts') || lower.includes('output=ts')) {
+    return 'hls-ts';
+  }
+  
+  // VOD MP4/MKV → direct play
+  if (serverTech.key === 'VOD_MP4' || lower.includes('.mp4') || lower.includes('.mkv')) {
+    return 'direct';
+  }
+  
+  // HLS Direct → HLS.js
+  if (serverTech.key === 'HLS_DIRECT' || lower.includes('.m3u8') || lower.includes('output=m3u8')) {
+    return 'hls';
+  }
+  
+  // Xtream → depends on content type
+  if (serverTech.key === 'XTREAM') {
+    const type = getGlobalStreamType(url);
+    if (type === 'movie' || type === 'series') {
+      // VOD via Xtream can be .ts or .mp4
+      if (lower.includes('.mp4') || lower.includes('.mkv')) return 'direct';
+      return 'hls'; // Xtream VOD often uses HLS
+    }
+    return 'hls'; // Live via Xtream
+  }
+  
+  // MAG/Stalker → TS streams via HLS.js
+  if (serverTech.key === 'MAG' || serverTech.key === 'ENIGMA') {
+    return 'hls-ts';
+  }
+  
+  // Fallback: detect by extension
   if (lower.includes('.ts') || lower.includes('.mp4') || lower.includes('.mkv')) return 'direct';
   const type = getGlobalStreamType(url);
-  return (type === 'movie' || type === 'series') ? 'vod' : 'live';
+  return (type === 'movie' || type === 'series') ? 'hls' : 'live';
 }
 
 export default function useHlsPlayer(url, videoRef, options = {}) {
@@ -99,7 +136,10 @@ export default function useHlsPlayer(url, videoRef, options = {}) {
 
     const type = detectStreamType(src);
     const profile = detectDeviceProfile();
-    const baseConfig = type === 'vod' ? CONFIG_PROFILES.vod : CONFIG_PROFILES.live;
+    const isVod = type === 'direct';
+    const baseConfig = isVod ? CONFIG_PROFILES.vod : CONFIG_PROFILES.live;
+    
+    console.log(`[Turbo-Player] Server Tech: ${type} | Device: ${profile.label}`);
     
     // Mescla perfil de hardware com perfil de conteúdo
     const finalConfig = {
@@ -158,10 +198,12 @@ export default function useHlsPlayer(url, videoRef, options = {}) {
     let cleanupHls = null;
 
     if (type === 'direct') {
+      // VOD MP4/MKV: Native playback
       video.src = url;
       video.load();
       video.play().catch(() => {});
     } else {
+      // HLS (live, hls, hls-ts): HLS.js
       cleanupHls = initHlsRef.current?.(video, url);
     }
 
