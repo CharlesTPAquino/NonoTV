@@ -3,7 +3,7 @@ import { Maximize2, X, Play } from 'lucide-react';
 
 export default function MiniPlayer({ channel, onOpen, onClose }) {
   return (
-    <div className="fixed bottom-6 right-6 w-80 bg-[#1a191b] rounded-2xl shadow-2xl border border-white/10 overflow-hidden z-50">
+    <div className="fixed bottom-6 right-6 w-80 bg-black rounded-2xl shadow-2xl border border-white/10 overflow-hidden z-50">
       <div className="aspect-video relative bg-black flex items-center justify-center cursor-pointer group" onClick={onOpen}>
         <img 
           src={channel.logo || `https://via.placeholder.com/200?text=${channel.name}`} 
@@ -14,7 +14,7 @@ export default function MiniPlayer({ channel, onOpen, onClose }) {
           <Play size={32} className="text-white/80 group-hover:text-white group-hover:scale-110 transition-all" fill="currentColor"/>
         </div>
       </div>
-      <div className="p-4 flex items-center justify-between bg-[#1a191b]">
+      <div className="p-4 flex items-center justify-between bg-black">
         <div className="flex items-center gap-3 truncate">
           <span className="text-xl shrink-0">{channel.emoji}</span>
           <div className="truncate min-w-0">

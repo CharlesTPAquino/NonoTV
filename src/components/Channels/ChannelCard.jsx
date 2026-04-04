@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, memo } from 'react';
-import { Play, Film } from 'lucide-react';
+import { Film } from 'lucide-react';
 
 let HlsClass = null;
 
@@ -36,7 +36,8 @@ function ChannelCard({ channel, onPlay, isValid, isPlayerOpen }) {
   const isLive = contentType === 'live';
   const quality = getQualityBadge(channel.name);
 
-  const aspectClass = isLive ? 'aspect-video' : 'aspect-[2/3]';
+  const aspectClass = isLive ? 'aspect-[4/3]' : 'aspect-[2/3]';
+  const containerRadius = isLive ? 'rounded-none' : 'rounded-xl';
 
   // Lazy load HLS.js
   useEffect(() => {
@@ -148,7 +149,7 @@ function ChannelCard({ channel, onPlay, isValid, isPlayerOpen }) {
       className="group relative flex flex-col w-full text-left outline-none transition-all duration-300 select-none"
     >
       {/* Main Container */}
-      <div className={`relative ${aspectClass} w-full rounded-xl overflow-hidden bg-[#252528] border border-white/[0.06] group-hover:border-white/[0.10] transition-all duration-300 ${isLive ? 'flex flex-col' : ''}`}>
+      <div className={`relative ${aspectClass} w-full ${containerRadius} overflow-hidden ${isLive ? 'bg-black' : 'bg-[#252528]'} border ${isLive ? 'border-none' : 'border-white/[0.06]'} group-hover:border-white/[0.10] transition-all duration-300 ${isLive ? 'flex flex-col' : ''}`}>
         
         {/* Artwork Area */}
         <div className={`relative ${isLive ? 'flex-1 min-h-0' : 'absolute inset-0'} overflow-hidden`}>
@@ -158,7 +159,7 @@ function ChannelCard({ channel, onPlay, isValid, isPlayerOpen }) {
               ref={videoRef}
               muted
               playsInline
-              className="absolute inset-0 w-full h-full object-cover"
+              className="absolute inset-0 w-full h-full object-cover bg-black"
             />
           )}
 
@@ -169,17 +170,19 @@ function ChannelCard({ channel, onPlay, isValid, isPlayerOpen }) {
               alt={channel.name}
               loading="lazy"
               onError={() => setImgError(true)}
-              className={`w-full h-full transition-all duration-300 ${
+              className={`absolute inset-0 w-full h-full transition-all duration-300 ${
                 isPoster ? 'object-cover' : 'object-contain p-4'
               } ${isHovered && isLive ? 'opacity-0' : 'opacity-100'} ${isHovered ? 'scale-105' : 'scale-100'}`}
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center bg-[#252528]">
-              <div className="w-8 h-8 rounded-full bg-white/[0.04] flex items-center justify-center">
-                <svg className="w-4 h-4 text-white/[0.10]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
-                </svg>
-              </div>
+            <div className={`absolute inset-0 w-full h-full flex items-center justify-center ${isLive ? 'bg-black' : 'bg-[#252528]'}`}>
+              {!isLive && (
+                <div className="w-8 h-8 rounded-full bg-white/[0.04] flex items-center justify-center">
+                  <svg className="w-4 h-4 text-white/[0.10]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
+                  </svg>
+                </div>
+              )}
             </div>
           )}
 
@@ -217,15 +220,6 @@ function ChannelCard({ channel, onPlay, isValid, isPlayerOpen }) {
               </div>
             </div>
           )}
-
-          {/* Play Icon on Hover */}
-          <div className={`absolute inset-0 z-10 flex items-center justify-center transition-all duration-300 ${
-            isHovered ? 'opacity-100' : 'opacity-0'
-          }`}>
-            <div className="w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-lg">
-              <Play size={16} className="fill-black ml-0.5 text-black" />
-            </div>
-          </div>
 
           {/* Info Area */}
           {isPoster ? null : (
