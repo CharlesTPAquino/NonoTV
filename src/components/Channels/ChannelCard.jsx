@@ -42,10 +42,10 @@ function ChannelCard({ channel, onPlay, isValid, isPlayerOpen }) {
       className="group relative flex flex-col w-full text-left outline-none transition-all duration-300 select-none"
     >
       {/* Main Container */}
-      <div className={`relative ${aspectClass} w-full ${containerRadius} overflow-hidden bg-[#252528] border border-white/[0.06] group-hover:border-white/[0.12] transition-all duration-300`}>
+      <div className={`relative ${aspectClass} w-full ${containerRadius} overflow-hidden bg-[#252528] border border-white/[0.06] group-hover:border-white/[0.12] transition-all duration-300 flex flex-col`}>
         
-        {/* Artwork */}
-        <div className="absolute inset-0 z-0 flex items-center justify-center">
+        {/* Artwork Area - fills remaining space above info bar */}
+        <div className="relative flex-1 min-h-0 overflow-hidden">
           {!imgError && channel.logo ? (
             <img
               src={channel.logo}
@@ -53,7 +53,7 @@ function ChannelCard({ channel, onPlay, isValid, isPlayerOpen }) {
               loading="lazy"
               onError={() => setImgError(true)}
               className={`w-full h-full transition-all duration-300 ${
-                isPoster ? 'object-cover' : 'object-contain p-4'
+                isPoster ? 'object-cover' : 'object-contain p-3'
               } ${isHovered ? 'scale-105' : 'scale-100'}`}
             />
           ) : (
@@ -64,53 +64,59 @@ function ChannelCard({ channel, onPlay, isValid, isPlayerOpen }) {
               </span>
             </div>
           )}
-        </div>
 
-        {/* Subtle bottom gradient */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent z-10" />
+          {/* Subtle gradient only for poster content */}
+          {isPoster && (
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+          )}
 
-        {/* Type Badge + Quality */}
-        <div className="absolute top-2.5 left-2.5 z-20 flex items-center gap-1.5">
-          {isLive && (
-            <div className="flex items-center gap-1 bg-red-600/90 backdrop-blur-sm px-2 py-0.5 rounded-md">
-              <div className="w-1 h-1 rounded-full bg-white" />
-              <span className="text-white text-[7px] font-bold uppercase tracking-wide">Ao Vivo</span>
-            </div>
-          )}
-          {contentType === 'movie' && (
-            <div className="flex items-center gap-1 bg-white/90 text-black px-2 py-0.5 rounded-md font-bold uppercase tracking-wide text-[7px]">
-              <Film size={8} className="fill-black" />
-              <span>Filme</span>
-            </div>
-          )}
-          {contentType === 'series' && (
-            <div className="flex items-center gap-1 bg-indigo-500/90 backdrop-blur-sm px-2 py-0.5 rounded-md text-white font-bold uppercase tracking-wide text-[7px]">
-              <span>Série</span>
-            </div>
-          )}
+          {/* Type Badge - Top Left */}
+          <div className="absolute top-2 left-2 z-10">
+            {isLive && (
+              <div className="flex items-center gap-1 bg-red-600/90 backdrop-blur-sm px-1.5 py-0.5 rounded">
+                <div className="w-1 h-1 rounded-full bg-white" />
+                <span className="text-white text-[6px] font-bold uppercase tracking-wide">Ao Vivo</span>
+              </div>
+            )}
+            {contentType === 'movie' && (
+              <div className="flex items-center gap-1 bg-white/90 text-black px-1.5 py-0.5 rounded font-bold uppercase tracking-wide text-[6px]">
+                <Film size={7} className="fill-black" />
+                <span>Filme</span>
+              </div>
+            )}
+            {contentType === 'series' && (
+              <div className="flex items-center gap-1 bg-indigo-500/90 backdrop-blur-sm px-1.5 py-0.5 rounded text-white font-bold uppercase tracking-wide text-[6px]">
+                <span>Série</span>
+              </div>
+            )}
+          </div>
+
+          {/* Quality Badge - Top Right */}
           {quality && (
-            <div className={`px-1.5 py-0.5 rounded-md font-bold text-[7px] uppercase tracking-wide ${quality.color}`}>
-              {quality.label}
+            <div className="absolute top-2 right-2 z-10">
+              <div className={`px-1.5 py-0.5 rounded font-bold text-[6px] uppercase tracking-wide ${quality.color}`}>
+                {quality.label}
+              </div>
             </div>
           )}
-        </div>
 
-        {/* Play Icon on Hover */}
-        <div className={`absolute inset-0 z-20 flex items-center justify-center transition-all duration-300 ${
-          isHovered ? 'opacity-100' : 'opacity-0'
-        }`}>
-          <div className="w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-lg">
-            <Play size={16} className="fill-black ml-0.5 text-black" />
+          {/* Play Icon on Hover */}
+          <div className={`absolute inset-0 z-10 flex items-center justify-center transition-all duration-300 ${
+            isHovered ? 'opacity-100' : 'opacity-0'
+          }`}>
+            <div className="w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-lg">
+              <Play size={16} className="fill-black ml-0.5 text-black" />
+            </div>
           </div>
         </div>
 
-        {/* Info Area */}
-        <div className="absolute bottom-0 left-0 right-0 z-20 p-3">
-          <h3 className="font-bold text-[11px] text-white/90 leading-tight line-clamp-2 group-hover:text-white transition-colors">
+        {/* Info Bar - Solid background, always below artwork */}
+        <div className="shrink-0 px-2.5 py-1.5 bg-[#1e1e21] border-t border-white/[0.04]">
+          <h3 className="font-bold text-[10px] text-white/90 leading-tight line-clamp-2 group-hover:text-white transition-colors">
             {channel.name}
           </h3>
           {channel.group && (
-            <p className="text-white/30 text-[8px] font-medium uppercase tracking-wide mt-0.5 truncate">
+            <p className="text-white/30 text-[7px] font-medium uppercase tracking-wide mt-0.5 truncate">
               {channel.group}
             </p>
           )}
