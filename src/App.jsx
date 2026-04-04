@@ -139,7 +139,7 @@ export default function App() {
             onOpenSettings={() => { setSettingsTab('sources'); setSettingsOpen(true); }}
           />
 
-          <div className={`flex-1 ${isHome ? 'overflow-y-auto' : 'overflow-hidden'} custom-scrollbar px-6 md:px-12 pt-4 pb-32`}>
+          <div className={`flex-1 overflow-y-auto custom-scrollbar px-6 md:px-12 pt-4 pb-32`}>
             
             <header className="mb-12 mt-4 shrink-0">
               <h1 className="text-3xl font-black text-white uppercase tracking-tighter">
