@@ -12,6 +12,9 @@ PROJECT_DIR="/home/pcnono/Secretária/IPTV/meu-iptv"
 APK_SOURCE="$PROJECT_DIR/android/app/build/outputs/apk/debug/NonoTV-debug.apk"
 APK_NAME="NonoTV-debug.apk"
 
+# Pasta de versionamento de APKs
+RELEASES_DIR="$PROJECT_DIR/releases"
+
 # Pasta local de destino (fácil de encontrar)
 LOCAL_DEST="$HOME/Desktop/NonoTV"
 
@@ -112,7 +115,7 @@ echo -e "   📦 Arquivo: ${GREEN}$APK_NAME${NC} (${APK_SIZE})"
 echo ""
 echo -e "${YELLOW}[4/4] Distribuindo o APK...${NC}"
 
-# Define o nome das versões (Latest + Histórico Data/Hora)
+# Define o nome das versões (Latest + Data/Hora)
 TIMESTAMP=$(date '+%Y-%m-%d_%H-%M')
 VERSIONED_NAME="NonoTV_v$TIMESTAMP.apk"
 LATEST_NAME="NonoTV_latest.apk"
@@ -120,6 +123,14 @@ LATEST_NAME="NonoTV_latest.apk"
 # Prepara as cópias temporárias
 cp "$APK_SOURCE" "/tmp/$VERSIONED_NAME"
 cp "$APK_SOURCE" "/tmp/$LATEST_NAME"
+
+# -- Cópia Local (Pasta Releases) --
+mkdir -p "$RELEASES_DIR"
+# Mantém apenas os últimos 5 APKs
+cd "$RELEASES_DIR" && ls -t NonoTV_v*.apk 2>/dev/null | tail -n +6 | xargs -r rm -f
+cp "/tmp/$LATEST_NAME" "$RELEASES_DIR/$LATEST_NAME"
+cp "/tmp/$VERSIONED_NAME" "$RELEASES_DIR/$VERSIONED_NAME"
+echo -e "   ${GREEN}✅ Releases:${NC}   $RELEASES_DIR/"
 
 # -- Cópia Local (Desktop) --
 mkdir -p "$LOCAL_DEST/Historico"
@@ -136,27 +147,23 @@ if [ -n "$GDRIVE_PATH" ]; then
   fi
 fi
 
-# -- Google Drive via rclone (alternativa profissional) --
+# -- Google Drive via rclone --
 if $USE_RCLONE; then
-  echo -e "   ${YELLOW}📤 Enviando para Google Drive via rclone...${NC}"
+  echo -e "   ${YELLOW}📤 Enviando para Google Drive...${NC}"
   
-  # Usando o ID da pasta específica que você enviou: 1Xd5pLMdsikeEYGOTXEa0NTDzlreaseuv
   RCLONE_REMOTE="gdrive"
   GDRIVE_FOLDER_ID="1Xd5pLMdsikeEYGOTXEa0NTDzlreaseuv"
   
-  # Verifica se o remote gdrive existe
   if rclone listremotes | grep -q "^${RCLONE_REMOTE}:"; then
-    echo -e "   🔄 Atualizando NonoTV_latest.apk..."
+    # Latest na raiz (sobrescreve)
     rclone copy "/tmp/$LATEST_NAME" "${RCLONE_REMOTE}:" --drive-root-folder-id "$GDRIVE_FOLDER_ID" 2>/dev/null
     
-    echo -e "   📦 Salvando backup $VERSIONED_NAME no Histórico..."
-    if rclone copy "/tmp/$VERSIONED_NAME" "${RCLONE_REMOTE}:Histórico/" --drive-root-folder-id "$GDRIVE_FOLDER_ID" --progress 2>/dev/null; then
-      echo -e "   ${GREEN}✅ Google Drive (rclone):${NC} Arquivos versionados enviados com sucesso!"
-    else
-      echo -e "   ${RED}❌ Falha ao enviar histórico para o Google Drive.${NC}"
-    fi
+    # Versão com timestamp no Histórico (adiciona, não sobrescreve)
+    rclone copy "/tmp/$VERSIONED_NAME" "${RCLONE_REMOTE}:Histórico/" --drive-root-folder-id "$GDRIVE_FOLDER_ID" 2>/dev/null
+    
+    echo -e "   ${GREEN}✅ Google Drive atualizado!${NC}"
   else
-    echo -e "   ${YELLOW}⚠️  Acesso rclone não configurado. Rode: ${NC}rclone config"
+    echo -e "   ${YELLOW}⚠️  rclone não configurado${NC}"
   fi
 fi
 

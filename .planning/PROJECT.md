@@ -2,7 +2,7 @@
 
 ## What This Is
 
-Aplicação IPTV/Android para streaming de canais de TV com EPG, Catch-up TV, AI Hub e temas personalizáveis. Desenvolvida com React + Vite + Capacitor para Android.
+Aplicação IPTV/Android para streaming de canais de TV com EPG, AI Hub e temas personalizáveis. Desenvolvida com React + Vite + Capacitor para Android.
 
 ## Core Value
 
@@ -10,21 +10,30 @@ Fornecer acesso confiável a streams IPTV com experiência premium de visualiza�
 
 ## Requirements
 
-### Validated
+### Validated ✅
 
 - Sistema de fallback de APIs (CapacitorHttp → proxies → fetch)
 - EPG com Catch-up TV
-- AI Hub com Ollama e MCP
+- AI Hub com Gemini
 - Sistema de temas (dark, cinema, kids, light)
 - Design System com tokens consistentes
+- Splash Screen cinematográfica
+- Parallax no Hero Banner
+- Skeleton Shimmer nos placeholders
+- Badge 4K em Electric Blue (#00E5FF)
+- Staggered Entry animation com will-change
+- Navegação unificada (sidebar desktop + bottom nav mobile)
+- Server Tech Profiler (detecção automática de tecnologia)
+- Cards sem sobreposição (info bar sólida)
+- Grid responsivo (6 colunas para live, 6 para poster)
 
-### Active
+### Active ⏳
 
-- [ ] Corrigir sync de servidores no APK
-- [ ] Health check automático dos servidores
-- [ ] Dashboard de status em tempo real
-- [ ] ChannelListOverlay integrado
-- [ ] Continuar assistindo
+- [ ] Video preview otimizado com IntersectionObserver
+- [ ] Shared Element Transition (card → player)
+- [ ] AI Metadata Enrichment (batch Gemini)
+- [ ] Auto-quality selector
+- [ ] Google Video Stitcher
 
 ### Out of Scope
 
@@ -37,7 +46,8 @@ Fornecer acesso confiável a streams IPTV com experiência premium de visualiza�
 - **Stack**: React + Vite + Capacitor + Tailwind
 - **37 fontes IPTV** configuradas
 - **Projeto pai** (`/meu-iptv/`) como principal após migração
-- **APKbuildado** em: `NonoTV_v2026-03-29_16-10.apk`
+- **Último APK**: `NonoTV_v2026-04-04_11-37.apk`
+- **Último commit**: `4c219a4`
 
 ## Constraints
 
@@ -49,10 +59,24 @@ Fornecer acesso confiável a streams IPTV com experiência premium de visualiza�
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Projeto pai como principal | Migração de 17→37 fontes | ✓ Bom |
-| Variáveis de ambiente para credenciais | Segurança | ✓ Bom |
-| Design tokens via Tailwind | Consistência | ✓ Bom |
+| Projeto pai como principal | Migração de 17→37 fontes | ✅ Bom |
+| Variáveis de ambiente para credenciais | Segurança | ✅ Bom |
+| Design tokens via Tailwind | Consistência | ✅ Bom |
+| Navegação unificada (sidebar/bottom nav) | Menus não coexistem | ✅ Bom |
+| Sem video preview no hover | Mi Stick não aguenta | ✅ Bom |
+| Info bar sólida nos cards | Zero sobreposição | ✅ Bom |
+| Grid 6 colunas para live | Melhor navegação em TV | ✅ Bom |
+
+## Histórico de Versões
+
+| Versão | Data | Descrição |
+|--------|------|-----------|
+| v4.9 | 29/03/2026 | Design System + migração de projeto |
+| v8.6.0 | 04/04/2026 | Debug crítico (P0-P2) |
+| v8.7.0 | 04/04/2026 | Motor de vídeo + AI |
+| v8.7.4 | 04/04/2026 | Restauração v4.9 + Server Tech Profiler |
+| v4.9+UI | 04/04/2026 | Melhorias de UI (Splash, Parallax, Shimmer, etc.) |
 
 ---
 
-*Last updated: 29/03/2026 after Design System improvements*
+*Last updated: 04/04/2026 after UI improvements*

@@ -1,4 +1,4 @@
-# 🎯 Missões de Desenvolvimento - NonoTV v4.2+
+# 🎯 Missões de Desenvolvimento - NonoTV v6.0+
 
 Estes prompts são projetados para IA de codificação e desenvolvedores. Use-os para iniciar tarefas específicas.
 
@@ -15,10 +15,24 @@ Estes prompts são projetados para IA de codificação e desenvolvedores. Use-os
 
 ---
 
-### 🚀 Missão: Virtualização de Grid (Alta Prioridade)
-> "Siga o plano de otimização de performance. Implemente a biblioteca `react-window` ou `react-virtuoso` no componente `ChannelGrid.jsx`. 
-> **Desafio:** A grid deve suportar colunas dinâmicas (responsividade) e dois tipos de layouts de card (16:9 p/ Live e 2:3 p/ VOD) sem quebrar o cálculo de altura dos itens virtualizados.
-> **Objetivo:** Scroll fluído (60fps) em listas de 50.000+ canais."
+### ✅ Missão Concluída: Virtualização de Grid (v6.0)
+> **Status:** Concluído com sucesso e estabilizado (Fallback Integrado).
+> **Legado:** O `VirtualChannelGrid.jsx` já suporta 50.000+ canais via `react-window` e `AutoSizer`.
+
+---
+
+### 🧠 Missão: AI Metadata Enrichment (Prioridade Alta)
+> "Inicie a implementação do enriquecimento de metadados via IA Generativa (Gemini).
+> **Tarefa:** No componente `ChannelCard.jsx` (ou em um HOC), ative a função `enrichMetadata` quando o canal for focado ou quando o EPG estiver vazio.
+> **Desafio:** Garantir que as requisições para a IA sejam cacheadas via `IndexedDB` e aplicadas com debounce para não estourar os limites de requisições da API.
+> **Objetivo:** Ter sinopses dinâmicas para VODs e TV Ao Vivo sem depender de XMLTVs externos."
+
+---
+
+### 🎥 Missão: Validação Stitcher & DAI (Estabilidade)
+> "Retome a integração do Google Video Stitcher no `streamService.js`.
+> **Tarefa:** Ative a costura de streams VOD (MP4/MKV) no `useHlsPlayer` de forma assíncrona, MAS fora do ciclo de montagem crítica (utilize pre-flight check).
+> **Objetivo:** Adicionar suporte a Dynamic Ad Insertion (DAI) sem causar resets de sintonização ou falhas de watchdog."
 
 ---
 

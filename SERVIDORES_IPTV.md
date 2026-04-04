@@ -1,11 +1,19 @@
 # Servidores IPTV - NonoTV Elite 4K
 
 > Lista de servidores IPTV testados e funcionando
-> Atualizado: 28/03/2026
+> Atualizado: 02/04/2026
 
 ---
 
-## ✅ Servidores Funcionando (Testados em 18/03/2026)
+## ✅ Servidores Ativos (02/04/2026)
+
+### GP IPTV DOS AMIGOS
+| Usuário | Senha | Vencimento | Host |
+|--------|-------|------------|------|
+| `gerivaldovaldo` | `100limitscell` | 07/04/2026 | d.plmv.site |
+| `FV280724` | `FV8855338855` | 28/04/2026 | dj.chefemcasa.store |
+| `624793687` | `377283764` | 16/07/2026 | falcon12.top |
+| `19998728046` | `eli19734848` | 11/04/2026 | sansuygtv.site |
 
 ### Sawsax Live - 16 Contas Premium (Ordenadas por Validade)
 | Usuário | Senha | Vencimento | Dias Restantes |
