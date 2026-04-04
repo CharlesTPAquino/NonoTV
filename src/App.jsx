@@ -12,6 +12,7 @@ import SeriesGroup from './components/Channels/SeriesGroup';
 import ContinueWatching from './components/Channels/ContinueWatching';
 import VideoPlayerMinimal from './components/Player/VideoPlayerMinimal';
 import { ChannelGridSkeleton, HeroSkeleton } from './components/UI/Skeleton';
+import SplashScreen from './components/UI/SplashScreen';
 import { usePlayer } from './context/PlayerContext';
 import { useSources } from './context/SourceContext';
 import { usePodcasts } from './context/PodcastContext';
@@ -30,6 +31,7 @@ const PodcastGrid = lazy(() => import('./components/Podcast/PodcastGrid'));
 const PodcastPlayer = lazy(() => import('./components/Podcast/PodcastPlayer'));
 
 export default function App() {
+  const [showSplash, setShowSplash] = useState(true);
   const [activeCategory,  setActiveCategory]  = useState('All');
   const [activeGroup,     setActiveGroup]     = useState('All');
   const [search,          setSearch]          = useState('');
@@ -112,6 +114,10 @@ export default function App() {
   // Se estiver na Home (All), usamos o scroll do App. 
   // Se estiver em categoria (Grid Virtualizada), o scroll é interno à Grid.
   const isHome = activeCategory === 'All' && activeGroup === 'All' && !search;
+
+  if (showSplash) {
+    return <SplashScreen onFinish={() => setShowSplash(false)} />;
+  }
 
   return (
     <div className={`h-screen w-screen bg-[#050505] text-white font-inter overflow-hidden relative selection:bg-[#F7941D]/30 transition-all duration-1000 bg-gradient-to-br ${ambientClass}`}>
