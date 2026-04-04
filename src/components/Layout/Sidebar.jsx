@@ -9,34 +9,36 @@ const NAV_ITEMS = [
   { id: 'podcasts', name: 'Podcasts',   type: 'podcasts', icon: Mic },
 ];
 
-export default function Sidebar({ activeCategory, setActiveCategory, onOpenSettings, onOpenChannelList, onOpenServerStatus, search, setSearch, serverStatus }) {
+export default function Sidebar({ activeCategory, setActiveCategory, onOpenSettings, onOpenChannelList, onOpenServerStatus, serverStatus }) {
   const [expanded, setExpanded] = useState(false);
   const isOnline = serverStatus === 'online' || serverStatus === 'connected';
   const isOffline = serverStatus === 'offline' || serverStatus === 'error';
 
   return (
     <>
-      {/* DESKTOP / TV */}
+      {/* DESKTOP / TV — Premium Matte Sidebar */}
       <aside
-        className="hidden lg:flex fixed left-0 top-0 h-full z-[100] flex-col overflow-hidden bg-[#0a0a0a] border-r border-white/[0.06] transition-all duration-200"
-        style={{ width: expanded ? '220px' : '56px' }}
+        className="hidden lg:flex fixed left-0 top-0 h-full z-[100] flex-col overflow-hidden transition-all duration-200"
+        style={{
+          width: expanded ? '200px' : '48px',
+          background: 'var(--bg-surface)',
+          borderRight: '1px solid var(--border-subtle)',
+        }}
         onMouseEnter={() => setExpanded(true)}
         onMouseLeave={() => setExpanded(false)}
       >
         {/* Brand */}
-        <div className="flex items-center shrink-0 h-14 px-4" style={{ gap: expanded ? '12px' : '0', justifyContent: expanded ? 'flex-start' : 'center' }}>
-          <div className="w-7 h-7 rounded-md flex items-center justify-center shrink-0" style={{ background: 'linear-gradient(135deg, #E8913A, #F0A050)' }}>
-            <span className="text-black font-bold text-[10px]">N+</span>
+        <div className="flex items-center shrink-0 h-12 px-3" style={{ gap: expanded ? '10px' : '0', justifyContent: expanded ? 'flex-start' : 'center' }}>
+          <div className="w-6 h-6 rounded-md flex items-center justify-center shrink-0" style={{ background: 'var(--text-primary)' }}>
+            <span className="text-black font-bold text-[9px]">N+</span>
           </div>
           {expanded && (
-            <div className="overflow-hidden">
-              <span className="text-white font-semibold text-[13px] tracking-tight leading-none block">NonoTV</span>
-            </div>
+            <span className="text-white font-semibold text-[12px] tracking-tight leading-none">NonoTV</span>
           )}
         </div>
 
         {/* Divider */}
-        <div className="mx-3 h-px bg-white/[0.04]" />
+        <div className="mx-3 h-px" style={{ background: 'var(--border-subtle)' }} />
 
         {/* Navigation */}
         <nav className="flex-1 py-2 px-2 space-y-0.5 overflow-y-auto custom-scrollbar">
@@ -49,15 +51,13 @@ export default function Sidebar({ activeCategory, setActiveCategory, onOpenSetti
                 onClick={() => setActiveCategory(item.type)}
                 className="nav-item w-full"
                 style={{
-                  padding: expanded ? '6px 8px' : '6px 0',
+                  padding: expanded ? '5px 8px' : '5px 0',
                   justifyContent: expanded ? 'flex-start' : 'center',
-                  color: isActive ? 'var(--text-primary)' : 'var(--text-tertiary)',
-                  background: isActive ? 'var(--surface-active)' : 'transparent',
                 }}
               >
-                <Icon size={18} strokeWidth={isActive ? 2 : 1.5} className="shrink-0" />
+                <Icon size={16} strokeWidth={isActive ? 2 : 1.5} className="shrink-0" />
                 {expanded && (
-                  <span className="text-[12px] font-medium truncate">{item.name}</span>
+                  <span className="text-[11px] font-medium truncate">{item.name}</span>
                 )}
               </button>
             );
@@ -65,7 +65,7 @@ export default function Sidebar({ activeCategory, setActiveCategory, onOpenSetti
         </nav>
 
         {/* Divider */}
-        <div className="mx-3 h-px bg-white/[0.04]" />
+        <div className="mx-3 h-px" style={{ background: 'var(--border-subtle)' }} />
 
         {/* Bottom */}
         <div className="p-2 space-y-0.5 shrink-0">
@@ -73,27 +73,27 @@ export default function Sidebar({ activeCategory, setActiveCategory, onOpenSetti
             onClick={onOpenChannelList}
             className="nav-item w-full"
             style={{
-              padding: expanded ? '6px 8px' : '6px 0',
+              padding: expanded ? '5px 8px' : '5px 0',
               justifyContent: expanded ? 'flex-start' : 'center',
             }}
           >
-            <LayoutGrid size={18} strokeWidth={1.5} className="shrink-0" />
-            {expanded && <span className="text-[12px] font-medium">Canais</span>}
+            <LayoutGrid size={16} strokeWidth={1.5} className="shrink-0" />
+            {expanded && <span className="text-[11px] font-medium">Canais</span>}
           </button>
 
           <div
             className="flex items-center"
             style={{
-              padding: expanded ? '6px 8px' : '6px 0',
+              padding: expanded ? '5px 8px' : '5px 0',
               justifyContent: expanded ? 'flex-start' : 'center',
               color: isOnline ? 'var(--success)' : isOffline ? 'var(--error)' : 'var(--text-tertiary)',
             }}
           >
-            {isOnline && <CheckCircle size={16} strokeWidth={1.5} className="shrink-0" />}
-            {isOffline && <XCircle size={16} strokeWidth={1.5} className="shrink-0" />}
-            {!isOnline && !isOffline && <Activity size={16} strokeWidth={1.5} className="shrink-0 animate-pulse" />}
+            {isOnline && <CheckCircle size={14} strokeWidth={1.5} className="shrink-0" />}
+            {isOffline && <XCircle size={14} strokeWidth={1.5} className="shrink-0" />}
+            {!isOnline && !isOffline && <Activity size={14} strokeWidth={1.5} className="shrink-0 animate-pulse" />}
             {expanded && (
-              <span className="text-[12px] font-medium">
+              <span className="text-[11px] font-medium">
                 {isOnline ? 'Online' : isOffline ? 'Offline' : '...'}
               </span>
             )}
@@ -103,18 +103,24 @@ export default function Sidebar({ activeCategory, setActiveCategory, onOpenSetti
             onClick={onOpenSettings}
             className="nav-item w-full"
             style={{
-              padding: expanded ? '6px 8px' : '6px 0',
+              padding: expanded ? '5px 8px' : '5px 0',
               justifyContent: expanded ? 'flex-start' : 'center',
             }}
           >
-            <Settings size={18} strokeWidth={1.5} className="shrink-0" />
-            {expanded && <span className="text-[12px] font-medium">Ajustes</span>}
+            <Settings size={16} strokeWidth={1.5} className="shrink-0" />
+            {expanded && <span className="text-[11px] font-medium">Ajustes</span>}
           </button>
         </div>
       </aside>
 
       {/* MOBILE/TABLET */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-[200] bg-[#0a0a0a] border-t border-white/[0.06]">
+      <nav
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-[200]"
+        style={{
+          background: 'var(--bg-surface)',
+          borderTop: '1px solid var(--border-subtle)',
+        }}
+      >
         <div className="flex items-center justify-around h-14 px-1">
           {NAV_ITEMS.map(item => {
             const Icon = item.icon;
@@ -123,31 +129,31 @@ export default function Sidebar({ activeCategory, setActiveCategory, onOpenSetti
               <button
                 key={item.id}
                 onClick={() => setActiveCategory(item.type)}
-                className="relative flex flex-col items-center justify-center w-12 h-full"
-                style={{ color: isActive ? 'var(--accent)' : 'var(--text-tertiary)' }}
+                className="relative flex flex-col items-center justify-center w-12 h-full transition-all duration-180"
+                style={{ color: isActive ? 'var(--text-primary)' : 'var(--text-tertiary)' }}
               >
-                <Icon size={20} strokeWidth={isActive ? 2 : 1.5} />
+                <Icon size={18} strokeWidth={isActive ? 2 : 1.5} />
                 {isActive && (
-                  <div className="absolute -top-[1px] w-4 h-[2px] rounded-full bg-[var(--accent)]" />
+                  <div className="absolute -top-[1px] w-3 h-[2px] rounded-full" style={{ background: 'var(--text-primary)' }} />
                 )}
               </button>
             );
           })}
           <button
             onClick={onOpenServerStatus || onOpenSettings}
-            className="flex flex-col items-center justify-center w-12 h-full"
+            className="flex flex-col items-center justify-center w-12 h-full transition-all duration-180"
             style={{ color: isOnline ? 'var(--success)' : isOffline ? 'var(--error)' : 'var(--text-tertiary)' }}
           >
-            {isOnline && <CheckCircle size={18} strokeWidth={1.5} />}
-            {isOffline && <XCircle size={18} strokeWidth={1.5} />}
-            {!isOnline && !isOffline && <Activity size={18} strokeWidth={1.5} />}
+            {isOnline && <CheckCircle size={16} strokeWidth={1.5} />}
+            {isOffline && <XCircle size={16} strokeWidth={1.5} />}
+            {!isOnline && !isOffline && <Activity size={16} strokeWidth={1.5} />}
           </button>
           <button
             onClick={onOpenSettings}
-            className="flex flex-col items-center justify-center w-12 h-full"
+            className="flex flex-col items-center justify-center w-12 h-full transition-all duration-180"
             style={{ color: 'var(--text-tertiary)' }}
           >
-            <Settings size={20} strokeWidth={1.5} />
+            <Settings size={18} strokeWidth={1.5} />
           </button>
         </div>
       </nav>

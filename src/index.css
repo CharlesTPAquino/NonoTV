@@ -3,58 +3,71 @@
 @tailwind utilities;
 
 /* ============================================
-   NONOTV ELITE — Design System v2.0
-   Inspired by: Apple TV+, Linear, Vercel
+   NONOTV ELITE — Design System v3.0
+   Matte · Depth · Premium
    ============================================ */
 
 :root {
-  /* Core — Deep, rich blacks */
-  --bg-primary: #000000;
-  --bg-secondary: #0a0a0a;
-  --bg-tertiary: #111111;
-  --bg-elevated: #161616;
-  --bg-overlay: rgba(0, 0, 0, 0.8);
+  /* Background — Matte dark, not pure black */
+  --bg-app: #18181b;
+  --bg-surface: #131316;
+  --bg-card: #0c0c0e;
+  --bg-elevated: #0a0a0c;
 
-  /* Accent — Refined amber */
-  --accent: #E8913A;
-  --accent-hover: #F0A050;
-  --accent-subtle: rgba(232, 145, 58, 0.08);
-  --accent-border: rgba(232, 145, 58, 0.15);
+  /* Accent — Refined silver, no orange */
+  --accent: #a1a1aa;
+  --accent-hover: #d4d4d8;
+  --accent-subtle: rgba(161, 161, 170, 0.06);
+  --accent-border: rgba(161, 161, 170, 0.12);
 
   /* Text — Precise hierarchy */
-  --text-primary: #FAFAFA;
-  --text-secondary: rgba(255, 255, 255, 0.55);
-  --text-tertiary: rgba(255, 255, 255, 0.30);
-  --text-disabled: rgba(255, 255, 255, 0.15);
+  --text-primary: #f4f4f5;
+  --text-secondary: rgba(244, 244, 245, 0.50);
+  --text-tertiary: rgba(244, 244, 245, 0.25);
+  --text-disabled: rgba(244, 244, 245, 0.12);
 
-  /* Borders — Almost invisible */
+  /* Borders — Barely there */
+  --border-subtle: rgba(255, 255, 255, 0.04);
   --border: rgba(255, 255, 255, 0.06);
   --border-hover: rgba(255, 255, 255, 0.10);
-  --border-active: rgba(255, 255, 255, 0.15);
+  --border-active: rgba(255, 255, 255, 0.14);
 
-  /* Surfaces — Solid, not glassy */
-  --surface: #111111;
-  --surface-hover: #161616;
-  --surface-active: #1a1a1a;
+  /* Status — Muted, elegant */
+  --success: #4ade80;
+  --error: #f87171;
+  --warning: #fbbf24;
 
-  /* Status */
-  --success: #34C759;
-  --error: #FF453A;
-  --warning: #FFD60A;
+  /* 3D Depth — Cards float above background */
+  --shadow-card: 
+    0 1px 2px rgba(0, 0, 0, 0.4),
+    0 4px 12px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  --shadow-card-hover: 
+    0 2px 4px rgba(0, 0, 0, 0.5),
+    0 8px 24px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  --shadow-button:
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 2px 6px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --shadow-button-hover:
+    0 2px 4px rgba(0, 0, 0, 0.4),
+    0 4px 12px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
 
   /* Radius — Tight, precise */
   --radius-sm: 6px;
   --radius: 8px;
   --radius-md: 10px;
   --radius-lg: 12px;
-  --radius-xl: 16px;
+  --radius-xl: 14px;
 
   /* Transitions — Fast, crisp */
   --ease: cubic-bezier(0.25, 0.1, 0.25, 1);
   --ease-out: cubic-bezier(0, 0, 0.2, 1);
-  --duration-fast: 150ms;
-  --duration: 200ms;
-  --duration-slow: 300ms;
+  --duration-fast: 120ms;
+  --duration: 180ms;
+  --duration-slow: 250ms;
 }
 
 @layer base {
@@ -64,10 +77,11 @@
   }
 
   body {
-    @apply bg-black text-white;
+    @apply overflow-hidden;
     margin: 0;
+    background: var(--bg-app);
+    color: var(--text-primary);
     font-family: -apple-system, BlinkMacSystemFont, 'Inter', system-ui, sans-serif;
-    overflow: hidden;
     height: 100vh;
     width: 100vw;
   }
@@ -81,14 +95,13 @@
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.06);
     border-radius: 999px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.12);
   }
 
-  /* Hide scrollbar utility */
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
@@ -100,72 +113,77 @@
 
 @layer components {
   /* ============================================
-     BUTTONS — Solid, precise
+     BUTTONS — Solid, 3D, premium
      ============================================ */
 
-  .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-sm;
+  .btn-solid {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium;
     background: var(--text-primary);
-    color: var(--bg-primary);
+    color: var(--bg-card);
+    box-shadow: var(--shadow-button);
     transition: all var(--duration) var(--ease);
   }
-  .btn-primary:hover {
-    opacity: 0.85;
-    transform: scale(1.02);
+  .btn-solid:hover {
+    background: var(--accent-hover);
+    box-shadow: var(--shadow-button-hover);
+    transform: translateY(-1px);
   }
-  .btn-primary:active {
-    transform: scale(0.98);
+  .btn-solid:active {
+    transform: translateY(0);
+    box-shadow: var(--shadow-card);
   }
 
   .btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-sm;
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium;
     background: transparent;
     color: var(--text-secondary);
     transition: all var(--duration) var(--ease);
   }
   .btn-ghost:hover {
-    background: var(--surface-hover);
+    background: var(--bg-surface);
     color: var(--text-primary);
   }
 
   /* ============================================
-     CARDS — Solid surfaces, subtle borders
+     CARDS — 3D depth, matte surface
      ============================================ */
 
-  .card {
+  .card-3d {
     @apply relative overflow-hidden;
-    background: var(--surface);
-    border: 1px solid var(--border);
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
     border-radius: var(--radius);
+    box-shadow: var(--shadow-card);
     transition: all var(--duration) var(--ease);
   }
-  .card:hover {
+  .card-3d:hover {
     border-color: var(--border-hover);
-    background: var(--surface-hover);
+    box-shadow: var(--shadow-card-hover);
+    transform: translateY(-2px);
   }
 
   /* ============================================
-     BADGES — Tight, precise
+     BADGES — Clean, muted, elegant
      ============================================ */
 
   .badge {
-    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide;
+    @apply inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wider;
   }
   .badge-live {
-    background: rgba(255, 69, 58, 0.15);
-    color: #FF453A;
+    background: rgba(248, 113, 113, 0.10);
+    color: var(--error);
   }
   .badge-4k {
-    background: rgba(52, 199, 89, 0.12);
-    color: #34C759;
+    background: rgba(74, 222, 128, 0.08);
+    color: var(--success);
   }
   .badge-movie {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(244, 244, 245, 0.06);
     color: var(--text-secondary);
   }
   .badge-series {
-    background: rgba(94, 92, 255, 0.12);
-    color: #5E5CFF;
+    background: rgba(167, 139, 250, 0.08);
+    color: #a78bfa;
   }
   .badge-ai {
     background: var(--accent-subtle);
@@ -178,8 +196,8 @@
 
   .input {
     @apply w-full px-3 py-2 rounded-lg text-sm outline-none;
-    background: var(--surface);
-    border: 1px solid var(--border);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
     color: var(--text-primary);
     transition: all var(--duration) var(--ease);
   }
@@ -188,7 +206,7 @@
   }
   .input:focus {
     border-color: var(--border-active);
-    background: var(--surface-hover);
+    background: var(--bg-card);
   }
 
   /* ============================================
@@ -197,25 +215,26 @@
 
   .divider {
     height: 1px;
-    background: var(--border);
+    background: var(--border-subtle);
   }
 
   /* ============================================
-     NAV ITEMS — Clean, precise
+     NAV ITEMS — Premium, subtle
      ============================================ */
 
   .nav-item {
-    @apply flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium;
+    @apply flex items-center gap-2.5 rounded-lg text-sm font-medium;
     color: var(--text-tertiary);
     transition: all var(--duration) var(--ease);
   }
   .nav-item:hover {
     color: var(--text-secondary);
-    background: var(--surface-hover);
+    background: var(--bg-surface);
   }
   .nav-item.active {
     color: var(--text-primary);
-    background: var(--surface-active);
+    background: var(--bg-card);
+    box-shadow: var(--shadow-card);
   }
 
   /* ============================================
@@ -227,11 +246,11 @@
     to { opacity: 1; }
   }
   @keyframes slideUp {
-    from { opacity: 0; transform: translateY(8px); }
+    from { opacity: 0; transform: translateY(6px); }
     to { opacity: 1; transform: translateY(0); }
   }
   @keyframes scaleIn {
-    from { opacity: 0; transform: scale(0.95); }
+    from { opacity: 0; transform: scale(0.96); }
     to { opacity: 1; transform: scale(1); }
   }
 
@@ -245,10 +264,9 @@
     animation: scaleIn var(--duration-slow) var(--ease-out);
   }
 
-  /* Staggered grid items */
   .stagger-item {
     will-change: opacity, transform;
     opacity: 0;
-    animation: slideUp 250ms var(--ease-out) forwards;
+    animation: slideUp 200ms var(--ease-out) forwards;
   }
 }
