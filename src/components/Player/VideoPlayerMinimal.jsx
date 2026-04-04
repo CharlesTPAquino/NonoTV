@@ -45,7 +45,7 @@ const DesignSystem = {
   }
 };
 
-export default function VideoPlayer({ channel, channels, onClose, mode = 'smart' }) {
+export default function VideoPlayer({ channel, channels, onClose, mode = 'smart', isTransitioning = false, transitionRect = null }) {
   const videoRef = useRef(null);
   const containerRef = useRef(null);
   const { playChannel } = usePlayer();
@@ -304,6 +304,9 @@ export default function VideoPlayer({ channel, channels, onClose, mode = 'smart'
     <div 
       ref={containerRef}
       className="fixed inset-0 z-[100] bg-black flex items-center justify-center"
+      style={{
+        animation: isTransitioning && transitionRect ? 'playerExpand 400ms cubic-bezier(0.4, 0, 0.2, 1) forwards' : 'none',
+      }}
       onClick={handleContainerClick}
       onPointerMove={showControlsTemporarily}
       onPointerDown={showControlsTemporarily}
@@ -415,6 +418,16 @@ export default function VideoPlayer({ channel, channels, onClose, mode = 'smart'
             backdropFilter: 'blur(10px)'
           }}
         >
+          {/* Indicador de Qualidade */}
+          {playerState.quality && playerState.quality !== 'auto' && (
+            <div className="flex items-center gap-1.5 px-2 py-1 bg-[#00E5FF]/10 rounded-md">
+              <div className="w-1.5 h-1.5 rounded-full bg-[#00E5FF]" />
+              <span className="text-[9px] font-black text-[#00E5FF] uppercase tracking-wider">
+                {playerState.quality}
+              </span>
+            </div>
+          )}
+
           <button 
             onClick={toggleMute}
             className="flex items-center justify-center transition-colors hover:opacity-80"

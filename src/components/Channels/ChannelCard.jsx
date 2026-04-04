@@ -30,7 +30,12 @@ function ChannelCard({ channel, onPlay, isValid, isPlayerOpen }) {
   const aspectClass = isLive ? 'aspect-[4/3]' : 'aspect-[2/3]';
   const containerRadius = isLive ? 'rounded-none' : 'rounded-xl';
 
-  const handleClick = () => { setIsHovered(false); onPlay(channel); };
+  const handleClick = (e) => {
+    setIsHovered(false);
+    // Pass card rect for shared element transition
+    const rect = e.currentTarget.getBoundingClientRect();
+    onPlay(channel, rect);
+  };
 
   return (
     <button
