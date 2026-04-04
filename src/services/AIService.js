@@ -1,8 +1,9 @@
 /**
- * NonoTV AI Hub — P3 + P4
+ * NonoTV AI Hub — P3 + P4 + Video Stitcher
  * 
- * P3: AI Metadata Enrichment (batch Gemini + cache IndexedDB)
+ * P3: AI Metadata Enrichment (batch Gemini + cache)
  * P4: Auto-quality selector (adapta resolução ao bandwidth)
+ * Stitcher: Google Video Stitcher para play instantâneo
  */
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -10,6 +11,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 const API_KEY = import.meta.env.VITE_GOOGLE_AI_KEY || "";
 const STITCHER_PROJECT_ID = "3722493286327444324";
 const STITCHER_LOCATION = "us-central1";
+const STITCHER_API = `https://videostitcher.googleapis.com/v1/projects/${STITCHER_PROJECT_ID}/locations/${STITCHER_LOCATION}`;
 
 const genAI = API_KEY ? new GoogleGenerativeAI(API_KEY) : null;
 
@@ -209,9 +211,59 @@ function onConnectionChange(callback) {
 // ==================== Export ====================
 
 export const aiService = {
-  async getStitchedManifest(originalUrl) {
-    console.log(`[AI-Stitcher] Projeto: ${STITCHER_PROJECT_ID}`);
-    return originalUrl;
+  /**
+   * Google Video Stitcher — cria sessão de vídeo costurada para play instantâneo
+   * 
+   * Funcionamento:
+   * 1. Envia URL do stream para o Stitcher
+   * 2. Stitcher retorna manifest otimizado com ad-insertion e buffer pré-carregado
+   * 3. Player usa o manifest stitchado em vez do original
+   * 
+   * Fallback: se Stitcher falhar, retorna URL original
+   */
+  async getStitchedManifest(originalUrl, channelData = {}) {
+    if (!API_KEY) {
+      console.log('[Stitcher] Sem API key, usando URL original');
+      return originalUrl;
+    }
+
+    try {
+      const sessionData = {
+        sourceUri: originalUrl,
+        adTagUri: '',
+        slateConfig: {
+          slateVideoUri: ''
+        },
+        bumperConfig: {
+          enableBumper: false
+        }
+      };
+
+      const response = await fetch(
+        `${STITCHER_API}/liveAdTagDetails?alt=json`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Goog-Api-Key': API_KEY
+          },
+          body: JSON.stringify(sessionData),
+          signal: AbortSignal.timeout(5000)
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('[Stitcher] Sessão criada:', data.name);
+        return data.playUri || originalUrl;
+      }
+
+      console.warn('[Stitcher] Falha, usando URL original');
+      return originalUrl;
+    } catch (err) {
+      console.warn('[Stitcher] Erro:', err.message, '— fallback para URL original');
+      return originalUrl;
+    }
   },
 
   async enrichMetadata(channelName, groupName = "") {

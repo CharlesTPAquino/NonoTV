@@ -147,6 +147,37 @@ export default function VideoPlayer({ channel, channels, onClose, mode = 'smart'
     }
   }, []);
 
+  // PiP event listeners
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const onEnterPiP = () => setIsPipActive(true);
+    const onLeavePiP = () => setIsPipActive(false);
+
+    video.addEventListener('enterpictureinpicture', onEnterPiP);
+    video.addEventListener('leavepictureinpicture', onLeavePiP);
+
+    return () => {
+      video.removeEventListener('enterpictureinpicture', onEnterPiP);
+      video.removeEventListener('leavepictureinpicture', onLeavePiP);
+    };
+  }, []);
+
+  // Auto PiP: quando o app vai para background no Android
+  useEffect(() => {
+    if (!document.pictureInPictureEnabled) return;
+    
+    const handleVisibility = () => {
+      if (document.hidden && videoRef.current && !videoRef.current.paused && !document.pictureInPictureElement) {
+        videoRef.current.requestPictureInPicture().catch(() => {});
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, []);
+
   const toggleFullscreen = useCallback(() => {
     const elem = containerRef.current;
     if (!elem) return;
