@@ -23,10 +23,10 @@ export default function Sidebar({ activeCategory, setActiveCategory, onOpenSetti
 
   return (
     <>
-      {/* DESKTOP / TV - ULTRA ELITE 4K REFLECTIVE GLASS */}
+      {/* DESKTOP / TV */}
       <aside 
-        className={`hidden lg:flex fixed left-0 top-0 h-full bg-[#050505]/40 backdrop-blur-[40px] border-r border-white/5 z-[100] transition-all duration-700 ease-[cubic-bezier(0.2,0,0,1)] flex flex-col shadow-[20px_0_50px_rgba(0,0,0,0.5)] group overflow-hidden ${
-          expanded ? 'w-[280px]' : 'w-[88px]'
+        className={`hidden lg:flex fixed left-0 top-0 h-full bg-[#161618] border-r border-white/[0.04] z-[100] transition-all duration-500 flex flex-col group overflow-hidden ${
+          expanded ? 'w-[260px]' : 'w-[72px]'
         }`}
         onMouseEnter={() => setExpanded(true)}
         onMouseLeave={() => setExpanded(false)}
@@ -168,10 +168,8 @@ export default function Sidebar({ activeCategory, setActiveCategory, onOpenSetti
         </div>
       </aside>
 
-      {/* MOBILE/TABLET - BOTTOM NAV (único menu, sem sidebar) */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-[#050505]/90 backdrop-blur-[50px] border-t border-white/5 z-[200] flex items-center justify-around px-2 safe-area-bottom">
-        {/* Reflection Line */}
-        <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-[#F7941D]/30 to-transparent" />
+      {/* MOBILE/TABLET - BOTTOM NAV */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-[#161618] border-t border-white/[0.04] z-[200] flex items-center justify-around px-2 safe-area-bottom">
         
         {/* Nav Items */}
         {NAV_ITEMS.map(item => {

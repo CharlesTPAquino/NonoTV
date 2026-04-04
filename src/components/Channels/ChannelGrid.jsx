@@ -113,11 +113,11 @@ export default function ChannelGrid({ channels, activeGroup, activeCategory, set
             <p className="text-white/20 text-[9px] font-black uppercase tracking-[0.3em] mt-2">{standard.length} Itens Disponíveis</p>
           </div>
 
-          {/* Botões de Categoria Horizontal - Full Width */}
-          {groups.length > 2 && (
-            <div className="flex items-center gap-2 mb-8 overflow-x-auto no-scrollbar pb-1">
+          {/* Botões de Categoria - Scroll horizontal, tamanho do conteúdo */}
+          {groups.length > 1 && (
+            <div className="flex items-center gap-2 mb-8 overflow-x-auto no-scrollbar">
               {groups.slice(0, 20).map((g) => (
-                <button key={g.id} onClick={() => setActiveGroup(g.name)} className={`flex-shrink-0 flex-1 min-w-0 px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border text-center truncate ${activeGroup === g.name ? 'bg-white text-black border-white' : 'bg-white/5 text-white/30 border-white/5 hover:bg-white/10 hover:text-white'}`}>
+                <button key={g.id} onClick={() => setActiveGroup(g.name)} className={`flex-shrink-0 px-5 py-2 rounded-lg text-[9px] font-bold uppercase tracking-wide transition-all whitespace-nowrap ${activeGroup === g.name ? 'bg-white text-black' : 'bg-white/[0.04] text-white/30 hover:bg-white/[0.08] hover:text-white/60'}`}>
                   {g.name}
                 </button>
               ))}

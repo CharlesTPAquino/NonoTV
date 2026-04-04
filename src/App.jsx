@@ -120,10 +120,7 @@ export default function App() {
   }
 
   return (
-    <div className={`h-screen w-screen bg-[#050505] text-white font-inter overflow-hidden relative selection:bg-[#F7941D]/30 transition-all duration-1000 bg-gradient-to-br ${ambientClass}`}>
-
-      <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-[#F7941D]/5 blur-[120px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-500/5 blur-[120px] rounded-full pointer-events-none" />
+    <div className={`h-screen w-screen bg-[#111113] text-white font-inter overflow-hidden relative selection:bg-[#F7941D]/30 transition-all duration-500`}>
 
       <div className="h-full w-full relative z-10 flex">
         <Sidebar 

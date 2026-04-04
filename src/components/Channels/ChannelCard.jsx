@@ -1,16 +1,5 @@
 import React, { useState, memo } from 'react';
-import { Play, Star, Clock, Film, Tv, Info, Zap } from 'lucide-react';
-
-/**
- * Extrai badges de qualidade do nome do canal
- */
-function getQualityBadge(name) {
-  if (!name) return null;
-  if (/4K|UHD/i.test(name)) return { label: 'ULTRA 4K', color: 'from-[#F7941D] to-[#FBB03B]', glow: 'shadow-[#F7941D]/40' };
-  if (/FHD|1080/i.test(name)) return { label: 'FULL HD', color: 'from-blue-500 to-indigo-600', glow: 'shadow-blue-500/40' };
-  if (/HD|720/i.test(name)) return { label: 'HD', color: 'from-emerald-500 to-teal-600', glow: 'shadow-emerald-500/40' };
-  return null;
-}
+import { Play, Film, Tv } from 'lucide-react';
 
 function getContentType(channel) {
   const type = channel.type || 'live';
@@ -28,11 +17,9 @@ function ChannelCard({ channel, onPlay, isValid, isPlayerOpen }) {
   const contentType = getContentType(channel);
   const isPoster = contentType === 'movie' || contentType === 'series';
   const isLive = contentType === 'live';
-  const quality = getQualityBadge(channel.name);
 
-  // Layout dinâmico: 16:9 para LIVE, 2:3 para VOD
   const aspectClass = isLive ? 'aspect-video' : 'aspect-[2/3]';
-  const containerRadius = isLive ? 'rounded-2xl' : 'rounded-[1.5rem] md:rounded-[2rem]';
+  const containerRadius = isLive ? 'rounded-xl' : 'rounded-xl';
 
   const handleClick = () => { setIsHovered(false); onPlay(channel); };
 
@@ -43,16 +30,11 @@ function ChannelCard({ channel, onPlay, isValid, isPlayerOpen }) {
       onMouseLeave={() => setIsHovered(false)}
       onFocus={() => !isPlayerOpen && setIsHovered(true)}
       onBlur={() => setIsHovered(false)}
-      className={`group relative flex flex-col w-full text-left outline-none transition-all duration-500 select-none ${
-        isHovered ? 'z-30 scale-[1.05]' : 'z-0 scale-100'
-      }`}
+      className="group relative flex flex-col w-full text-left outline-none transition-all duration-300 select-none"
     >
       {/* Main Container */}
-      <div className={`relative ${aspectClass} w-full ${containerRadius} overflow-hidden bg-[#050505] border border-white/5 group-hover:border-[#F7941D]/50 transition-all duration-500 shadow-2xl group-hover:shadow-[0_0_30px_rgba(247,148,29,0.2)]`}>
+      <div className={`relative ${aspectClass} w-full ${containerRadius} overflow-hidden bg-[#252528] border border-white/[0.06] group-hover:border-white/[0.12] transition-all duration-300`}>
         
-        {/* Reflection Highlight */}
-        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out z-30" />
-
         {/* Artwork */}
         <div className="absolute inset-0 z-0 flex items-center justify-center">
           {!imgError && channel.logo ? (
@@ -61,71 +43,63 @@ function ChannelCard({ channel, onPlay, isValid, isPlayerOpen }) {
               alt={channel.name}
               loading="lazy"
               onError={() => setImgError(true)}
-              className={`w-full h-full transition-all duration-500 ${
-                isPoster ? 'object-cover' : 'object-contain p-6'
-              } ${isHovered ? 'scale-110 brightness-[0.4] blur-[2px]' : 'scale-100 brightness-[0.85]'}`}
+              className={`w-full h-full transition-all duration-300 ${
+                isPoster ? 'object-cover' : 'object-contain p-4'
+              } ${isHovered ? 'scale-105' : 'scale-100'}`}
             />
           ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center p-4 bg-gradient-to-br from-[#1C1C1E] to-[#050505]">
-              <Tv className="w-8 h-8 text-white/10 mb-2" />
-              <span className="text-white/20 text-[8px] font-black text-center uppercase tracking-widest line-clamp-2">
+            <div className="w-full h-full flex flex-col items-center justify-center p-4 bg-[#252528]">
+              <Tv className="w-7 h-7 text-white/[0.08] mb-2" />
+              <span className="text-white/[0.15] text-[7px] font-bold text-center uppercase tracking-widest line-clamp-2">
                 {channel.name}
               </span>
             </div>
           )}
         </div>
 
-        {/* Content Overlays */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-20" />
+        {/* Subtle bottom gradient */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent z-10" />
 
-        {/* Badges */}
-        <div className="absolute top-3 left-3 z-40 flex flex-col gap-1.5">
+        {/* Type Badge */}
+        <div className="absolute top-2.5 left-2.5 z-20">
           {isLive && (
-            <div className="flex items-center gap-1.5 bg-red-600 px-2 py-1 rounded-lg shadow-xl border border-white/20 pulse-glow">
-              <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-              <span className="text-white text-[8px] font-black uppercase tracking-tighter">AO VIVO</span>
+            <div className="flex items-center gap-1 bg-red-600/90 backdrop-blur-sm px-2 py-0.5 rounded-md">
+              <div className="w-1 h-1 rounded-full bg-white" />
+              <span className="text-white text-[7px] font-bold uppercase tracking-wide">Ao Vivo</span>
             </div>
           )}
           {contentType === 'movie' && (
-            <div className="flex items-center gap-1.5 bg-[#F7941D] text-black px-2 py-1 rounded-lg font-black uppercase tracking-tighter text-[8px]">
-              <Film size={10} className="fill-black" />
-              <span>FILME</span>
+            <div className="flex items-center gap-1 bg-white/90 text-black px-2 py-0.5 rounded-md font-bold uppercase tracking-wide text-[7px]">
+              <Film size={8} className="fill-black" />
+              <span>Filme</span>
+            </div>
+          )}
+          {contentType === 'series' && (
+            <div className="flex items-center gap-1 bg-indigo-500/90 backdrop-blur-sm px-2 py-0.5 rounded-md text-white font-bold uppercase tracking-wide text-[7px]">
+              <span>Série</span>
             </div>
           )}
         </div>
 
-        {/* Quality Badge */}
-        {quality && (
-          <div className="absolute top-3 right-3 z-40">
-            <div className={`bg-black/60 backdrop-blur-md text-white text-[8px] font-black px-2 py-1 rounded-lg border border-white/10`}>
-              {quality.label}
-            </div>
-          </div>
-        )}
-
-        {/* Play Icon */}
-        <div className={`absolute inset-0 z-40 flex items-center justify-center transition-all duration-500 ${
-          isHovered ? 'opacity-100 scale-100' : 'opacity-0 scale-50'
+        {/* Play Icon on Hover */}
+        <div className={`absolute inset-0 z-20 flex items-center justify-center transition-all duration-300 ${
+          isHovered ? 'opacity-100' : 'opacity-0'
         }`}>
-          <div className={`w-12 h-12 md:w-16 md:h-16 rounded-full bg-white text-black flex items-center justify-center shadow-2xl border-4 border-white/20`}>
-            <Play size={24} className="fill-black ml-1" />
+          <div className="w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-lg">
+            <Play size={16} className="fill-black ml-0.5 text-black" />
           </div>
         </div>
 
         {/* Info Area */}
-        <div className={`absolute bottom-0 left-0 right-0 z-40 p-4 md:p-6 transition-all duration-500 ${
-          isHovered ? 'translate-y-0' : 'translate-y-1'
-        }`}>
-          <div className="flex items-center gap-1.5 mb-1">
-             <div className={`w-1 h-1 rounded-full ${isLive ? 'bg-red-500 shadow-[0_0_5px_red]' : 'bg-[#F7941D]'}`} />
-             <span className="text-white/40 text-[8px] font-black uppercase tracking-widest truncate">
-               {channel.group || 'Elite'}
-             </span>
-          </div>
-          
-          <h3 className={`font-black ${isLive ? 'text-xs md:text-sm' : 'text-sm md:text-base'} text-white leading-tight line-clamp-2`}>
+        <div className="absolute bottom-0 left-0 right-0 z-20 p-3">
+          <h3 className="font-bold text-[11px] text-white/90 leading-tight line-clamp-2 group-hover:text-white transition-colors">
             {channel.name}
           </h3>
+          {channel.group && (
+            <p className="text-white/30 text-[8px] font-medium uppercase tracking-wide mt-0.5 truncate">
+              {channel.group}
+            </p>
+          )}
         </div>
       </div>
     </button>
