@@ -5,11 +5,12 @@ import { detectStreamType as getGlobalStreamType } from '../services/streamServi
 import { detectDeviceProfile } from '../services/SmartServerOrchestrator';
 import { prefetchService } from '../services/PrefetchService';
 import { detectServerTech, TECH_PROFILES } from '../services/ServerTechProfiler';
+import { detectTier } from './useDeviceProfile';
 
 /**
- * NonoTV — Hardware-Aware Turbo Player v5.0
+ * NonoTV — Hardware-Aware Turbo Player v5.1
  * P3: AI Metadata Enrichment integrado
- * P4: Auto-Quality Selector (adapta resolução ao bandwidth em tempo real)
+ * P4: Auto-Quality Selector (adapta resolução ao bandwidth + hardware)
  */
 
 function detectStreamType(url) {
@@ -96,20 +97,22 @@ export default function useHlsPlayer(url, videoRef, options = {}) {
 
     const type = detectStreamType(src);
     const deviceProfile = detectDeviceProfile();
+    const tier = detectTier();
     const isVod = type === 'direct';
     const isLive = !isVod;
 
-    // P4: Auto-Quality Selector — detecta conexão e aplica perfil ótimo
+    // P4: Auto-Quality Selector — detecta conexão E hardware
     const autoConfig = aiService.getAutoQualityConfig(isLive);
     const deviceConfig = {
-      maxBufferLength: Math.min(autoConfig.maxBufferLength, deviceProfile.maxBuffer),
+      maxBufferLength: Math.min(autoConfig.maxBufferLength, deviceProfile.maxBuffer, tier.maxBufferLength),
+      maxBufferSize: Math.min(autoConfig.maxBufferSize, tier.bufferSize),
       abrBandWidthFactor: deviceProfile.abrFactor,
     };
     
     const finalConfig = { ...autoConfig, ...deviceConfig, enableWorker: true };
     
     const conn = aiService.detectConnectionQuality();
-    console.log(`[Turbo-Player] ${type} | ${deviceProfile.label} | ${conn.effectiveType} (${conn.downlink}Mbps)`);
+    console.log(`[Turbo-Player] ${type} | ${deviceProfile.label} | ${tier.name} | ${conn.effectiveType} (${conn.downlink}Mbps)`);
     
     const hls = new Hls(finalConfig);
     hlsRef.current = hls;
