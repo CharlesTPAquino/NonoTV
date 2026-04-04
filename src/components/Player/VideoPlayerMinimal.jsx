@@ -205,6 +205,14 @@ export default function VideoPlayer({ channel, channels, onClose, mode = 'smart'
 
   useEffect(() => {
     const handleKeyDown = (e) => {
+      // Back button — close player immediately
+      if (e.key === 'Back' || e.keyCode === 4 || e.keyCode === 10009 || e.keyCode === 461) {
+        e.preventDefault();
+        e.stopPropagation();
+        handleClose();
+        return;
+      }
+
       showControlsTemporarily();
       switch(e.key) {
         case ' ': 

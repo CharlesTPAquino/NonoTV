@@ -30,7 +30,7 @@ export default function ChannelListOverlay({ isOpen, onClose, channels, groups, 
       <div className="p-6 border-b border-white/10">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <Tv size={24} className="text-[#F7941D]" />
+            <Tv size={24} className="text-white/50" />
             <h2 className="text-xl font-black text-white uppercase tracking-tight">Canais Ao Vivo</h2>
           </div>
           <button 
@@ -106,7 +106,7 @@ export default function ChannelListOverlay({ isOpen, onClose, channels, groups, 
 
               {/* Channel Info */}
               <div className="flex-1 min-w-0">
-                <p className={`font-bold text-sm truncate ${isActive ? 'text-[#F7941D]' : 'text-white'}`}>
+                <p className={`font-bold text-sm truncate ${isActive ? 'text-white' : 'text-white/80'}`}>
                   {channel.name}
                 </p>
                 <p className="text-xs text-white/40 truncate">{channel.group}</p>

@@ -8,7 +8,7 @@
  * é salvo em cache para uso futuro.
  */
 
-const TECH_PROFILES = {
+export const TECH_PROFILES = {
   XTREAM: {
     name: 'Xtream Codes API',
     indicators: ['/player_api.php', '/get.php', '/xmltv.php', 'username=', 'password='],

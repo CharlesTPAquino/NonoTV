@@ -79,7 +79,7 @@ export default function HeroSection({ channels, onPlay, validity = {}, isPlayerO
               <span className="text-white text-[8px] font-black uppercase tracking-wider">Ao Vivo</span>
             </div>
             
-            <div className="bg-white/5 border border-white/10 px-3 py-1 rounded-full text-[#F7941D] text-[8px] font-black uppercase tracking-wider">
+            <div className="bg-white/5 border border-white/10 px-3 py-1 rounded-full text-white/60 text-[8px] font-bold uppercase tracking-wider">
               {current.group || 'Premium'}
             </div>
           </div>
@@ -114,7 +114,7 @@ export default function HeroSection({ channels, onPlay, validity = {}, isPlayerO
               onClick={() => setFeaturedIndex(i)}
               className={`transition-all duration-300 rounded-full ${
                 i === featuredIndex 
-                  ? 'h-2 w-6 bg-[#F7941D]' 
+                  ? 'h-2 w-6 bg-white' 
                   : 'h-2 w-2 bg-white/15 hover:bg-white/30'
               }`}
             />

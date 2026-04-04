@@ -25,7 +25,7 @@ export default function ContinueWatching({ history = [], onPlayChannel, maxItems
   return (
     <section className="mb-10">
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-1 h-6 bg-[#F7941D] rounded-full shadow-[0_0_12px_#F7941D]" />
+        <div className="w-1 h-6 bg-white/30 rounded-full" />
         <h2 className="text-xl font-black text-white uppercase tracking-tight">
           Continuar Assistindo
         </h2>
@@ -70,14 +70,14 @@ export default function ContinueWatching({ history = [], onPlayChannel, maxItems
                 </div>
               </div>
 
-              <div className="absolute top-3 right-3 w-10 h-10 rounded-full bg-[#F7941D] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
+              <div className="absolute top-3 right-3 w-10 h-10 rounded-full bg-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
                 <Play size={16} fill="currentColor" className="text-black ml-0.5" />
               </div>
 
               {item.watchTime > 0 && (
                 <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
                   <div 
-                    className="h-full bg-[#F7941D]"
+                    className="h-full bg-white/60"
                     style={{ width: `${Math.min((item.watchTime / 300) * 100, 100)}%` }}
                   />
                 </div>
