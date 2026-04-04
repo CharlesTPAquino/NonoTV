@@ -49,7 +49,7 @@ function detectStreamType(url) {
   return (type === 'movie' || type === 'series') ? 'hls' : 'live';
 }
 
-export default function useHlsPlayer(url, videoRef, options = {}) {
+export default function useHlsPlayer(url, videoRef, options = {}, channel = null) {
   const [playerState, setPlayerState] = useState({
     playing: false, buffering: true, error: null, status: 'idle', quality: 'auto'
   });
@@ -72,7 +72,7 @@ export default function useHlsPlayer(url, videoRef, options = {}) {
     }
   }, []);
 
-  const initHls = useCallback((video, src) => {
+  const initHls = useCallback(async (video, src) => {
     destroyHls();
 
     const warmHls = prefetchService.getWarmHls(src);
@@ -101,6 +101,19 @@ export default function useHlsPlayer(url, videoRef, options = {}) {
     const isVod = type === 'direct';
     const isLive = !isVod;
 
+    // Google Video Stitcher — tenta obter manifest otimizado para play instantâneo
+    let loadUrl = src;
+    try {
+      loadUrl = await aiService.getStitchedManifest(src, { name: channel?.name, group: channel?.group });
+      if (loadUrl !== src) {
+        console.log('[Stitcher] Manifest otimizado recebido');
+      } else {
+        console.log('[Stitcher] Fallback para URL original');
+      }
+    } catch {
+      console.log('[Stitcher] Erro, usando URL original');
+    }
+
     // P4: Auto-Quality Selector — detecta conexão E hardware
     const autoConfig = aiService.getAutoQualityConfig(isLive);
     const deviceConfig = {
@@ -120,19 +133,10 @@ export default function useHlsPlayer(url, videoRef, options = {}) {
     video.setAttribute('playsinline', '');
     video.style.transform = 'translateZ(0)';
 
-    // P4: Monitorar nível de qualidade atual
-    hls.on(Hls.Events.LEVEL_SWITCHED, (_, data) => {
-      const level = hls.levels[data.level];
-      if (level) {
-        const height = level.height;
-        const label = height >= 2160 ? '4K' : height >= 1080 ? '1080p' : height >= 720 ? '720p' : `${height}p`;
-        qualityRef.current = label;
-        update({ quality: label });
-      }
-    });
-
     const isDev = import.meta.env.DEV;
-    const loadUrl = isDev ? `http://localhost:3131/?url=${encodeURIComponent(src)}` : src;
+    if (isDev) {
+      loadUrl = `http://localhost:3131/?url=${encodeURIComponent(src)}`;
+    }
 
     hls.loadSource(loadUrl);
     hls.attachMedia(video);
