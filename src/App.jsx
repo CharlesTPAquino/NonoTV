@@ -162,7 +162,7 @@ export default function App() {
   }
 
   return (
-    <div className="h-screen w-screen bg-black text-white overflow-hidden relative">
+    <div className="h-screen w-screen overflow-hidden relative" style={{ background: 'var(--bg-app)', color: 'var(--text-primary)' }}>
 
       <div className="h-full w-full relative z-10 flex">
         <Sidebar 
