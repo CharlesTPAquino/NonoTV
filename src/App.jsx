@@ -163,6 +163,7 @@ export default function App() {
 
   return (
     <div className="h-screen w-screen overflow-hidden relative" style={{ background: 'var(--surface-app)', color: 'var(--text-1)' }}>
+      <style>{`:root { --sidebar-width: 0px; } @media (min-width: 1024px) { :root { --sidebar-width: 68px; } }`}</style>
 
       <div className="h-full w-full relative z-10 flex">
         <Sidebar 
@@ -177,7 +178,7 @@ export default function App() {
           serverStatus={syncStatus?.includes('Conectado') || syncStatus?.includes('Carregado') ? 'online' : error ? 'offline' : 'checking'}
         />
 
-        <main className="flex-1 h-full overflow-hidden flex flex-col relative pb-16 md:pb-0 lg:ml-[88px]">
+        <main className="flex-1 h-full overflow-hidden flex flex-col relative" style={{ marginLeft: 'var(--sidebar-width)', transition: 'margin-left 200ms cubic-bezier(0.25,0.1,0.25,1)' }}>
           
           <Navbar 
             search={search} setSearch={setSearch} syncStatus={syncStatus}
@@ -185,7 +186,7 @@ export default function App() {
             serverStatus={syncStatus?.includes('Conectado') || syncStatus?.includes('Carregado') ? 'online' : error ? 'offline' : 'checking'}
           />
 
-          <div className={`flex-1 overflow-y-auto custom-scrollbar px-4 md:px-8 pt-2 pb-32`}>
+          <div className="flex-1 overflow-y-auto custom-scrollbar px-4 md:px-8 pt-4 pb-20 lg:pb-8">
             
             {error && (
               <div className="p-6 mb-8 bg-red-500/10 border border-red-500/20 rounded-3xl flex items-center gap-6 animate-in slide-in-from-top duration-500 shrink-0">
@@ -215,8 +216,8 @@ export default function App() {
 
             {isLoading && filteredChannels.length === 0 && (
               <div className="flex flex-col items-center justify-center py-40">
-                <div className="w-16 h-16 border-4 border-white/5 border-t-[#F7941D] rounded-full animate-spin mb-6" />
-                <p className="text-[#F7941D] font-black uppercase tracking-[0.5em] text-[10px] animate-pulse">Sintonizando Elite...</p>
+                <div className="w-16 h-16 border-4 border-white/5 border-t-white/60 rounded-full animate-spin mb-6" />
+                <p className="text-white/50 font-semibold uppercase tracking-[0.4em] text-[10px] animate-pulse">Sintonizando...</p>
               </div>
             )}
           </div>
@@ -251,8 +252,8 @@ export default function App() {
 
       {syncStatus && !error && (
         <div className="fixed bottom-10 right-10 bg-white/5 backdrop-blur-3xl border border-white/10 rounded-2xl px-6 py-4 flex items-center gap-4 z-[200] animate-in slide-in-from-right-10 shadow-2xl">
-          <RefreshCw size={16} className={`text-[#F7941D] ${isLoading ? 'animate-spin' : ''}`} />
-          <span className="text-[10px] font-black uppercase tracking-widest text-[#F7941D]">{syncStatus}</span>
+          <RefreshCw size={16} className={`text-white/50 ${isLoading ? 'animate-spin' : ''}`} />
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-white/50">{syncStatus}</span>
         </div>
       )}
     </div>

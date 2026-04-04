@@ -6,21 +6,21 @@ export default function Navbar({ search, setSearch, syncStatus, onOpenSettings, 
   const isOffline = serverStatus === 'offline' || serverStatus === 'error';
 
   return (
-    <nav className="relative shrink-0 h-16 md:h-20 flex items-center px-4 md:px-8 z-[90]">
+    <nav className="relative shrink-0 h-16 md:h-20 flex items-center px-4 md:px-8 z-[90] mt-2 md:mt-0">
       {/* Background */}
       <div className="absolute inset-x-0 top-0 h-full bg-gradient-to-b from-black/60 via-black/20 to-transparent pointer-events-none" />
 
       <div className="w-full flex items-center justify-between relative z-10">
         {/* Search Bar */}
         <div className="flex items-center flex-1 max-w-md">
-          <div className="relative flex items-center w-full bg-white/5 border border-white/5 rounded-xl backdrop-blur-xl focus-within:border-[#F7941D]/50 transition-all">
-            <Search className="ml-3 text-white/20 focus-within:text-[#F7941D] transition-colors" size={16} />
+          <div className="relative flex items-center w-full bg-white/5 border border-white/5 rounded-xl backdrop-blur-xl focus-within:border-white/25 transition-all">
+            <Search className="ml-3 text-white/20 transition-colors" size={16} />
             <input 
               type="text" 
               placeholder="Buscar..." 
               value={search}
               onChange={(e) => setSearch && setSearch(e.target.value)}
-              className="w-full h-10 pl-2 pr-3 bg-transparent outline-none text-xs font-bold text-white placeholder:text-white/10 uppercase tracking-widest"
+              className="w-full h-10 pl-2 pr-3 bg-transparent outline-none text-xs font-medium text-white placeholder:text-white/15 tracking-wide"
             />
           </div>
         </div>
@@ -30,8 +30,8 @@ export default function Navbar({ search, setSearch, syncStatus, onOpenSettings, 
           <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/5 rounded-xl backdrop-blur-xl">
             {isOnline && <CheckCircle size={12} className="text-green-500" />}
             {isOffline && <XCircle size={12} className="text-red-500" />}
-            {!isOnline && !isOffline && <Zap size={12} className="text-[#F7941D] animate-pulse" />}
-            <span className={`text-[8px] font-black uppercase tracking-widest hidden sm:inline ${isOnline ? 'text-green-500' : isOffline ? 'text-red-500' : 'text-white/40'}`}>
+            {!isOnline && !isOffline && <Zap size={12} className="text-white/40 animate-pulse" />}
+            <span className={`text-[9px] font-semibold uppercase tracking-widest hidden sm:inline ${isOnline ? 'text-green-500' : isOffline ? 'text-red-500' : 'text-white/30'}`}>
               {isOnline ? 'ON' : isOffline ? 'OFF' : '...'}
             </span>
           </div>

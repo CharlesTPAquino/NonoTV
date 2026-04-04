@@ -18,68 +18,78 @@ export default function SeriesGroup({ channels, onPlay, isPlayerOpen }) {
 
   return (
     <section className="mb-12">
-      <div className="flex items-center gap-4 mb-8">
-        <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-          <Tv size={20} className="text-emerald-400" />
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--surface-card)', border: '1px solid var(--border-1)' }}>
+          <Tv size={16} style={{ color: 'var(--text-2)' }} />
         </div>
         <div>
-          <h2 className="text-2xl md:text-3xl font-black text-white">Séries</h2>
-          <p className="text-white/20 text-[10px] font-bold uppercase tracking-widest mt-0.5">
+          <h2 className="text-xl font-semibold" style={{ color: 'var(--text-1)' }}>Séries</h2>
+          <p className="text-[9px] font-medium uppercase tracking-wider mt-0.5" style={{ color: 'var(--text-3)' }}>
             {uniqueSeries.length} {uniqueSeries.length === 1 ? 'série' : 'séries'}
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
         {uniqueSeries.map((channel, idx) => (
           <button
             key={`${channel.id}-${idx}`}
             onClick={() => onPlay(channel)}
-            className="group relative flex flex-col w-full text-left rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:scale-[1.03] hover:shadow-xl hover:shadow-black/40 focus-visible:ring-2 focus-visible:ring-[#F7941D] outline-none"
+            className="group relative flex flex-col w-full text-left outline-none select-none"
+            style={{ transition: 'all 180ms cubic-bezier(0.25,0.1,0.25,1)' }}
           >
-            <div className="relative aspect-[2/3] rounded-2xl overflow-hidden bg-gradient-to-b from-[#1a1a1a] to-[#0a0a0a]">
+            <div
+              className="relative w-full aspect-[2/3] overflow-hidden"
+              style={{
+                background: 'var(--surface-card)',
+                border: '1px solid var(--border-1)',
+                borderRadius: 'var(--r)',
+                boxShadow: 'var(--depth-1)',
+                transition: 'all 180ms cubic-bezier(0.25,0.1,0.25,1)',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = 'var(--depth-2)'; e.currentTarget.style.borderColor = 'var(--border-3)'; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'var(--depth-1)'; e.currentTarget.style.borderColor = 'var(--border-1)'; }}
+            >
               {channel.logo ? (
                 <img
                   src={channel.logo}
                   alt={channel.originalName || channel.name}
                   loading="lazy"
-                  className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:brightness-50"
+                  className="w-full h-full object-cover transition-all duration-200"
+                  style={{ filter: 'brightness(0.9)' }}
                 />
               ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center p-4">
-                  <span className="text-white/40 text-sm font-bold text-center line-clamp-3">
+                <div className="w-full h-full flex flex-col items-center justify-center p-4" style={{ background: 'var(--surface-card)' }}>
+                  <span className="text-white/30 text-sm font-medium text-center line-clamp-3">
                     {channel.originalName || channel.name}
                   </span>
                 </div>
               )}
 
-              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
 
-              <div className="absolute top-3 left-3 z-10">
-                <span className="flex items-center gap-1.5 bg-emerald-600/90 backdrop-blur-sm text-white text-[9px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider shadow-lg">
-                  <Tv size={10} />
-                  SÉRIE
+              <div className="absolute top-2 left-2 z-10">
+                <span className="badge badge-purple">
+                  <Tv size={8} />
+                  Série
                 </span>
               </div>
 
-              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-[#F7941D] rounded-full blur-lg opacity-50" />
-                  <div className="relative w-14 h-14 rounded-full bg-[#F7941D] flex items-center justify-center shadow-xl border-2 border-white/30">
-                    <Play size={22} fill="white" className="text-white ml-0.5" />
-                  </div>
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-180">
+                <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: 'var(--text-1)', boxShadow: 'var(--depth-btn)' }}>
+                  <svg className="w-3.5 h-3.5 ml-0.5" style={{ color: 'var(--surface-card)' }} fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
                 </div>
               </div>
 
-              <div className="absolute bottom-0 left-0 right-0 z-10 p-4">
-                <h3 className="font-black text-sm text-white leading-tight line-clamp-2 drop-shadow-lg">
+              <div className="absolute bottom-0 left-0 right-0 z-10 p-2.5">
+                <h3 className="text-[10px] font-medium leading-snug line-clamp-2" style={{ color: 'var(--text-1)' }}>
                   {channel.originalName || channel.name}
                 </h3>
-                <div className="flex items-center gap-2 mt-2">
-                  <span className="text-white/70 text-[10px] font-bold uppercase tracking-wider bg-white/10 px-2 py-0.5 rounded">
-                    {channel.group || 'Série'}
-                  </span>
-                </div>
+                {channel.group && (
+                  <p className="text-[7px] font-medium mt-0.5 truncate" style={{ color: 'var(--text-3)' }}>
+                    {channel.group}
+                  </p>
+                )}
               </div>
             </div>
           </button>
