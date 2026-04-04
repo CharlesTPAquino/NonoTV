@@ -98,32 +98,26 @@ export default function HeroSection({ channels, onPlay, validity = {}, isPlayerO
           </div>
 
           {/* Cinematic Title */}
-          <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-white mb-6 leading-[0.85] tracking-tighter drop-shadow-2xl uppercase">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white mb-6 leading-[0.9] tracking-tight drop-shadow-2xl uppercase">
             {cleanChannelName(current.name)}
           </h1>
 
           {/* Description Ultra */}
-          <div className="flex items-center gap-4 mb-10 animate-in slide-in-from-bottom-4 duration-700 delay-300">
-             <div className="h-12 w-1 bg-[#F7941D] rounded-full shadow-[0_0_15px_#F7941D]" />
-             <p className="text-white/40 text-sm md:text-base font-bold uppercase tracking-[0.15em] max-w-xl leading-relaxed">
-               Experiência 4K nativa com baixa latência e som imersivo surround. 
-               O melhor do entretenimento mundial agora disponível.
+          <div className="flex items-center gap-4 mb-8">
+             <div className="h-8 w-0.5 bg-[#F7941D] rounded-full" />
+             <p className="text-white/40 text-xs md:text-sm font-bold uppercase tracking-[0.15em] max-w-xl leading-relaxed">
+               Experiência 4K nativa com baixa latência e som imersivo surround.
              </p>
           </div>
 
           {/* Premium Actions */}
-          <div className="flex flex-wrap items-center gap-4 md:gap-6 animate-in slide-in-from-bottom-6 duration-700 delay-400">
+          <div className="flex flex-wrap items-center gap-3 md:gap-4">
             <button
               onClick={() => onPlay(current)}
-              className="group relative flex items-center gap-4 bg-white text-black font-black px-10 py-5 rounded-[2rem] transition-all hover:scale-105 active:scale-95 shadow-[0_20px_50px_rgba(255,255,255,0.2)]"
+              className="group flex items-center gap-3 bg-white text-black font-black px-8 py-4 rounded-2xl transition-all hover:scale-105 active:scale-95 shadow-lg"
             >
-              <Play size={24} className="fill-black" />
-              <span className="text-sm md:text-base uppercase tracking-[0.2em]">Assistir Agora</span>
-            </button>
-            
-            <button className="group flex items-center gap-4 bg-white/5 backdrop-blur-2xl border border-white/10 text-white font-black px-10 py-5 rounded-[2rem] transition-all hover:bg-white/10 hover:border-white/20 active:scale-95">
-              <Info size={24} className="text-[#F7941D]" />
-              <span className="text-sm md:text-base uppercase tracking-[0.2em]">Detalhes</span>
+              <Play size={20} className="fill-black" />
+              <span className="text-xs uppercase tracking-[0.2em]">Assistir</span>
             </button>
           </div>
         </div>

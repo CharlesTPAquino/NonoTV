@@ -86,20 +86,16 @@ export default function ChannelGrid({ channels, activeGroup, activeCategory, set
         <div className="space-y-24 animate-in fade-in duration-1000">
           <HeroSection channels={[...featured, ...standard]} onPlay={onPlay} validity={channelValidity} isPlayerOpen={isPlayerOpen} />
           
-          <div className="space-y-20 pb-32">
-            {groupedAll && Object.entries(groupedAll).slice(0, 12).map(([group, items], idx) => (
-              <div key={group} className="animate-in slide-in-from-bottom-8 duration-700" style={{ animationDelay: `${idx * 150}ms` }}>
-                <div className="flex items-center justify-between mb-8 px-2 md:px-0">
-                   <div className="flex items-center gap-4">
-                      <div className="w-1.5 h-8 bg-gradient-to-b from-[#F7941D] to-transparent rounded-full shadow-[0_0_15px_#F7941D]" />
-                      <div>
-                        <h2 className="text-white font-black text-xl md:text-2xl lg:text-3xl tracking-tighter uppercase">{group}</h2>
-                        <span className="text-white/20 text-[9px] font-black uppercase tracking-[0.3em]">Premium Collection</span>
-                      </div>
+          <div className="space-y-16 pb-32">
+            {groupedAll && Object.entries(groupedAll).slice(0, 12).map(([group, items]) => (
+              <div key={group}>
+                <div className="flex items-center justify-between mb-6 px-2 md:px-0">
+                   <div>
+                     <h2 className="text-white font-black text-lg md:text-xl lg:text-2xl tracking-tight uppercase">{group}</h2>
                    </div>
-                   <button onClick={() => setActiveGroup(group)} className="flex items-center gap-2 text-white/30 hover:text-[#F7941D] transition-colors group/all">
-                      <span className="text-[10px] font-black uppercase tracking-widest">Ver Tudo</span>
-                      <ChevronRight size={16} className="group-hover/all:translate-x-1 transition-transform" />
+                   <button onClick={() => setActiveGroup(group)} className="flex items-center gap-1 text-white/30 hover:text-[#F7941D] transition-colors">
+                      <span className="text-[9px] font-black uppercase tracking-widest">Ver Tudo</span>
+                      <ChevronRight size={14} />
                    </button>
                 </div>
                 <ChannelCarousel channels={items} onPlay={onPlay} validity={channelValidity} isPlayerOpen={isPlayerOpen} />
@@ -108,30 +104,25 @@ export default function ChannelGrid({ channels, activeGroup, activeCategory, set
           </div>
         </div>
       ) : (
-        <div className="flex flex-col animate-in slide-in-from-bottom-10 duration-1000">
-          <div className="shrink-0 flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12 px-2 md:px-0">
-            <div className="max-w-2xl">
-              <div className="flex items-center gap-3 text-[#F7941D] mb-4">
-                <Compass size={18} className="animate-spin-slow" />
-                <span className="text-[10px] font-black uppercase tracking-[0.4em]">Exploração de Sinal 4K</span>
-              </div>
-              <h2 className="text-5xl md:text-6xl lg:text-7xl font-black text-white uppercase tracking-tighter leading-[0.9] drop-shadow-2xl">
-                {isSearching ? search : activeGroup === 'All' ? (CATEGORY_META[activeCategory]?.label || activeCategory) : activeGroup}
-              </h2>
-              <div className="flex items-center gap-4 mt-6">
-                 <div className="h-px w-12 bg-[#F7941D]/50" />
-                 <p className="text-white/20 text-[10px] font-black uppercase tracking-[0.3em]">{standard.length} Itens Catalogados</p>
-              </div>
-            </div>
+        <div className="flex flex-col">
+          {/* Header Centralizado */}
+          <div className="text-center mb-8">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-white uppercase tracking-tight leading-tight">
+              {isSearching ? search : activeGroup === 'All' ? (CATEGORY_META[activeCategory]?.label || activeCategory) : activeGroup}
+            </h2>
+            <p className="text-white/20 text-[9px] font-black uppercase tracking-[0.3em] mt-2">{standard.length} Itens Disponíveis</p>
+          </div>
 
-            <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-2 scroll-smooth">
-              {groups.slice(0, 20).map((g, idx) => (
-                <button key={g.id} onClick={() => setActiveGroup(g.name)} className={`relative px-8 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border ${activeGroup === g.name ? 'bg-white text-black border-white' : 'bg-white/5 text-white/30 border-white/5 hover:bg-white/10 hover:text-white'}`}>
+          {/* Botões de Categoria Horizontal - Full Width */}
+          {groups.length > 2 && (
+            <div className="flex items-center gap-2 mb-8 overflow-x-auto no-scrollbar pb-1">
+              {groups.slice(0, 20).map((g) => (
+                <button key={g.id} onClick={() => setActiveGroup(g.name)} className={`flex-shrink-0 flex-1 min-w-0 px-4 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border text-center truncate ${activeGroup === g.name ? 'bg-white text-black border-white' : 'bg-white/5 text-white/30 border-white/5 hover:bg-white/10 hover:text-white'}`}>
                   {g.name}
                 </button>
               ))}
             </div>
-          </div>
+          )}
 
           <div className={`grid ${isPosterContent ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6' : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'} gap-4 md:gap-6`}>
             {displayChannels.map((ch) => (
@@ -142,7 +133,7 @@ export default function ChannelGrid({ channels, activeGroup, activeCategory, set
           {standard.length > limit && (
             <div className="mt-20 flex justify-center pb-32">
               <button onClick={() => setLimit(prev => prev + 60)} className="px-12 py-4 bg-white/5 border border-white/10 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-white/10 transition-all">
-                Carregar Mais Conteúdo
+                Carregar Mais
               </button>
             </div>
           )}

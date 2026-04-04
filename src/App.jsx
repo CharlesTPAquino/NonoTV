@@ -146,20 +146,8 @@ export default function App() {
             serverStatus={syncStatus?.includes('Conectado') || syncStatus?.includes('Carregado') ? 'online' : error ? 'offline' : 'checking'}
           />
 
-          <div className={`flex-1 overflow-y-auto custom-scrollbar px-6 md:px-12 pt-4 pb-32`}>
+          <div className={`flex-1 overflow-y-auto custom-scrollbar px-4 md:px-8 pt-2 pb-32`}>
             
-            <header className="mb-12 mt-4 shrink-0">
-              <h1 className="text-3xl font-black text-white uppercase tracking-tighter">
-                {activeCategory === 'podcasts' ? 'Podcasts' : 
-                 activeCategory === 'live' ? 'TV Ao Vivo' :
-                 activeCategory === 'movie' ? 'Cine VOD' :
-                 activeCategory === 'series' ? 'Séries' : 'Descobrir'}
-              </h1>
-              <p className="text-white/20 text-[10px] font-black uppercase tracking-[0.3em] mt-2">
-                {filteredChannels.length} Itens Disponíveis • Experiência Elite 4K
-              </p>
-            </header>
-
             {error && (
               <div className="p-6 mb-8 bg-red-500/10 border border-red-500/20 rounded-3xl flex items-center gap-6 animate-in slide-in-from-top duration-500 shrink-0">
                  <AlertCircle className="text-red-500 shrink-0" size={24} />
