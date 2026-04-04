@@ -135,14 +135,15 @@ export default function App() {
           onOpenServerStatus={() => { setSettingsTab('status'); setSettingsOpen(true); }}
           search={search}
           setSearch={setSearch}
+          serverStatus={syncStatus?.includes('Conectado') || syncStatus?.includes('Carregado') ? 'online' : error ? 'offline' : 'checking'}
         />
 
         <main className="flex-1 h-full overflow-hidden flex flex-col relative pb-16 md:pb-0 lg:ml-[88px]">
           
           <Navbar 
             search={search} setSearch={setSearch} syncStatus={syncStatus}
-            activeCategory={activeCategory} setActiveCategory={(cat) => { setActiveCategory(cat); setActiveGroup('All'); }}
             onOpenSettings={() => { setSettingsTab('sources'); setSettingsOpen(true); }}
+            serverStatus={syncStatus?.includes('Conectado') || syncStatus?.includes('Carregado') ? 'online' : error ? 'offline' : 'checking'}
           />
 
           <div className={`flex-1 overflow-y-auto custom-scrollbar px-6 md:px-12 pt-4 pb-32`}>
