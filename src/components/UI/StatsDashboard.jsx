@@ -120,7 +120,7 @@ export default function StatsDashboard({ history = [], channels = [] }) {
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
-          <div className="flex items-center gap-2 text-[#F7941D] mb-2">
+          <div className="flex items-center gap-2 text-white/50 mb-2">
             <Tv size={16} />
             <span className="text-[10px] font-black uppercase tracking-wider">Canais</span>
           </div>
@@ -128,7 +128,7 @@ export default function StatsDashboard({ history = [], channels = [] }) {
         </div>
 
         <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
-          <div className="flex items-center gap-2 text-[#F7941D] mb-2">
+          <div className="flex items-center gap-2 text-white/50 mb-2">
             <Clock size={16} />
             <span className="text-[10px] font-black uppercase tracking-wider">Tempo Total</span>
           </div>
@@ -136,7 +136,7 @@ export default function StatsDashboard({ history = [], channels = [] }) {
         </div>
 
         <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
-          <div className="flex items-center gap-2 text-[#F7941D] mb-2">
+          <div className="flex items-center gap-2 text-white/50 mb-2">
             <Calendar size={16} />
             <span className="text-[10px] font-black uppercase tracking-wider">Sequência</span>
           </div>
@@ -144,7 +144,7 @@ export default function StatsDashboard({ history = [], channels = [] }) {
         </div>
 
         <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
-          <div className="flex items-center gap-2 text-[#F7941D] mb-2">
+          <div className="flex items-center gap-2 text-white/50 mb-2">
             <TrendingUp size={16} />
             <span className="text-[10px] font-black uppercase tracking-wider">Média/Sessão</span>
           </div>
@@ -155,7 +155,7 @@ export default function StatsDashboard({ history = [], channels = [] }) {
       {/* Top Channels */}
       <div>
         <h3 className="flex items-center gap-2 text-sm font-black uppercase tracking-wider text-white/60 mb-3">
-          <Star size={14} className="text-[#F7941D]" />
+          <Star size={14} className="text-white/50" />
           Canais Mais Assistidos
         </h3>
         <div className="space-y-2">
@@ -164,7 +164,7 @@ export default function StatsDashboard({ history = [], channels = [] }) {
               key={channel.name}
               className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5"
             >
-              <span className="w-6 h-6 rounded-full bg-[#F7941D]/20 flex items-center justify-center text-[#F7941D] text-xs font-black">
+              <span className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-white/50 text-xs font-black">
                 {idx + 1}
               </span>
               {channel.logo ? (
@@ -180,7 +180,7 @@ export default function StatsDashboard({ history = [], channels = [] }) {
               </div>
               <div className="w-16 h-2 bg-white/10 rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-[#F7941D] rounded-full"
+                  className="h-full bg-white rounded-full"
                   style={{ width: `${(channel.count / stats.topChannels[0].count) * 100}%` }}
                 />
               </div>
@@ -193,14 +193,14 @@ export default function StatsDashboard({ history = [], channels = [] }) {
       <div className="grid grid-cols-2 gap-4">
         <div>
           <h3 className="flex items-center gap-2 text-sm font-black uppercase tracking-wider text-white/60 mb-3">
-            <Target size={14} className="text-[#F7941D]" />
+            <Target size={14} className="text-white/50" />
             Categorias
           </h3>
           <div className="space-y-2">
             {stats.topCategories.map((cat) => (
               <div key={cat.name} className="flex items-center justify-between p-2">
                 <span className="text-white/70 text-sm truncate">{cat.name}</span>
-                <span className="text-[#F7941D] text-xs font-black">{cat.count}</span>
+                <span className="text-white/50 text-xs font-black">{cat.count}</span>
               </div>
             ))}
           </div>
@@ -208,7 +208,7 @@ export default function StatsDashboard({ history = [], channels = [] }) {
 
         <div>
           <h3 className="flex items-center gap-2 text-sm font-black uppercase tracking-wider text-white/60 mb-3">
-            <Clock size={14} className="text-[#F7941D]" />
+            <Clock size={14} className="text-white/50" />
             Horários
           </h3>
           <div className="space-y-2">
@@ -218,7 +218,7 @@ export default function StatsDashboard({ history = [], channels = [] }) {
                 <span className="text-white/70 text-sm">{slot}</span>
                 <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
                   <div 
-                    className="h-full bg-[#F7941D] rounded-full"
+                    className="h-full bg-white rounded-full"
                     style={{ width: `${(count / stats.peakHours[0].count) * 100}%` }}
                   />
                 </div>

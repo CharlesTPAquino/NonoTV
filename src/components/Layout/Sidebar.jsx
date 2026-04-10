@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Home, Tv, Film, Clapperboard, Settings, Mic, LayoutGrid, CheckCircle, XCircle, Activity } from 'lucide-react';
+import logoImg from '../../assets/logo.png';
 
 const NAV_ITEMS = [
   { id: 'home',     name: 'Início',     type: 'All',      icon: Home },
@@ -23,14 +24,16 @@ export default function Sidebar({ activeCategory, setActiveCategory, onOpenSetti
           background: 'var(--surface-sidebar)',
           borderRight: '1px solid var(--border-1)',
           transition: 'width 200ms cubic-bezier(0.25,0.1,0.25,1)',
+          paddingTop: 'var(--safe-top)',
+          paddingBottom: 'var(--safe-bottom, 0px)',
         }}
         onMouseEnter={() => setExpanded(true)}
         onMouseLeave={() => setExpanded(false)}
       >
         {/* Brand */}
         <div className="flex items-center shrink-0 h-16 px-4" style={{ gap: expanded ? '12px' : '0', justifyContent: expanded ? 'flex-start' : 'center' }}>
-          <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: 'var(--text-1)' }}>
-            <span className="text-black font-bold text-[11px]">N+</span>
+          <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 overflow-hidden">
+            <img src={logoImg} alt="N+" className="w-full h-full object-contain" />
           </div>
           {expanded && <span className="text-white font-semibold text-[14px] tracking-tight">NonoTV</span>}
         </div>
@@ -91,7 +94,7 @@ export default function Sidebar({ activeCategory, setActiveCategory, onOpenSetti
       </aside>
 
       {/* Mobile */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-[200]" style={{ background: 'var(--surface-sidebar)', borderTop: '1px solid var(--border-1)' }}>
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-[200]" data-nav-zone="bottomnav" style={{ background: 'var(--surface-sidebar)', borderTop: '1px solid var(--border-1)' }}>
         <div className="flex items-center justify-around h-16 px-1 pb-[env(safe-area-inset-bottom)]">
           {NAV_ITEMS.map(item => {
             const Icon = item.icon;

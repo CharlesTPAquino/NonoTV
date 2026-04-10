@@ -16,7 +16,7 @@ export const UI = {
   BLUR_LARGE: 120,
   BLUR_MEDIUM: 150,
   FOCUS_SCALE: 1.05,
-  FOCUS_BOX_SHADOW: '0 0 0 4px #F7941D, 0 0 20px rgba(247, 148, 29, 0.5)'
+  FOCUS_BOX_SHADOW: '0 0 0 2px rgba(255, 255, 255, 0.5), 0 0 12px rgba(255, 255, 255, 0.15)'
 };
 
 export const API = {

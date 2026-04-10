@@ -25,7 +25,7 @@ export default function ThemeToggle({ compact = false }) {
         {theme === THEMES.KIDS && <Sparkles size={18} className="text-green-400" />}
         {theme === THEMES.CINEMA && <Tv size={18} className="text-red-500" />}
         {theme === THEMES.DARK && <Moon size={18} className="text-white" />}
-        {theme === THEMES.DEFAULT && <Sun size={18} className="text-[#F7941D]" />}
+        {theme === THEMES.DEFAULT && <Sun size={18} className="text-white/50" />}
       </button>
     );
   }

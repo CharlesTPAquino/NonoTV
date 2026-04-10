@@ -113,3 +113,10 @@
     animation: fadeUp 200ms var(--ease) forwards;
   }
 }
+
+/* ── Landscape Adaptations ── */
+@media (orientation: landscape) and (max-height: 700px) {
+  .aspect-\[4\/3\] {
+    aspect-ratio: 16 / 10 !important;
+  }
+}

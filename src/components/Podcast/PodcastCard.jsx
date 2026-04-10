@@ -18,10 +18,10 @@ export default function PodcastCard({ podcast, onPress }) {
   return (
     <button
       onClick={handleClick}
-      className="group relative w-full aspect-video md:aspect-[16/10] bg-[#1C1C1E] rounded-2xl md:rounded-[2rem] overflow-hidden transition-all duration-700 hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-[#F7941D]/50 reflective-glass border border-white/5 hover:border-white/20 shadow-2xl text-left"
+      className="group relative w-full aspect-video md:aspect-[16/10] bg-[#1C1C1E] rounded-2xl md:rounded-[2rem] overflow-hidden transition-all duration-700 hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-white/50 reflective-glass border border-white/5 hover:border-white/20 shadow-2xl text-left"
     >
       {/* Background Glow */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#F7941D]/0 via-transparent to-[#F7941D]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+      <div className="absolute inset-0 bg-gradient-to-br from-white/0 via-transparent to-white/70/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
       
       {/* Reflection Effect */}
       <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
@@ -59,8 +59,8 @@ export default function PodcastCard({ podcast, onPress }) {
         {/* Title & Info */}
         <div className="relative translate-y-4 group-hover:translate-y-0 transition-transform duration-500 ease-out">
           <div className="flex items-center gap-2 mb-2 opacity-0 group-hover:opacity-100 transition-all duration-500 delay-100">
-             <span className="w-2 h-2 bg-[#F7941D] rounded-full animate-pulse shadow-[0_0_10px_#F7941D]" />
-             <span className="text-[#F7941D] text-[10px] font-black uppercase tracking-[0.3em] drop-shadow-md">Podcast Premium</span>
+             <span className="w-2 h-2 bg-white rounded-full animate-pulse " />
+             <span className="text-white/50 text-[10px] font-black uppercase tracking-[0.3em] drop-shadow-md">Podcast Premium</span>
           </div>
           
           <h3 className="text-white font-black text-lg md:text-xl lg:text-2xl leading-tight mb-4 line-clamp-2 drop-shadow-2xl tracking-tight">
@@ -85,7 +85,7 @@ export default function PodcastCard({ podcast, onPress }) {
 
         {/* Play Button Icon - Hover Only */}
         <div className="absolute bottom-8 right-8 opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 transition-all duration-500 delay-200">
-          <div className="w-14 h-14 md:w-16 md:h-16 bg-[#F7941D] text-black rounded-full flex items-center justify-center shadow-[0_0_50px_rgba(247,148,29,0.4)] hover:scale-110 active:scale-90 transition-all border-4 border-white/20">
+          <div className="w-14 h-14 md:w-16 md:h-16 bg-white text-black rounded-full flex items-center justify-center  hover:scale-110 active:scale-90 transition-all border-4 border-white/20">
             <Play className="w-7 h-7 fill-black ml-1.5" />
           </div>
         </div>

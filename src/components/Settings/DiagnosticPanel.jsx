@@ -125,19 +125,19 @@ export default function DiagnosticPanel({ sources, resetSourceStatus }) {
           <h4 className="text-xs font-bold text-[#71717A] uppercase tracking-wider mb-3">Ambiente Detectado</h4>
           <div className="grid grid-cols-2 gap-2 text-xs">
             <div className="flex items-center gap-2">
-              <Cpu size={12} className="text-[#F7941D]" />
+              <Cpu size={12} className="text-white/50" />
               <span className="text-[#71717A]">Platform:</span>
               <span className="text-white font-bold">{env.platform}</span>
             </div>
             <div className="flex items-center gap-2">
-              <Shield size={12} className="text-[#F7941D]" />
+              <Shield size={12} className="text-white/50" />
               <span className="text-[#71717A]">Nativo:</span>
               <span className={`font-bold ${env.isNative ? 'text-green-400' : 'text-yellow-400'}`}>
                 {env.isNative ? 'Sim (APK)' : 'Não (Browser)'}
               </span>
             </div>
             <div className="flex items-center gap-2 col-span-2">
-              <Wifi size={12} className="text-[#F7941D]" />
+              <Wifi size={12} className="text-white/50" />
               <span className="text-[#71717A]">HTTP Plugin:</span>
               <span className={`font-bold ${env.httpPluginActive ? 'text-green-400' : 'text-red-400'}`}>
                 {env.httpPluginActive ? 'Ativo' : 'Inativo (modo fetch)'}
@@ -151,7 +151,7 @@ export default function DiagnosticPanel({ sources, resetSourceStatus }) {
       <button
         onClick={runDiagnostic}
         disabled={running}
-        className="w-full flex items-center justify-center gap-2 py-3 bg-[#F7941D] text-black font-bold rounded-xl text-sm disabled:opacity-50 active:scale-95 transition-all"
+        className="w-full flex items-center justify-center gap-2 py-3 bg-red-600 text-white font-bold rounded-xl text-sm disabled:opacity-50 active:scale-95 transition-all hover:bg-red-500"
       >
         <RefreshCw size={16} className={running ? 'animate-spin' : ''} />
         {running ? 'Testando...' : 'Iniciar Diagnóstico'}

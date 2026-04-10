@@ -39,9 +39,9 @@ export default function ContinueWatching({ history = [], onPlayChannel, maxItems
           <button
             key={item.id || item.lastWatched}
             onClick={() => onPlayChannel && onPlayChannel(item)}
-            className="group relative min-w-[160px] w-[160px] md:min-w-[200px] md:w-[200px] flex-shrink-0"
+            className="group relative min-w-[140px] w-[140px] md:min-w-[180px] md:w-[180px] flex-shrink-0"
           >
-            <div className="relative aspect-[9/16] md:aspect-[2/3] rounded-2xl overflow-hidden bg-white/5 border border-white/10 transition-all duration-300 group-hover:scale-105 group-hover:border-white/30">
+            <div className="relative aspect-video rounded-xl overflow-hidden bg-black/40 border border-white/10 transition-all duration-300 group-hover:scale-105 group-hover:border-white/30 group-focus:border-white group-focus:scale-105 shadow-lg">
               {item.logo ? (
                 <img 
                   src={item.logo} 
@@ -58,9 +58,9 @@ export default function ContinueWatching({ history = [], onPlayChannel, maxItems
                 </div>
               )}
 
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#050505]/95 via-black/40 to-transparent" />
 
-              <div className="absolute bottom-0 left-0 right-0 p-3">
+              <div className="absolute bottom-0 left-0 right-0 p-2.5 md:p-3 pb-3 md:pb-4">
                 <p className="font-bold text-white text-sm truncate mb-1">
                   {item.name}
                 </p>
@@ -75,9 +75,9 @@ export default function ContinueWatching({ history = [], onPlayChannel, maxItems
               </div>
 
               {item.watchTime > 0 && (
-                <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
+                <div className="absolute bottom-0 left-0 right-0 h-1 md:h-1.5 bg-white/10">
                   <div 
-                    className="h-full bg-white/60"
+                    className="h-full bg-red-600 rounded-r-full shadow-[0_0_8px_rgba(220,38,38,0.8)]"
                     style={{ width: `${Math.min((item.watchTime / 300) * 100, 100)}%` }}
                   />
                 </div>

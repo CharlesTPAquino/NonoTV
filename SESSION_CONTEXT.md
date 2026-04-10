@@ -1,32 +1,31 @@
-# NonoTV IPTV - Contexto da Sessão (v8.6.0 Elite Alpha - Suspenso)
+# NonoTV IPTV - Contexto da Sessão (v8.7.0 Elite Alpha - AI & Premium UI)
 
-> Última atualização: 03/04/2026 às 22:40
-> Status: Interface Estabilizada / Player em Depuração
+> Última atualização: 04/04/2026 às 22:30
+> Status: Interface Premium Estabilizada / AI Injecting Ativo
 
 ---
 
 ## 📍 De Onde Viemos (O Passado)
 - **Legado v4.1 - v5.9:** Um player unificado que tentava processar tudo na Main Thread.
-- **Problemas Crônicos:** Travamentos de 15s em listas grandes, crashes de codec ao trocar de Live para VOD e categorização falha baseada em nomes de grupos.
+- **Problemas Crônicos:** Travamentos de 15s em listas grandes. Player engasgava em aparelhos Mi Stick, e a UI não parecia premium.
 
-## 🛠️ Onde Estamos (O Hoje - v8.6.0)
+## 🛠️ Onde Estamos (O Hoje - v8.7.0)
 
-### 1. Performance de Interface (Sucesso ✅)
-- **Web Worker:** A filtragem de 50k+ canais agora é feita em background. A navegação entre abas não trava mais.
-- **Virtualização 2D:** Implementada com fallback paginado (30 itens) para evitar estouro de RAM.
-- **Dual-Environment:** Estrutura de `LivePlayer` e `CinemaPlayer` criada e orquestrada.
+### 1. AI Hardware Neural Enhancement (Sucesso ✅)
+- **Injeção de Imagem:** Filtros `contrast`, `saturate` e algoritmos de sharpening de bordas injetados via GPU ao rodar os canais pelo `<VideoPlayerMinimal>`.
+- **Zapping Preditivo:** Implementado `prefetchService` que pré-carrega o manifesto `.m3u8` ao focar (hover/focus) em um card por mais de 800ms.
 
-### 2. Sintonização de Vídeo (Falha Parcial ❌)
-- **O Problema Atual:** Apesar da lógica de detecção de DNA (HLS vs TS) e dos resets de hardware implementados, o sinal continua falhando ao carregar em certos cenários.
-- **Hipótese:** Conflito de renderização no ciclo de vida do React ou latência excessiva nos proxies de rede configurados no `streamService`.
+### 2. Interface Elite "Deep Layering" (Sucesso ✅)
+- **Hero Section Cinemático:** Reescrita completa do Hero com poster flutuante nítido à direita, sombras pesadas e glow (efeito neon), mantendo fundo embaçado (Glassmorphism). Funciona em TVs (modo paisagem) via responsividade focada.
+- **Categorização Fina (M3U):** Extração de marcas (HBO, Telecine, Premiere, SporTV, ESPN, 4K) agrupando-as automaticamente na UI.
+
+### 3. Voice Control Semântico (Sucesso ✅)
+- **Web Speech + Gemini:** Inserido microfone na barra de busca. A IA capta fala natural (ex: "quero ver esportes"), processa a intenção e filtra o app via busca semântica assíncrona.
 
 ## 🎯 Para Onde Vamos (O Futuro)
 
-### Prioridade 0: O "Reset" do Motor de Vídeo
-> Na próxima sessão, devemos ignorar a UI e focar 100% em um componente isolado de teste de vídeo para descobrir por que o buffer não está enchendo no Mi Stick.
+### Prioridade 1: EPG Generativo e Completude de Grades
+> Utilizar a IA para criar um `EPGService` inteligente, que preencha as grades de canais faltantes, sem pesar no motor de renderização.
 
-### Prioridade 1: AI Metadata Enrichment
-> Dar vida aos canais sem EPG usando Gemini AI para gerar sinopses.
-
-### Prioridade 2: Pre-flight Stitching
-> Preparar a URL via Google Video Stitcher antes do clique, para que o "Play" seja instantâneo.
+### Prioridade 2: Perfis de Usuário & Sincronização em Nuvem (Supabase)
+> Criar a infraestrutura de login/sessão para manter os Favoritos, Histórico e Progresso de "Continue Assistindo" persistentes em qualquer dispositivo.

@@ -56,7 +56,7 @@ export default function PullToRefresh({ onRefresh, children, disabled = false })
           isPulling ? 'h-16' : 'h-0'
         }`}
       >
-        <div className={`flex items-center gap-2 ${isRefreshing ? 'animate-spin' : ''} text-[#F7941D]`}>
+        <div className={`flex items-center gap-2 ${isRefreshing ? 'animate-spin' : ''} text-white/50`}>
           <RefreshCw size={20} />
           <span className="text-xs font-bold uppercase tracking-wider">
             {isRefreshing ? 'Atualizando...' : 'Puxe para atualizar'}

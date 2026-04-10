@@ -103,14 +103,14 @@ export default function PodcastPlayer({ podcast, onClose }) {
           </button>
 
           <div className="text-center hidden md:block">
-            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-[#F7941D] mb-1 block">Reproduzindo Podcast</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-white/50 mb-1 block">Reproduzindo Podcast</span>
             <h2 className="text-white font-black text-lg tracking-tight uppercase">{podcast.title}</h2>
           </div>
 
           <button
             onClick={() => setShowList(!showList)}
             className={`w-12 h-12 md:w-14 md:h-14 border rounded-full flex items-center justify-center backdrop-blur-2xl transition-all active:scale-90 ${
-              showList ? 'bg-[#F7941D] border-[#F7941D] text-black shadow-[0_0_30px_#F7941D]' : 'bg-white/5 border-white/5 text-white'
+              showList ? 'bg-white border-white/20 text-black ' : 'bg-white/5 border-white/5 text-white'
             }`}
           >
             <List className="w-6 h-6" />
@@ -122,7 +122,7 @@ export default function PodcastPlayer({ podcast, onClose }) {
           
           {/* Cover Art - Reflective Style */}
           <div className="relative group mb-10 md:mb-14">
-            <div className="absolute -inset-4 bg-gradient-to-tr from-[#F7941D]/20 to-white/10 rounded-[2.5rem] blur-2xl opacity-50 group-hover:opacity-100 transition-opacity duration-1000" />
+            <div className="absolute -inset-4 bg-gradient-to-tr from-white/20 to-white/10 rounded-[2.5rem] blur-2xl opacity-50 group-hover:opacity-100 transition-opacity duration-1000" />
             
             <div className="relative w-56 h-56 md:w-80 md:h-80 rounded-[2.5rem] overflow-hidden border border-white/10 shadow-2xl reflective-glass">
               {podcast.thumbnail ? (
@@ -141,7 +141,7 @@ export default function PodcastPlayer({ podcast, onClose }) {
             </div>
 
             {/* Floating Badge */}
-            <div className="absolute -bottom-4 -right-4 w-16 h-16 bg-[#F7941D] rounded-2xl flex items-center justify-center shadow-2xl border-4 border-[#09090B] animate-bounce-slow">
+            <div className="absolute -bottom-4 -right-4 w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-2xl border-4 border-[#09090B] animate-bounce-slow">
               <Mic className="text-black w-8 h-8" />
             </div>
           </div>
@@ -159,7 +159,7 @@ export default function PodcastPlayer({ podcast, onClose }) {
             </h3>
             
             {currentCall.channelName && (
-              <p className="text-[#F7941D] font-bold uppercase tracking-[0.3em] text-xs md:text-sm mb-8">
+              <p className="text-white/50 font-bold uppercase tracking-[0.3em] text-xs md:text-sm mb-8">
                 {currentCall.channelName}
               </p>
             )}
@@ -169,7 +169,7 @@ export default function PodcastPlayer({ podcast, onClose }) {
           <div className="w-full max-w-xl px-4 md:px-0 mb-12">
             <div className="relative h-2 bg-white/5 rounded-full overflow-hidden border border-white/5 backdrop-blur-md mb-4 group cursor-pointer">
               <div
-                className="absolute inset-y-0 left-0 bg-gradient-to-r from-[#F7941D] to-[#FBB03B] transition-all duration-1000 shadow-[0_0_15px_#F7941D]"
+                className="absolute inset-y-0 left-0 bg-gradient-to-r from-white to-white/50 transition-all duration-1000 "
                 style={{ width: `${((currentTime) / currentCall.duration) * 100}%` }}
               >
                 <div className="absolute right-0 top-0 bottom-0 w-4 bg-white/40 blur-sm" />
@@ -247,7 +247,7 @@ export default function PodcastPlayer({ podcast, onClose }) {
                 onClick={() => handleCallClick(call, index)}
                 className={`w-full group p-4 rounded-2xl flex items-center gap-4 transition-all duration-500 border ${
                   index === currentCallIndex
-                    ? 'bg-[#F7941D] border-[#F7941D] text-black shadow-[0_0_30px_#F7941D]'
+                    ? 'bg-white border-white/20 text-black '
                     : 'bg-white/5 border-white/5 text-white hover:bg-white/10'
                 }`}
               >

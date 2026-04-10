@@ -10,7 +10,7 @@ const THEMES = {
 const THEME_CONFIG = {
   [THEMES.DEFAULT]: {
     name: 'Padrão',
-    primary: '#F7941D',
+    primary: '#FFFFFF',
     background: '#0a0a0f',
     surface: '#14141a',
     text: '#ffffff',
@@ -18,7 +18,7 @@ const THEME_CONFIG = {
   },
   [THEMES.DARK]: {
     name: 'Escuro',
-    primary: '#F7941D',
+    primary: '#FFFFFF',
     background: '#000000',
     surface: '#0d0d0d',
     text: '#e0e0e0',

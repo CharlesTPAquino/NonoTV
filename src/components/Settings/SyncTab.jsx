@@ -77,7 +77,7 @@ export default function SyncTab({ favorites, history }) {
       <div className="space-y-3">
         <button
           onClick={handleExport}
-          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#F7941D] rounded-xl text-black font-medium hover:bg-[#F7941D]/90 transition-colors"
+          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white rounded-xl text-black font-medium hover:bg-white/90 transition-colors"
         >
           <Download size={18} />
           Exportar Dados (JSON)
@@ -101,7 +101,7 @@ export default function SyncTab({ favorites, history }) {
             setImportResult(null);
           }}
           placeholder="Cole o código Base64 aqui..."
-          className="w-full h-24 bg-[#18181B] border border-[#27272A] rounded-xl p-3 text-xs text-white placeholder-white/30 resize-none focus:border-[#F7941D] focus:outline-none"
+          className="w-full h-24 bg-[#18181B] border border-[#27272A] rounded-xl p-3 text-xs text-white placeholder-white/30 resize-none focus:border-white/20 focus:outline-none"
         />
         
         {importResult && (

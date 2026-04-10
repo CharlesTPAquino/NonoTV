@@ -80,12 +80,12 @@ export default function SettingsPanel({
         {/* Sidebar Tabs (Desktop/Tablet) */}
         <div className="w-full md:w-72 border-b md:border-b-0 md:border-r border-white/5 flex flex-col p-6 z-10 bg-black/20">
           <div className="flex items-center gap-4 mb-10 px-2">
-             <div className="w-10 h-10 bg-gradient-to-br from-[#F7941D] to-[#FBB03B] rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(247,148,29,0.3)]">
-                <Settings size={20} className="text-black" />
+             <div className="w-10 h-10 bg-gradient-to-br from-red-600 to-red-700 rounded-xl flex items-center justify-center ">
+                <Settings size={20} className="text-white" />
              </div>
              <div>
                 <h2 className="text-white font-black text-lg tracking-tighter uppercase leading-none">Painel Elite</h2>
-                <span className="text-[#F7941D] text-[8px] font-black uppercase tracking-[0.4em] mt-1 block">Configurações</span>
+                <span className="text-white/50 text-[8px] font-black uppercase tracking-[0.4em] mt-1 block">Configurações</span>
              </div>
           </div>
 
@@ -99,12 +99,12 @@ export default function SettingsPanel({
                   onClick={() => setActiveTab(tab.id)}
                   className={`flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-500 whitespace-nowrap group
                     ${isActive 
-                      ? 'bg-white text-black shadow-2xl' 
+                      ? 'bg-red-600 text-white shadow-2xl shadow-red-600/20' 
                       : 'text-white/30 hover:bg-white/5 hover:text-white'}`}
                 >
                   <Icon size={20} className={`shrink-0 ${isActive ? '' : 'group-hover:scale-110 transition-transform'}`} />
                   <span className="text-[10px] font-black uppercase tracking-[0.2em]">{tab.label}</span>
-                  {isActive && <div className="ml-auto w-1.5 h-1.5 bg-black rounded-full" />}
+                  {isActive && <div className="ml-auto w-1.5 h-1.5 bg-white rounded-full" />}
                 </button>
               );
             })}
@@ -112,7 +112,7 @@ export default function SettingsPanel({
 
           <div className="mt-auto pt-6 hidden md:block">
              <div className="p-5 rounded-[1.5rem] bg-white/5 border border-white/5 text-center">
-                <Zap size={24} className="mx-auto text-[#F7941D] mb-3 animate-pulse" />
+                <Zap size={24} className="mx-auto text-white/50 mb-3 animate-pulse" />
                 <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/40">Status do Sinal</p>
                 <p className="text-white text-[10px] font-bold mt-1">4K ULTRA HIGH SPEED</p>
              </div>
@@ -145,8 +145,8 @@ export default function SettingsPanel({
               <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
                 <div className="flex items-center justify-between bg-white/5 border border-white/5 p-6 rounded-[2rem] backdrop-blur-xl">
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-[#F7941D]/10 rounded-2xl flex items-center justify-center border border-[#F7941D]/20">
-                       <Database size={24} className="text-[#F7941D]" />
+                    <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center border border-white/20/20">
+                       <Database size={24} className="text-white/50" />
                     </div>
                     <div>
                       <h4 className="text-white font-black text-sm uppercase tracking-widest">Repositório de Fontes</h4>
@@ -155,7 +155,7 @@ export default function SettingsPanel({
                   </div>
                   <button
                     onClick={handleImportM3U}
-                    className="flex items-center gap-3 px-6 py-3 bg-white text-black rounded-xl font-black text-[10px] uppercase tracking-widest hover:scale-105 transition-all shadow-xl"
+                    className="flex items-center gap-3 px-6 py-3 bg-red-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:scale-105 hover:bg-red-500 transition-all shadow-xl shadow-red-600/20"
                   >
                     <Upload size={14} />
                     Importar M3U
@@ -173,25 +173,25 @@ export default function SettingsPanel({
                         onClick={() => onSelectSource(source)}
                         className={`group relative flex items-center gap-4 p-5 rounded-[1.5rem] transition-all duration-500 border
                           ${isActive
-                            ? 'bg-white text-black border-white shadow-2xl scale-[1.02]'
+                            ? 'bg-red-600 text-white border-red-500 shadow-2xl shadow-red-600/20 scale-[1.02]'
                             : 'bg-white/5 border-white/5 text-white/40 hover:border-white/20 hover:bg-white/10 hover:text-white'
                           }`}
                       >
                         <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border transition-colors ${
-                          isActive ? 'bg-black/5 border-black/10 text-black' : 'bg-black/40 border-white/10 text-white/20'
+                          isActive ? 'bg-white/15 border-white/20 text-white' : 'bg-black/40 border-white/10 text-white/20'
                         }`}>
                           <Server size={20} />
                         </div>
                         
                         <div className="flex-1 text-left min-w-0">
                           <p className="font-black text-xs uppercase tracking-widest truncate">{source.name}</p>
-                          <p className={`text-[9px] font-bold truncate mt-1 ${isActive ? 'text-black/40' : 'text-white/10'}`}>
+                          <p className={`text-[9px] font-bold truncate mt-1 ${isActive ? 'text-white/60' : 'text-white/10'}`}>
                             {source.url}
                           </p>
                         </div>
                         
                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
-                          isActive ? 'bg-black/10' : 'bg-white/5 group-hover:bg-[#F7941D] group-hover:text-black'
+                          isActive ? 'bg-black/10' : 'bg-white/5 group-hover:bg-white group-hover:text-black'
                         }`}>
                           <ChevronRight size={16} />
                         </div>
@@ -210,7 +210,7 @@ export default function SettingsPanel({
                   </button>
                   <button
                     onClick={onRefresh}
-                    className="flex-1 flex items-center justify-center gap-3 px-6 py-4 bg-[#F7941D] rounded-2xl text-black font-black text-[10px] uppercase tracking-widest hover:scale-[1.02] transition-all shadow-[0_10px_30px_rgba(247,148,29,0.3)]"
+                    className="flex-1 flex items-center justify-center gap-3 px-6 py-4 bg-red-600 rounded-2xl text-white font-black text-[10px] uppercase tracking-widest hover:scale-[1.02] hover:bg-red-500 transition-all shadow-[0_10px_30px_rgba(220,38,38,0.25)]"
                   >
                     <RefreshCw size={16} />
                     Sincronizar Agora
@@ -235,9 +235,9 @@ export default function SettingsPanel({
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {favorites?.map(fav => (
-                      <div key={fav.id} className="flex items-center gap-4 p-4 bg-white/5 border border-white/5 rounded-2xl group hover:border-[#F7941D]/30 transition-all">
-                        <div className="w-10 h-10 bg-gradient-to-br from-[#F7941D] to-orange-600 rounded-lg flex items-center justify-center shadow-lg">
-                           <Heart size={18} className="text-black fill-black" />
+                      <div key={fav.id} className="flex items-center gap-4 p-4 bg-white/5 border border-white/5 rounded-2xl group hover:border-white/15 transition-all">
+                        <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-700 rounded-lg flex items-center justify-center shadow-lg">
+                           <Heart size={18} className="text-white fill-white" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="font-black text-white text-xs uppercase tracking-widest truncate">{fav.name}</p>
@@ -286,9 +286,9 @@ export default function SettingsPanel({
 
             {activeTab === 'ai' && (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                <div className="p-6 bg-gradient-to-br from-[#F7941D]/10 to-transparent border border-[#F7941D]/20 rounded-[1.5rem]">
+                <div className="p-6 bg-gradient-to-br from-white/10 to-transparent border border-white/20/20 rounded-[1.5rem]">
                   <div className="flex items-center gap-3 mb-4">
-                    <Sparkles size={24} className="text-[#F7941D]" />
+                    <Sparkles size={24} className="text-white/50" />
                     <div>
                       <p className="font-black text-white text-sm uppercase tracking-widest">AI Metadata Enrichment</p>
                       <p className="text-white/30 text-[9px] font-bold uppercase mt-1">Gemini 1.5 Flash</p>
@@ -308,10 +308,10 @@ export default function SettingsPanel({
                   <button
                     onClick={() => updateSettings({ aiEnrichment: !settings.aiEnrichment })}
                     className={`w-12 h-7 rounded-full transition-all p-1 ${
-                      settings.aiEnrichment ? 'bg-[#F7941D]' : 'bg-white/10'
+                      settings.aiEnrichment ? 'bg-red-600' : 'bg-white/10'
                     }`}
                   >
-                    <div className={`w-5 h-5 bg-white rounded-full transition-transform shadow-xl ${
+                    <div className={`w-5 h-5 bg-white rounded-full shadow-xl transition-transform ${
                       settings.aiEnrichment ? 'translate-x-5' : 'translate-x-0'
                     }`} />
                   </button>
@@ -343,7 +343,7 @@ export default function SettingsPanel({
                   className={`w-full flex items-center justify-center gap-3 px-6 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all ${
                     aiEnriching
                       ? 'bg-white/5 text-white/20 cursor-not-allowed'
-                      : 'bg-[#F7941D] text-black hover:scale-[1.02] shadow-[0_10px_30px_rgba(247,148,29,0.3)]'
+                      : 'bg-red-600 text-white hover:scale-[1.02] hover:bg-red-500 shadow-[0_10px_30px_rgba(220,38,38,0.25)]'
                   }`}
                 >
                   {aiEnriching ? (
@@ -391,7 +391,7 @@ export default function SettingsPanel({
                   <button
                     onClick={() => updateSettings({ autoFallback: !settings.autoFallback })}
                     className={`w-12 h-7 rounded-full transition-all p-1 ${
-                      settings.autoFallback ? 'bg-[#F7941D]' : 'bg-white/10'
+                      settings.autoFallback ? 'bg-red-600' : 'bg-white/10'
                     }`}
                   >
                     <div className={`w-5 h-5 bg-white rounded-full transition-transform shadow-xl ${
@@ -408,7 +408,7 @@ export default function SettingsPanel({
                   <button
                     onClick={() => updateSettings({ enablePrefetch: !settings.enablePrefetch })}
                     className={`w-12 h-7 rounded-full transition-all p-1 ${
-                      settings.enablePrefetch ? 'bg-[#F7941D]' : 'bg-white/10'
+                      settings.enablePrefetch ? 'bg-red-600' : 'bg-white/10'
                     }`}
                   >
                     <div className={`w-5 h-5 bg-white rounded-full transition-transform shadow-xl ${
@@ -420,7 +420,7 @@ export default function SettingsPanel({
                 {/* App Version */}
                 <div className="flex flex-col items-center justify-center p-6 bg-white/5 border border-white/5 rounded-[1.5rem] mt-6">
                   <span className="text-white/20 text-[9px] font-black uppercase tracking-[0.5em] mb-2">Versão do App</span>
-                  <span className="text-[#F7941D] text-sm font-black tracking-tighter">NonoTV Elite 4K v4.9</span>
+                  <span className="text-white/50 text-sm font-black tracking-tighter">NonoTV Elite 4K v4.9</span>
                   <span className="text-white/10 text-[8px] font-bold uppercase tracking-widest mt-1">Build {new Date().toLocaleDateString('pt-BR')}</span>
                 </div>
               </div>
