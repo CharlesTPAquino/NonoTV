@@ -49,14 +49,14 @@ export default function PodcastGrid({ onSelectPodcast }) {
         {/* Search Field */}
         <div className="relative flex-1 w-full group">
           <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none">
-            <Search className="w-5 h-5 text-white/20 group-focus-within:text-[#F7941D] transition-colors" />
+            <Search className="w-5 h-5 text-white/20 group-focus-within:text-white/50 transition-colors" />
           </div>
           <input
             type="text"
             placeholder="Buscar podcasts ou convidados..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-14 pr-6 py-4 bg-white/5 border border-white/5 rounded-[1.5rem] text-white placeholder-white/20 focus:outline-none focus:border-[#F7941D]/50 focus:bg-white/10 transition-all backdrop-blur-xl shadow-2xl"
+            className="w-full pl-14 pr-6 py-4 bg-white/5 border border-white/5 rounded-[1.5rem] text-white placeholder-white/20 focus:outline-none focus:border-white/20/50 focus:bg-white/10 transition-all backdrop-blur-xl shadow-2xl"
           />
         </div>
 
@@ -66,7 +66,7 @@ export default function PodcastGrid({ onSelectPodcast }) {
             onClick={() => setSortOption('recent')}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${
               sortOption === 'recent' 
-                ? 'bg-[#F7941D] text-black shadow-[0_0_20px_#F7941D]' 
+                ? 'bg-white text-black ' 
                 : 'text-white/40 hover:text-white hover:bg-white/5'
             }`}
           >
@@ -77,7 +77,7 @@ export default function PodcastGrid({ onSelectPodcast }) {
             onClick={() => setSortOption('popular')}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${
               sortOption === 'popular' 
-                ? 'bg-[#F7941D] text-black shadow-[0_0_20px_#F7941D]' 
+                ? 'bg-white text-black ' 
                 : 'text-white/40 hover:text-white hover:bg-white/5'
             }`}
           >
@@ -90,7 +90,7 @@ export default function PodcastGrid({ onSelectPodcast }) {
       {/* Results Info */}
       <div className="flex items-center justify-between mb-8 px-2">
         <div className="flex items-center gap-3">
-          <div className="w-1 h-6 bg-[#F7941D] rounded-full shadow-[0_0_10px_#F7941D]" />
+          <div className="w-1 h-6 bg-white rounded-full " />
           <span className="text-sm font-black uppercase tracking-[0.2em] text-white/40">
             {filteredPodcasts.length} Disponíveis
           </span>
@@ -98,7 +98,7 @@ export default function PodcastGrid({ onSelectPodcast }) {
         {search && (
           <button 
             onClick={() => setSearch('')}
-            className="text-[10px] font-black uppercase tracking-widest text-[#F7941D] hover:underline"
+            className="text-[10px] font-black uppercase tracking-widest text-white/50 hover:underline"
           >
             Limpar Busca
           </button>

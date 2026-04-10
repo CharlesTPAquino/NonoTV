@@ -37,14 +37,14 @@ export default class ErrorBoundary extends React.Component {
           <div className="flex gap-4">
             <button
               onClick={this.handleGoHome}
-              className="flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 rounded-xl transition-colors"
+              className="flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/10 rounded-xl transition-colors"
             >
               <Home size={20} />
               <span>Tentar Novamente</span>
             </button>
             <button
               onClick={this.handleReload}
-              className="flex items-center gap-2 px-6 py-3 bg-[#F7941D] hover:bg-[#F7941D]/80 rounded-xl transition-colors text-black font-bold"
+              className="flex items-center gap-2 px-6 py-3 bg-white hover:bg-white/80 rounded-xl transition-colors text-black font-bold"
             >
               <RefreshCw size={20} />
               <span>Recarregar App</span>

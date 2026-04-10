@@ -106,7 +106,7 @@ export default function EPGOverlay({ channel, epgData, onClose, onPlayChannel, a
           </div>
           <h3 className="text-white font-black text-xl uppercase tracking-tight mb-2">Guia Indisponível</h3>
           <p className="text-white/40 text-sm mb-6">Este servidor não fornece programação EPG</p>
-          <button onClick={onClose} className="px-8 py-3 bg-[#F7941D] text-black font-black text-xs uppercase tracking-wider rounded-xl">
+          <button onClick={onClose} className="px-8 py-3 bg-white text-black font-black text-xs uppercase tracking-wider rounded-xl">
             Voltar
           </button>
         </div>
@@ -124,7 +124,7 @@ export default function EPGOverlay({ channel, epgData, onClose, onPlayChannel, a
           </button>
           <div>
             <h2 className="text-white font-black text-2xl uppercase tracking-tight flex items-center gap-3">
-              <Tv size={24} className="text-[#F7941D]" />
+              <Tv size={24} className="text-white/50" />
               Guia de Programação
             </h2>
             <p className="text-white/40 text-xs font-black uppercase tracking-widest">
@@ -134,9 +134,9 @@ export default function EPGOverlay({ channel, epgData, onClose, onPlayChannel, a
         </div>
         <div className="flex items-center gap-2">
           {catchupDays > 0 && (
-            <div className="flex items-center gap-1 mr-4 px-3 py-1 bg-[#F7941D]/10 border border-[#F7941D]/20 rounded-full">
-              <Calendar size={12} className="text-[#F7941D]" />
-              <span className="text-[#F7941D] text-[10px] font-black uppercase">{catchupDays} dias</span>
+            <div className="flex items-center gap-1 mr-4 px-3 py-1 bg-white/10 border border-white/20/20 rounded-full">
+              <Calendar size={12} className="text-white/50" />
+              <span className="text-white/50 text-[10px] font-black uppercase">{catchupDays} dias</span>
             </div>
           )}
           <button 
@@ -160,7 +160,7 @@ export default function EPGOverlay({ channel, epgData, onClose, onPlayChannel, a
             <ArrowLeft size={16} />
           </button>
           <div className="flex items-center gap-2 px-4 py-1 bg-white/5 rounded-xl">
-            <Calendar size={14} className="text-[#F7941D]" />
+            <Calendar size={14} className="text-white/50" />
             <span className="text-white font-black text-sm">
               {selectedDate.toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' })}
             </span>
@@ -185,7 +185,7 @@ export default function EPGOverlay({ channel, epgData, onClose, onPlayChannel, a
           Anterior
         </button>
         <div className="flex items-center gap-2">
-          <Clock size={14} className="text-[#F7941D]" />
+          <Clock size={14} className="text-white/50" />
           <span className="text-white/60 text-xs font-black uppercase tracking-widest">
             {programs.length} programas • {formatDuration(new Date(), new Date(Date.now() + 6 * 60 * 60 * 1000))}
           </span>
@@ -218,7 +218,7 @@ export default function EPGOverlay({ channel, epgData, onClose, onPlayChannel, a
                   key={idx}
                   className={`relative group p-5 rounded-2xl border transition-all duration-300 overflow-hidden ${
                     isLive 
-                      ? 'bg-[#F7941D]/10 border-[#F7941D]/30 shadow-[0_0_30px_rgba(247,148,29,0.1)]' 
+                      ? 'bg-white/10 border-white/15 ' 
                       : isUpcoming
                         ? 'bg-white/5 border-white/10 hover:bg-white/10'
                         : 'bg-white/5 border-white/5 opacity-60'
@@ -226,9 +226,9 @@ export default function EPGOverlay({ channel, epgData, onClose, onPlayChannel, a
                 >
                   {/* Progress Bar */}
                   {isLive && (
-                    <div className="absolute top-0 left-0 right-0 h-1 bg-[#F7941D]/20">
+                    <div className="absolute top-0 left-0 right-0 h-1 bg-white/10">
                       <div 
-                        className="h-full bg-[#F7941D] shadow-[0_0_10px_#F7941D]" 
+                        className="h-full bg-white " 
                         style={{ width: `${progress}%` }}
                       />
                     </div>
@@ -237,11 +237,11 @@ export default function EPGOverlay({ channel, epgData, onClose, onPlayChannel, a
                   <div className="flex items-start gap-5">
                     {/* Time Column */}
                     <div className="w-20 shrink-0">
-                      <div className="flex items-center gap-1 text-[#F7941D] mb-1">
+                      <div className="flex items-center gap-1 text-white/50 mb-1">
                         {isLive && <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />}
                         {isLive && <span className="text-[9px] font-black uppercase tracking-wider">AO VIVO</span>}
                       </div>
-                      <p className={`font-black text-sm ${isLive ? 'text-[#F7941D]' : 'text-white/60'}`}>
+                      <p className={`font-black text-sm ${isLive ? 'text-white/50' : 'text-white/60'}`}>
                         {formatTime(program.start)}
                       </p>
                       <p className="text-white/30 text-xs">
@@ -272,14 +272,14 @@ export default function EPGOverlay({ channel, epgData, onClose, onPlayChannel, a
                     {isLive ? (
                       <button 
                         onClick={() => onPlayChannel && onPlayChannel(channel)}
-                        className="shrink-0 w-12 h-12 rounded-full bg-[#F7941D] flex items-center justify-center text-black hover:scale-110 transition-all shadow-[0_0_20px_rgba(247,148,29,0.4)]"
+                        className="shrink-0 w-12 h-12 rounded-full bg-white flex items-center justify-center text-black hover:scale-110 transition-all "
                       >
                         <Play size={18} fill="currentColor" className="ml-0.5" />
                       </button>
                     ) : catchupDays > 0 && !isUpcoming && (
                       <button 
                         onClick={() => playCatchup(program)}
-                        className="shrink-0 flex items-center gap-1 px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white/60 text-[10px] font-black uppercase tracking-wider hover:bg-[#F7941D] hover:text-black hover:border-[#F7941D] transition-all"
+                        className="shrink-0 flex items-center gap-1 px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white/60 text-[10px] font-black uppercase tracking-wider hover:bg-white hover:text-black hover:border-white/20 transition-all"
                       >
                         <Clock size={12} />
                         Rewind
@@ -297,7 +297,7 @@ export default function EPGOverlay({ channel, epgData, onClose, onPlayChannel, a
       <div className="p-4 border-t border-white/10 bg-black/40">
         <div className="flex items-center justify-center gap-6 text-[10px] font-black uppercase tracking-widest text-white/30">
           <span className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-[#F7941D]/30" />
+            <div className="w-3 h-3 rounded-full bg-white/30" />
             Ao Vivo
           </span>
           <span className="flex items-center gap-2">

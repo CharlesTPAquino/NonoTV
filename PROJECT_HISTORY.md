@@ -192,6 +192,7 @@ O projeto possui 20+ agentes e 36 skills configurados no `.agent/`:
 
 | Versão | Data | Mudanças |
 |--------|------|----------|
+| 8.7 | 04/04/2026 | AI Hardware Enhancement, Premium Hero UI, Voice Control |
 | 8.0 | 03/04/2026 | Arquitetura Dual-Environment (Live vs Cinema), Codec DNA Detection |
 | 6.0 | 03/04/2026 | Virtualização de Grid (50k+ canais), Fallback Resiliente |
 | 4.7 | 03/04/2026 | AI Engine + Zapping + VOD |
@@ -220,10 +221,18 @@ O projeto possui 20+ agentes e 36 skills configurados no `.agent/`:
 
 ---
 
-## 📝 Sessão de Desenvolvimento: 03/04/2026 (v8.0 Elite)
-... (mantém notas técnicas da v8.0)
+## 📝 Sessão de Desenvolvimento: 04/04/2026 (v8.7 Elite)
+
+**O que resolvemos:**
+1. **Zapping Instável:** O problema de "tela preta/carregamento infinito" ao abrir um canal resolvido ao mover a prioridade de Zapping Inteligente para o foco (`onFocus > 800ms`) e removendo os bloqueios do ciclo de vida React.
+2. **Experiência Visual Baixa:** A injeção pesada de `contrast`, `saturate` e upscale de CSS hardware-accelerated resolveu a reclamação de imagem "lavada". 
+3. **Busca Lenta na TV:** O uso do Web Speech API (Voz) com o Gemini "Semantic Search" automatizou filtros como "filmes de ação", tornando a navegação remota supérflua. 
+4. **Interface Sem Apelo:** O HeroSection ganhou a lógica "Deep Layering", sobrepondo o cartaz em alta resolução sobre um fundo escurecido/borrado, dando a sensação de app Premium de operadora. 
+
+**Insight Crítico:**
+A interligação do `PrefetchService` atrelado ao `onFocus` no Card, e o start visual assistido por mensagens de IA, elevou a experiência percebida pelo usuário em aparelhos Mi Stick.
 
 ---
 
 *Documento criado em 28/03/2026*
-*Atualizado em 03/04/2026 pelo opencode AI Assistant*
+*Atualizado em 04/04/2026 pelo opencode AI Assistant*

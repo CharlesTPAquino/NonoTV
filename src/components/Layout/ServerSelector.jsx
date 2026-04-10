@@ -24,11 +24,11 @@ export default function ServerSelector() {
       {/* Botão de Trigger Premium */}
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center gap-5 px-8 py-4 h-14 rounded-3xl transition-all duration-700 font-black text-[10px] uppercase tracking-[0.2em] outline-none border focus:ring-4 focus:ring-[#F7941D]/40 ${activeSource ? 'bg-[#F7941D]/10 border-[#F7941D]/30 text-[#F7941D]' : 'bg-white/5 border-white/5 text-white/40 hover:bg-white/10'}`}
+        className={`flex items-center gap-5 px-8 py-4 h-14 rounded-3xl transition-all duration-700 font-black text-[10px] uppercase tracking-[0.2em] outline-none border focus:ring-4 focus:ring-white/40 ${activeSource ? 'bg-white/10 border-white/15 text-white/50' : 'bg-white/5 border-white/5 text-white/40 hover:bg-white/10'}`}
       >
         <div className="relative">
           <Satellite size={16} className={isLoading ? 'animate-bounce' : 'animate-pulse'} />
-          {activeSource && <div className="absolute top-0 right-0 w-1.5 h-1.5 bg-[#F7941D] rounded-full animate-ping" />}
+          {activeSource && <div className="absolute top-0 right-0 w-1.5 h-1.5 bg-white rounded-full animate-ping" />}
         </div>
         <span className="hidden md:block">
            {isLoading ? 'Sintonizando...' : (activeSource?.name || 'Fonte Local')}
@@ -47,7 +47,7 @@ export default function ServerSelector() {
               {/* Fonte Local */}
               <button 
                 onClick={() => handleSelect(null)}
-                className={`w-full group p-5 rounded-[28px] border flex items-center gap-5 transition-all duration-500 ${!activeSource ? 'bg-[#F7941D] border-[#F7941D] text-white shadow-[0_15px_30px_rgba(247,148,29,0.3)]' : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/10'}`}
+                className={`w-full group p-5 rounded-[28px] border flex items-center gap-5 transition-all duration-500 ${!activeSource ? 'bg-red-600 border-red-500 text-white shadow-[0_15px_30px_rgba(220,38,38,0.25)]' : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/10'}`}
               >
                  <div className="w-10 h-10 bg-black/30 rounded-2xl flex items-center justify-center text-white/40 group-hover:text-white transition-colors">
                     <Laptop size={18} />
@@ -67,7 +67,7 @@ export default function ServerSelector() {
                     <button 
                       key={s.id}
                       onClick={() => handleSelect(s)}
-                      className={`w-full p-5 rounded-[28px] border flex items-center gap-5 transition-all duration-500 ${activeSource?.id === s.id ? 'bg-[#F7941D] border-[#F7941D] text-white shadow-[0_15px_30px_rgba(247,148,29,0.3)]' : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/10'}`}
+                      className={`w-full p-5 rounded-[28px] border flex items-center gap-5 transition-all duration-500 ${activeSource?.id === s.id ? 'bg-red-600 border-red-500 text-white shadow-[0_15px_30px_rgba(220,38,38,0.25)]' : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/10'}`}
                     >
                        <div className="w-10 h-10 bg-black/30 rounded-2xl flex items-center justify-center transition-all group-hover:scale-110">
                           <Server size={18} className={activeSource?.id === s.id ? 'text-white' : 'text-white/20'} />

@@ -1,27 +1,84 @@
-import React from 'react';
-import { Search, Settings, CheckCircle, XCircle, Zap } from 'lucide-react';
+import React, { useState } from 'react';
+import { Search, Settings, CheckCircle, XCircle, Zap, Mic, Loader2 } from 'lucide-react';
+import { aiService } from '../../services/AIService';
 
-export default function Navbar({ search, setSearch, syncStatus, onOpenSettings, serverStatus }) {
+export default function Navbar({ search, setSearch, syncStatus, onOpenSettings, serverStatus, setActiveCategory }) {
   const isOnline = serverStatus === 'online' || serverStatus === 'connected';
   const isOffline = serverStatus === 'offline' || serverStatus === 'error';
+  
+  const [isListening, setIsListening] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const handleVoiceCommand = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Seu navegador não suporta reconhecimento de voz.");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'pt-BR';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => setIsListening(true);
+
+    recognition.onresult = async (event) => {
+      const speechResult = event.results[0][0].transcript;
+      setIsListening(false);
+      setIsProcessing(true);
+      
+      try {
+        const intent = await aiService.semanticSearch(speechResult);
+        if (intent.category && setActiveCategory) {
+          setActiveCategory(intent.category);
+        }
+        if (intent.search !== undefined && setSearch) {
+          setSearch(intent.search);
+        }
+      } catch (err) {
+        console.error("[Voice API] Erro ao interpretar:", err);
+      } finally {
+        setIsProcessing(false);
+      }
+    };
+
+    recognition.onerror = () => {
+      setIsListening(false);
+      setIsProcessing(false);
+    };
+    
+    recognition.onend = () => setIsListening(false);
+
+    recognition.start();
+  };
 
   return (
-    <nav className="relative shrink-0 h-16 md:h-20 flex items-center px-4 md:px-8 z-[90] mt-2 md:mt-0">
+    <nav className="relative shrink-0 h-14 md:h-16 flex items-center px-4 md:px-8 z-[90]">
       {/* Background */}
       <div className="absolute inset-x-0 top-0 h-full bg-gradient-to-b from-black/60 via-black/20 to-transparent pointer-events-none" />
 
       <div className="w-full flex items-center justify-between relative z-10">
-        {/* Search Bar */}
-        <div className="flex items-center flex-1 max-w-md">
-          <div className="relative flex items-center w-full bg-white/5 border border-white/5 rounded-xl backdrop-blur-xl focus-within:border-white/25 transition-all">
+        {/* Search Bar + Logo (Mobile) */}
+        <div className="flex items-center flex-1 max-w-md pr-2">
+          <div className={`relative flex items-center w-full bg-white/5 border rounded-xl backdrop-blur-xl transition-all ${isListening ? 'border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.3)]' : 'border-white/5 focus-within:border-white/25'}`}>
             <Search className="ml-3 text-white/20 transition-colors" size={16} />
             <input 
               type="text" 
-              placeholder="Buscar..." 
+              placeholder={isListening ? "Ouvindo..." : isProcessing ? "Processando AI..." : "Buscar ou Falar..."} 
               value={search}
               onChange={(e) => setSearch && setSearch(e.target.value)}
-              className="w-full h-10 pl-2 pr-3 bg-transparent outline-none text-xs font-medium text-white placeholder:text-white/15 tracking-wide"
+              disabled={isListening || isProcessing}
+              className="w-full h-10 pl-2 pr-10 bg-transparent outline-none text-xs font-medium text-white placeholder:text-white/15 tracking-wide"
             />
+            
+            <button 
+              onClick={handleVoiceCommand}
+              disabled={isListening || isProcessing}
+              className={`absolute right-2 p-1.5 rounded-lg transition-all outline-none ${isListening ? 'text-red-500 bg-red-500/10' : isProcessing ? 'text-blue-400 bg-blue-400/10' : 'text-white/30 hover:text-white hover:bg-white/10'}`}
+            >
+              {isProcessing ? <Loader2 size={14} className="animate-spin" /> : <Mic size={14} className={isListening ? 'animate-pulse' : ''} />}
+            </button>
           </div>
         </div>
 

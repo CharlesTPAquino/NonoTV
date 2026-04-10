@@ -121,7 +121,7 @@ export default function EPGGrid({ channel, epgData, onClose, onPlayChannel, allC
           </div>
           <h3 className="text-white font-black text-xl uppercase tracking-tight mb-2">Guia Indisponível</h3>
           <p className="text-white/40 text-sm mb-6">Este servidor não fornece programação EPG</p>
-          <button onClick={onClose} className="px-8 py-3 bg-[#F7941D] text-black font-black text-xs uppercase tracking-wider rounded-xl">
+          <button onClick={onClose} className="px-8 py-3 bg-white text-black font-black text-xs uppercase tracking-wider rounded-xl">
             Voltar
           </button>
         </div>
@@ -139,7 +139,7 @@ export default function EPGGrid({ channel, epgData, onClose, onPlayChannel, allC
           </button>
           <div>
             <h2 className="text-white font-black text-lg uppercase tracking-tight flex items-center gap-2">
-              <Tv size={18} className="text-[#F7941D]" />
+              <Tv size={18} className="text-white/50" />
               Grade de Programação
             </h2>
           </div>
@@ -147,9 +147,9 @@ export default function EPGGrid({ channel, epgData, onClose, onPlayChannel, allC
         
         <div className="flex items-center gap-3">
           {catchupDays > 0 && (
-            <div className="flex items-center gap-1 px-2 py-1 bg-[#F7941D]/10 border border-[#F7941D]/20 rounded-full">
-              <Calendar size={10} className="text-[#F7941D]" />
-              <span className="text-[#F7941D] text-[9px] font-black uppercase">{catchupDays}d</span>
+            <div className="flex items-center gap-1 px-2 py-1 bg-white/10 border border-white/20/20 rounded-full">
+              <Calendar size={10} className="text-white/50" />
+              <span className="text-white/50 text-[9px] font-black uppercase">{catchupDays}d</span>
             </div>
           )}
           <button 
@@ -179,7 +179,7 @@ export default function EPGGrid({ channel, epgData, onClose, onPlayChannel, allC
             <ArrowLeft size={12} />
           </button>
           <div className="flex items-center gap-1 px-3 py-0.5 bg-white/5 rounded-lg">
-            <Calendar size={10} className="text-[#F7941D]" />
+            <Calendar size={10} className="text-white/50" />
             <span className="text-white text-xs font-bold">
               {selectedDate.toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' })}
             </span>
@@ -203,7 +203,7 @@ export default function EPGGrid({ channel, epgData, onClose, onPlayChannel, allC
               <div 
                 key={ch.id}
                 className={`p-3 border-b border-white/5 cursor-pointer transition-all ${
-                  currentChannel?.id === ch.id ? 'bg-[#F7941D]/10 border-l-2 border-l-[#F7941D]' : 'hover:bg-white/5'
+                  currentChannel?.id === ch.id ? 'bg-white/10 border-l-2 border-l-white/60' : 'hover:bg-white/5'
                 }`}
               >
                 {ch.icon && <img src={ch.icon} alt={ch.name} className="w-8 h-8 object-contain mb-1" />}
@@ -265,11 +265,11 @@ export default function EPGGrid({ channel, epgData, onClose, onPlayChannel, allC
                           key={idx}
                           className={`absolute top-1 rounded-lg border overflow-hidden cursor-pointer transition-all hover:scale-[1.02] ${
                             isLive 
-                              ? 'bg-[#F7941D]/20 border-[#F7941D]/40 z-10' 
+                              ? 'bg-white/10 border-white/15 z-10' 
                               : isUpcoming
                                 ? 'bg-white/10 border-white/20'
                                 : catchupDays > 0
-                                  ? 'bg-white/5 border-white/10 hover:border-[#F7941D]'
+                                  ? 'bg-white/5 border-white/10 hover:border-white/20'
                                   : 'bg-white/5 border-white/5 opacity-50'
                           }`}
                           style={{
@@ -281,7 +281,7 @@ export default function EPGGrid({ channel, epgData, onClose, onPlayChannel, allC
                         >
                           <div className="p-1.5 h-full overflow-hidden">
                             <p className={`text-[9px] font-black truncate leading-tight ${
-                              isLive ? 'text-[#F7941D]' : 'text-white/80'
+                              isLive ? 'text-white/50' : 'text-white/80'
                             }`}>
                               {program.title}
                             </p>
@@ -314,10 +314,10 @@ export default function EPGGrid({ channel, epgData, onClose, onPlayChannel, allC
       {/* Footer Info */}
       <div className="p-2 border-t border-white/10 bg-black/40 flex items-center justify-center gap-4 text-[9px] font-black uppercase tracking-wider text-white/30 shrink-0">
         <span className="flex items-center gap-1">
-          <div className="w-2 h-2 rounded-full bg-[#F7941D]/40" /> Ao Vivo
+          <div className="w-2 h-2 rounded-full bg-white/40" /> Ao Vivo
         </span>
         <span className="flex items-center gap-1">
-          <div className="w-2 h-2 rounded-full bg-white/20" /> Em Breve
+          <div className="w-2 h-2 rounded-full bg-white/10" /> Em Breve
         </span>
         {catchupDays > 0 && (
           <span className="flex items-center gap-1">

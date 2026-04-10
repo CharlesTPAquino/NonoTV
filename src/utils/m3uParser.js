@@ -40,6 +40,9 @@ export function parseM3U(content, onProgress) {
       currentItem.url = line.trim();
       const type = detectType(currentItem);
       currentItem.type = type;
+      
+      // Feature: M3U Smart Organizer (Filtro Zero-Lixo)
+      currentItem.group = normalizeCategory(currentItem.group, currentItem.name, type);
 
       if (type === 'series') {
         const baseName = extractSeriesBase(currentItem.name);
@@ -83,6 +86,47 @@ function detectType(c) {
 
 function extractSeriesBase(name) {
   return name.replace(/\s*[-–|].*/i, '').trim();
+}
+
+function normalizeCategory(rawGroup, rawName, type) {
+  const g = (rawGroup || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "");
+  const n = (rawName || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "");
+  
+  if (type === 'series') return 'Séries';
+  
+  // Categorização Fina para Filmes
+  if (type === 'movie') {
+    if (g.includes('LANCAMENTO') || n.includes('2024') || n.includes('2025')) return 'Lançamentos';
+    if (g.includes('4K') || g.includes('UHD') || n.includes('4K')) return 'Filmes 4K';
+    if (g.includes('ANIME') || n.includes('ANIME')) return 'Animes';
+    if (g.includes('INFANTIL') || g.includes('KIDS') || g.includes('ANIMACA') || n.includes('ANIMACA')) return 'Infantil';
+    if (g.includes('NACIONAL') || g.includes('BRASIL')) return 'Nacionais';
+    if (g.includes('TERROR') || g.includes('HORROR')) return 'Terror';
+    if (g.includes('ACAO')) return 'Ação';
+    if (g.includes('COMEDIA')) return 'Comédia';
+    if (g.includes('DRAMA')) return 'Drama';
+    if (g.includes('FICCAO') || g.includes('SCI-FI') || g.includes('SCIFI')) return 'Ficção Científica';
+    if (g.includes('ROMANCE')) return 'Romance';
+    if (g.includes('RELIGIAO') || g.includes('GOSPEL')) return 'Religioso';
+    if (g.includes('ADULTO') || g.includes('18+') || g.includes('XXX')) return 'Conteúdo Adulto';
+    return 'Filmes'; // Default fallback para VOD
+  }
+  
+  // Categorização Fina para TV Ao Vivo
+  if (g.includes('4K') || g.includes('UHD') || n.includes('4K') || n.includes('UHD')) return 'Canais 4K';
+  if (g.includes('HBO') || g.includes('TELECINE') || n.includes('HBO') || n.includes('TELECINE')) return 'Cinema Premium';
+  if (g.includes('PREMIERE') || n.includes('PREMIERE') || n.includes('PFC')) return 'Premiere';
+  if (g.includes('SPORTV') || n.includes('SPORTV')) return 'SporTV';
+  if (g.includes('ESPN') || n.includes('ESPN')) return 'ESPN';
+  if (g.includes('ESPORTE') || n.includes('SPORT') || n.includes('COMBATE') || n.includes('TNT SPORT')) return 'Esportes';
+  if (g.includes('DISCOVERY') || n.includes('DISCOVERY')) return 'Discovery / Documentários';
+  if (g.includes('NOTICIA') || g.includes('NEWS') || n.includes('NEWS') || n.includes('JORNAL')) return 'Notícias';
+  if (g.includes('INFANTIL') || g.includes('KIDS') || g.includes('DESENHO') || n.includes('CARTOON') || n.includes('DISNEY')) return 'Infantil';
+  if (g.includes('DOC') || n.includes('HISTORY') || n.includes('ANIMAL') || n.includes('GEO') || n.includes('WILD')) return 'Documentários';
+  if (g.includes('RELIGIAO') || g.includes('GOSPEL') || g.includes('CATOLIC')) return 'Canais Religiosos';
+  if (g.includes('ADULTO') || g.includes('18+') || n.includes('XXX') || g.includes('VIP')) return 'Conteúdo Adulto';
+  
+  return 'Canais Abertos / Variedades';
 }
 
 export function parseM3UFast(content) {

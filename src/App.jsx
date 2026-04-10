@@ -76,24 +76,32 @@ export default function App() {
       if (settingsOpen) { e?.preventDefault(); setSettingsOpen(false); return; }
       if (channelListOpen) { e?.preventDefault(); setChannelListOpen(false); return; }
       
-      // Se não está na Home, voltar para Home
+      // Se não está na Home, voltar para Home e focar menu
       if (activeCategory !== 'All' || activeGroup !== 'All' || search) {
         e?.preventDefault();
         setActiveCategory('All');
         setActiveGroup('All');
         setSearch('');
+        const homeBtn = document.querySelector('[data-nav-zone="sidebar"] .nav-item');
+        if (homeBtn) setTimeout(() => homeBtn.focus(), 50);
         return;
       }
       
-      // Se está na Home, não sai do app
-      if (e) {
-        e.preventDefault();
-        e.stopPropagation();
+      // Se está na Home mas o foco está nos cards, voltar para o Menu
+      if (document.activeElement && !document.activeElement.closest('[data-nav-zone="sidebar"]') && !document.activeElement.closest('[data-nav-zone="bottomnav"]')) {
+        e?.preventDefault();
+        e?.stopPropagation();
+        const activeNav = document.querySelector('[data-nav-zone="sidebar"] .nav-item.active') || document.querySelector('[data-nav-zone="sidebar"] .nav-item');
+        if (activeNav) activeNav.focus();
+        return;
       }
     };
 
     // Web: captura Escape/Back
     const onKeyDown = (e) => {
+      // Se o player está aberto, o player já trata tudo em capture phase — NÃO duplicar
+      if (showPlayer) return;
+
       if (e.key === 'Escape' || e.key === 'Back' || e.keyCode === 27 || e.keyCode === 4 || e.keyCode === 10009 || e.keyCode === 461) {
         handleBack(e);
       }
@@ -163,7 +171,30 @@ export default function App() {
 
   return (
     <div className="h-screen w-screen overflow-hidden relative" style={{ background: 'var(--surface-app)', color: 'var(--text-1)' }}>
-      <style>{`:root { --sidebar-width: 0px; } @media (min-width: 1024px) { :root { --sidebar-width: 68px; } }`}</style>
+      <style>{`
+        :root { 
+          --sidebar-width: 0px;
+          --safe-top: max(env(safe-area-inset-top, 0px), 24px);
+          --safe-left: env(safe-area-inset-left, 0px);
+          --safe-right: env(safe-area-inset-right, 0px);
+        } 
+        
+        /* Ao girar em dispositivos móveis, a barra do topo some ou vira env(), não forçamos 24px */
+        @media (orientation: landscape) and (max-height: 800px) {
+          :root {
+            --safe-top: env(safe-area-inset-top, 0px);
+          }
+        }
+
+        /* Desktop / Telas Grandes */
+        @media (min-width: 1024px) { 
+          :root { 
+            --sidebar-width: 68px;
+            /* Não zera o --safe-top cegamente: se for um tablet grande, respeita a safe-area */
+            --safe-top: env(safe-area-inset-top, 0px);
+          } 
+        }
+      `}</style>
 
       <div className="h-full w-full relative z-10 flex">
         <Sidebar 
@@ -178,10 +209,19 @@ export default function App() {
           serverStatus={syncStatus?.includes('Conectado') || syncStatus?.includes('Carregado') ? 'online' : error ? 'offline' : 'checking'}
         />
 
-        <main className="flex-1 h-full overflow-hidden flex flex-col relative" style={{ marginLeft: 'var(--sidebar-width)', transition: 'margin-left 200ms cubic-bezier(0.25,0.1,0.25,1)' }}>
+        <main 
+          className="flex-1 h-full overflow-hidden flex flex-col relative" 
+          style={{ 
+            marginLeft: 'calc(var(--sidebar-width) + var(--safe-left))', 
+            paddingTop: 'var(--safe-top)', 
+            paddingRight: 'var(--safe-right)',
+            transition: 'margin-left 200ms cubic-bezier(0.25,0.1,0.25,1)' 
+          }}
+        >
           
           <Navbar 
             search={search} setSearch={setSearch} syncStatus={syncStatus}
+            setActiveCategory={(cat) => { setActiveCategory(cat); setActiveGroup('All'); }}
             onOpenSettings={() => { setSettingsTab('sources'); setSettingsOpen(true); }}
             serverStatus={syncStatus?.includes('Conectado') || syncStatus?.includes('Carregado') ? 'online' : error ? 'offline' : 'checking'}
           />
@@ -210,6 +250,8 @@ export default function App() {
                   setActiveGroup={setActiveGroup} groups={groups}
                   onPlay={playChannel} search={search} isPlayerOpen={showPlayer}
                   channelValidity={validity} isValidating={isValidating}
+                  history={history}
+                  favorites={favorites}
                 />
               )}
             </div>

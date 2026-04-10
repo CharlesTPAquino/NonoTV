@@ -120,6 +120,43 @@ function getRecommendations(channels, count = 8) {
 }
 
 /**
+ * P3.4: Smart Hero Curator
+ * Seleciona os melhores canais para o Banner Principal usando heurísticas de IA
+ */
+function getSmartHero(channels, history = [], favorites = [], count = 5) {
+  if (!channels || channels.length === 0) return [];
+
+  // Pesar canais: 
+  // +10 se for favorito
+  // +5 se estiver no histórico recente
+  // +3 se for 'Premium' ou 'Lançamento'
+  // -100 se for adulto (segurança)
+  
+  const favIds = new Set(favorites.map(f => f.id));
+  const histIds = new Set(history.map(h => h.id));
+  
+  const scored = channels.map(ch => {
+    let score = Math.random() * 5; // Base aleatória para variação
+    if (favIds.has(ch.id)) score += 10;
+    if (histIds.has(ch.id)) score += 5;
+    
+    const name = (ch.name || '').toLowerCase();
+    const group = (ch.group || '').toLowerCase();
+    
+    if (/premiere|hbo|fox|telecine|espn|4k|uhd/i.test(name + group)) score += 8;
+    if (/lancamento|2024|2025/i.test(name + group)) score += 6;
+    if (/adulto|sexo|hot|xxx|18\+|porno/i.test(group)) score -= 100;
+    
+    return { ...ch, aiScore: score };
+  });
+
+  return scored
+    .sort((a, b) => b.aiScore - a.aiScore)
+    .slice(0, count)
+    .map(({ aiScore, ...ch }) => ({ ...ch, isAiSelected: true }));
+}
+
+/**
  * P3.3: Semantic Search
  * Traduz fala natural em filtros
  */
@@ -284,6 +321,7 @@ export const aiService = {
 
   batchEnrichMetadata,
   getRecommendations,
+  getSmartHero,
   semanticSearch,
   
   // P4 exports

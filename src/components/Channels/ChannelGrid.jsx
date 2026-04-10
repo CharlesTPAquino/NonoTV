@@ -3,6 +3,7 @@ import useDeviceProfile from '../../hooks/useDeviceProfile';
 import ChannelCard from './ChannelCard';
 import HeroSection from './HeroSection';
 import ChannelCarousel from './ChannelCarousel';
+import ContinueWatching from './ContinueWatching';
 import { ChannelGridSkeleton, HeroSkeleton } from '../UI/Skeleton';
 import { LayoutGrid, Tv, Film, Clapperboard, MonitorPlay, WifiOff, Search, Compass, ChevronRight, Mic } from 'lucide-react';
 
@@ -13,7 +14,7 @@ const CATEGORY_META = {
   podcasts: { label: 'PODCASTS', icon: Mic,            hint: 'Ouça e assista aos melhores podcasts e conversas do momento.' }
 };
 
-export default function ChannelGrid({ channels, activeGroup, activeCategory, setActiveGroup, groups, onPlay, search, isPlayerOpen, channelValidity = {}, isValidating = false }) {
+export default function ChannelGrid({ channels, activeGroup, activeCategory, setActiveGroup, groups, onPlay, search, isPlayerOpen, channelValidity = {}, isValidating = false, history = [], favorites = [] }) {
   const profile = useDeviceProfile();
   const [limit, setLimit] = useState(profile.gridLimit || 60);
   const isSearching = search && search.length > 0;
@@ -78,7 +79,15 @@ export default function ChannelGrid({ channels, activeGroup, activeCategory, set
             isPlayerOpen={isPlayerOpen}
             autoRotate={profile.heroAutoRotate}
             heroInterval={profile.heroInterval}
+            history={history}
+            favorites={favorites}
           />
+          
+          {history && history.length > 0 && (
+            <div className="mt-8 mb-2 md:mt-12 md:mb-6">
+              <ContinueWatching history={history} onPlayChannel={onPlay} />
+            </div>
+          )}
           
           <div className="space-y-8 md:space-y-12 lg:space-y-16 pb-32">
             {groupedAll && Object.entries(groupedAll).slice(0, maxCarousels).map(([group, items]) => (
@@ -133,7 +142,12 @@ export default function ChannelGrid({ channels, activeGroup, activeCategory, set
             </div>
           )}
 
-          <div className={`grid ${isPosterContent ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6' : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'} gap-3 md:gap-4 lg:gap-6`}>
+
+          <div className={`grid gap-3 md:gap-4 lg:gap-5 ${
+            isPosterContent 
+              ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6' 
+              : 'grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7'
+          }`}>
             {displayChannels.map((ch) => (
               <ChannelCard key={ch.id} channel={ch} onPlay={() => onPlay(ch)} isValid={channelValidity[ch.id]} isPlayerOpen={isPlayerOpen} />
             ))}
