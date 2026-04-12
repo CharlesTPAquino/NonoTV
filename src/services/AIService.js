@@ -164,13 +164,14 @@ async function semanticSearch(query) {
   if (!genAI) return { search: query, category: 'All' };
   try {
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-1.5-flash",
+      model: "gemini-1.5-flash", // Garantindo o nome estável do modelo
       systemInstruction: "Você é o cérebro de um app IPTV. Receba uma frase e retorne APENAS um JSON com: 'search' (termo simplificado), 'category' ('live', 'movie', 'series' ou 'All'). Ex: 'Quero ver um desenho' -> { 'search': 'infantil', 'category': 'live' }"
     });
     const result = await model.generateContent(query);
     const text = result.response.text();
     return JSON.parse(text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1));
-  } catch {
+  } catch (err) {
+    console.warn('[AI Search] Erro ou Modelo não encontrado:', err.message);
     return { search: query, category: 'All' };
   }
 }
@@ -210,14 +211,23 @@ function getAutoQualityConfig(isLive = true) {
     ? { ...profile, maxBufferLength: Math.max(profile.maxBufferLength / 2, 10), startLevel: 0 }
     : profile;
 
-  // Live vs VOD: live precisa de buffer menor
+  // Live vs VOD: live precisa de buffer resiliente (v8.6 style)
+  // AJUSTE CRÍTICO: Se a rede for < 2Mbps (como no seu log), aumentamos o buffer para 10s
+  const isUltraSlow = (conn.downlink || 10) < 2;
+  
   const baseConfig = isLive
-    ? { liveSyncDurationCount: 4, liveMaxLatencyDurationCount: 8, backBufferLength: 5 }
+    ? { 
+        liveSyncDurationCount: isUltraSlow ? 10 : 4, // 10s para conexões < 2Mbps (Ultra-Resiliência)
+        liveMaxLatencyDurationCount: isUltraSlow ? 20 : 10, 
+        backBufferLength: isUltraSlow ? 2 : 5,
+        lowLatencyMode: false,
+        maxLiveSyncPlaybackRate: 1.0,
+        initialLiveManifestSize: isUltraSlow ? 5 : 3
+      }
     : { backBufferLength: 30 };
 
   return {
     enableWorker: true,
-    lowLatencyMode: false,
     manifestLoadingMaxRetry: profile.maxBufferLength > 30 ? 12 : 8,
     levelLoadingMaxRetry: profile.maxBufferLength > 30 ? 12 : 8,
     fragLoadingMaxRetry: profile.maxBufferLength > 30 ? 15 : 10,

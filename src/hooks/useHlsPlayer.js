@@ -51,7 +51,7 @@ function detectStreamType(url) {
 
 export default function useHlsPlayer(url, videoRef, options = {}, channel = null) {
   const [playerState, setPlayerState] = useState({
-    playing: false, buffering: true, error: null, status: 'idle', quality: 'auto'
+    playing: false, buffering: true, error: null, status: 'idle', quality: 'auto', isWarmed: false
   });
 
   const hlsRef = useRef(null);
@@ -80,7 +80,7 @@ export default function useHlsPlayer(url, videoRef, options = {}, channel = null
       console.log('[Turbo-Player] Zapping Instantâneo: Reaproveitando buffer quente.');
       hlsRef.current = warmHls;
       warmHls.attachMedia(video);
-      update({ buffering: false, status: 'ready' });
+      update({ buffering: false, status: 'ready', isWarmed: true });
       if (optionsRef.current.autoPlay !== false) video.play().catch(() => {});
       return;
     }
@@ -158,11 +158,18 @@ export default function useHlsPlayer(url, videoRef, options = {}, channel = null
 
     hls.on(Hls.Events.ERROR, (_, data) => {
       if (!data.fatal) return;
-      if (data.type === Hls.ErrorTypes.NETWORK_ERROR) hls.startLoad();
-      else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) hls.recoverMediaError();
+      if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+        console.warn('[Turbo-Player] Erro de rede fatal, tentando recarregar...');
+        hls.startLoad();
+      }
+      else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+        console.warn('[Turbo-Player] Erro de mídia fatal, tentando recuperar...');
+        hls.recoverMediaError();
+      }
       else {
+        console.error('[Turbo-Player] Erro crítico, reinicializando em 800ms...');
         destroyHls();
-        setTimeout(() => initHlsRef.current?.(video, originalSrc), 2000);
+        setTimeout(() => initHlsRef.current?.(video, originalSrc), 800);
       }
     });
   }, [destroyHls, update]);

@@ -32,7 +32,7 @@ export default function VideoPlayer({ channel, channels, onClose, mode = 'smart'
     aiEnhance: isAiEnhanced
   }, channel);
 
-  const { playing, buffering, error, status } = playerState;
+  const { playing, buffering, error, status, isWarmed } = playerState;
 
   // Efeito visual de "Injeção de AI" no carregamento
   useEffect(() => {
@@ -269,6 +269,14 @@ export default function VideoPlayer({ channel, channels, onClose, mode = 'smart'
       {/* AI Status Notification (UI Minimal) */}
       {isAiEnhanced && aiStep !== 'initial' && aiStep !== 'enhanced' && (
         <div className="absolute top-24 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2 animate-out fade-out zoom-out duration-1000 delay-[2000ms]">
+          {isWarmed && (
+             <div className="px-4 py-2 bg-amber-500/20 backdrop-blur-xl border border-amber-500/30 rounded-full flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-amber-500" />
+              <span className="text-[10px] font-black text-amber-400 uppercase tracking-[0.2em]">
+                Turbo Zapping (Buffer Aquecido)
+              </span>
+            </div>
+          )}
           <div className="px-4 py-2 bg-blue-500/20 backdrop-blur-xl border border-blue-500/30 rounded-full flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
             <span className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em]">

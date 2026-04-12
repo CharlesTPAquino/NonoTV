@@ -10,7 +10,7 @@ const PUBLIC_PROXIES = [
 
 const PROXY_URL = 'http://localhost:3131';
 
-const STREAM_TIMEOUT = 25000;
+const STREAM_TIMEOUT = 20000; // 20s para resiliência máxima (padrão v8.6)
 
 const STREAM_CONFIG = {
   live: {
@@ -88,30 +88,30 @@ export function detectCodec(url, type) {
 }
 
 /**
- * Busca o conteúdo M3U da fonte
+ * Busca o conteúdo M3U da fonte com lógica sequencial resiliente
  */
 export async function fetchSource(url) {
   const isNative = isNativePlatform();
   const config = STREAM_CONFIG.live;
 
   // Função para tentar fetch direto
-  async function tryDirect() {
+  async function tryDirect(timeout = STREAM_TIMEOUT) {
     const res = await fetch(url, { 
       headers: config.headers,
-      signal: AbortSignal.timeout(STREAM_TIMEOUT)
+      signal: AbortSignal.timeout(timeout)
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.text();
   }
 
   // Função para tentar proxies
-  async function tryProxies() {
+  async function tryProxies(timeout = STREAM_TIMEOUT) {
     for (const proxy of PUBLIC_PROXIES) {
       try {
         const proxyUrl = proxy + encodeURIComponent(url);
         const res = await fetch(proxyUrl, {
           headers: config.headers,
-          signal: AbortSignal.timeout(STREAM_TIMEOUT)
+          signal: AbortSignal.timeout(timeout)
         });
         if (res.ok) return await res.text();
       } catch {
@@ -123,14 +123,14 @@ export async function fetchSource(url) {
 
   try {
     if (isNative) {
-      // APK: fetch direto primeiro, depois proxies
-      console.log('[StreamService] APK modo:', url.substring(0, 40) + '...');
+      // APK (CapacitorHttp): Direto primeiro, depois proxies (Fallback Estável)
       try {
         return await tryDirect();
       } catch {
         return await tryProxies();
       }
     }
+
 
     // Web mode
     if (import.meta.env.DEV) {
