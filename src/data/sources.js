@@ -13,32 +13,11 @@ import { CREDENTIALS, buildUrl } from './credentials';
 
 export const SOURCES = [
   // 💎 ©️🄾🄼🄿🅁🄴🄽🅂🅂🄾🅄🅁 💎
-  // === FONTES PÚBLICAS (Do APK Antigo) ===
-  { 
-    id: 'iptv-org-br',
-    name: '🇧🇷 Brasil (IPTV-ORG)', 
-    url: 'https://iptv-org.github.io/iptv/countries/br.m3u',
-    category: 'Grátis',
-    status: 'stable'
-  },
-  { 
-    id: 'mariosanthos',
-    name: '🇧🇷 Mariosanthos', 
-    url: 'https://raw.githubusercontent.com/mariosanthos/IPTV/main/lista%20m3u',
-    category: 'Grátis',
-    status: 'testing'
-  },
+  // === FONTES PÚBLICAS ===
   { 
     id: 'ramys-brasil',
     name: '🇧🇷 Ramys Mundial', 
     url: 'https://raw.githubusercontent.com/Ramys/Iptv-Brasil-2026/master/CanaisIPTV.m3u',
-    category: 'Grátis',
-    status: 'testing'
-  },
-  { 
-    id: 'free-tv',
-    name: '🇧🇷 Free-TV Brasil', 
-    url: 'https://raw.githubusercontent.com/Free-TV/IPTV/master/playlists/playlist_brazil.m3u8',
     category: 'Grátis',
     status: 'testing'
   },

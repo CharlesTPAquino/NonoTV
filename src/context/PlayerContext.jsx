@@ -11,10 +11,17 @@ export const PlayerProvider = ({ children }) => {
   const [epgData, setEpgData] = useState(null);
   const [currentProgram, setCurrentProgram] = useState(null);
   const [nextProgram, setNextProgram] = useState(null);
-  const [watchTime, setWatchTime] = useState(0);
-  const watchTimeRef = useRef(null);
+  
+  // CORREÇÃO: usa Date.now() em vez de setInterval
+  const watchStartRef = useRef(null);
+  const epgLoadedRef = useRef(false);
   
   const { activeSource, addToHistory, prefetchNext, channels } = useSources();
+
+  const getWatchTime = () => {
+    if (!watchStartRef.current) return 0;
+    return Math.floor((Date.now() - watchStartRef.current) / 1000);
+  };
 
   const loadEPG = useCallback(async (sourceUrl) => {
     if (!sourceUrl) return;
@@ -22,11 +29,8 @@ export const PlayerProvider = ({ children }) => {
     setEpgData(data);
   }, []);
 
-  useEffect(() => {
-    if (activeSource?.url) {
-      loadEPG(activeSource.url);
-    }
-  }, [activeSource?.url, loadEPG]);
+  // CORREÇÃO: EPG só carrega quando o player abre pela primeira vez
+  // Removido o useEffect automático que carregava EPG ao iniciar
 
   useEffect(() => {
     if (!epgData || !activeChannel) {
@@ -51,46 +55,37 @@ export const PlayerProvider = ({ children }) => {
     }
   }, [epgData, activeChannel]);
 
-  useEffect(() => {
-    if (showPlayer && activeChannel) {
-      watchTimeRef.current = setInterval(() => {
-        setWatchTime(t => t + 1);
-      }, 1000);
-    } else {
-      if (watchTimeRef.current) {
-        clearInterval(watchTimeRef.current);
-      }
-    }
-    return () => {
-      if (watchTimeRef.current) {
-        clearInterval(watchTimeRef.current);
-      }
-    };
-  }, [showPlayer, activeChannel]);
-
   const playChannel = useCallback((channel) => {
-    if (activeChannel && watchTime > 10) {
-      addToHistory(activeChannel, watchTime);
+    const elapsed = getWatchTime();
+    if (activeChannel && elapsed > 10) {
+      addToHistory(activeChannel, elapsed);
     }
     
     setActiveChannel(channel);
     setShowPlayer(true);
-    setWatchTime(0);
-    
+    watchStartRef.current = Date.now();
+
+    // CORREÇÃO: EPG só carrega na primeira vez que o player abre
+    if (!epgLoadedRef.current && activeSource?.url) {
+      epgLoadedRef.current = true;
+      loadEPG(activeSource.url);
+    }
+
     if (channels && channels.length > 0) {
       prefetchService.prefetchNextChannels(channel, channels, 2);
     }
-  }, [activeChannel, watchTime, addToHistory, channels]);
+  }, [activeChannel, addToHistory, channels, activeSource, loadEPG]);
 
   const closePlayer = useCallback(() => {
-    if (activeChannel && watchTime > 10) {
-      addToHistory(activeChannel, watchTime);
+    const elapsed = getWatchTime();
+    if (activeChannel && elapsed > 10) {
+      addToHistory(activeChannel, elapsed);
     }
     
     setShowPlayer(false);
     setActiveChannel(null);
-    setWatchTime(0);
-  }, [activeChannel, watchTime, addToHistory]);
+    watchStartRef.current = null;
+  }, [activeChannel, addToHistory]);
 
   return (
     <PlayerContext.Provider value={{ 
@@ -102,7 +97,7 @@ export const PlayerProvider = ({ children }) => {
       epgData,
       currentProgram,
       nextProgram,
-      watchTime,
+      watchTime: getWatchTime(),
     }}>
       {children}
     </PlayerContext.Provider>

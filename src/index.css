@@ -120,3 +120,80 @@
     aspect-ratio: 16 / 10 !important;
   }
 }
+
+/* ============================================
+   TV MODE — Escala e navegação por D-pad
+   ============================================ */
+
+/* Aplica quando <html class="tv-mode"> */
+.tv-mode {
+  /* Escala toda a UI via rem — sem alterar código dos componentes */
+  font-size: 162.5%; /* 26px base, legível a 3m de distância */
+}
+
+/* Alvos de foco grandes e visíveis na TV */
+.tv-mode [tabindex],
+.tv-mode button,
+.tv-mode .nav-item {
+  min-height: 64px;
+  min-width: 64px;
+}
+
+/* Ring de foco visível em TV (branco + glow) */
+.tv-mode *:focus {
+  outline: 3px solid rgba(255, 255, 255, 0.9) !important;
+  outline-offset: 4px !important;
+  box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Sidebar sempre visível e expandida na TV */
+.tv-mode aside {
+  width: 200px !important;
+}
+
+/* Cards da grade maiores na TV */
+.tv-mode [data-channel-card] {
+  min-height: 120px;
+}
+
+/* Esconde elementos touch-only na TV */
+.tv-mode [data-touch-only] {
+  display: none !important;
+}
+
+/* Esconde elementos tv-only em mobile/desktop */
+[data-tv-only] {
+  display: none;
+}
+.tv-mode [data-tv-only] {
+  display: flex;
+}
+
+/* ============================================
+   MOBILE — Ajuste do padding inferior e Safe Areas
+   ============================================ */
+
+/* Altura da bottom nav + safe area */
+:root {
+  --bottom-nav-h: calc(68px + env(safe-area-inset-bottom, 16px));
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 16px);
+}
+
+/* Aplica no container de scroll principal */
+.main-scroll {
+  padding-bottom: calc(var(--bottom-nav-h) + 24px) !important;
+}
+
+/* Otimização de toque em Mobile */
+@media (max-width: 1024px) {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  button:active {
+    transform: scale(0.96);
+  }
+}

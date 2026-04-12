@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Server, Wifi, Heart, History, Upload, Download, RefreshCw, Settings, ChevronRight, Activity, Cloud, Bug, Shield, Database, Zap, Sparkles } from 'lucide-react';
 import ServerHealthDashboard from './ServerHealthDashboard';
 import SyncTab from './SyncTab';
@@ -20,13 +20,27 @@ export default function SettingsPanel({
   const [aiEnriching, setAiEnriching] = useState(false);
   const [aiProgress, setAiProgress] = useState(null);
   const [aiEnrichedCount, setAiEnrichedCount] = useState(0);
+  const panelRef = React.useRef(null);
   
+  // Atualizar tab inicial quando changing
+  // Atualizar tab inicial quando mudar
   React.useEffect(() => {
     if (isOpen && initialTab) {
       setActiveTab(initialTab);
     }
   }, [isOpen, initialTab]);
   
+  // Definir tabs aqui para poder usar no useEffect
+  const tabs = [
+    { id: 'sources',    label: 'Fontes',      icon: Database },
+    { id: 'status',     label: 'Sinal',       icon: Activity },
+    { id: 'ai',         label: 'AI Hub',       icon: Sparkles },
+    { id: 'favorites',  label: 'Favoritos',   icon: Heart },
+    { id: 'history',    label: 'Histórico',   icon: History },
+    { id: 'settings',   label: 'Ajustes',     icon: Settings },
+    { id: 'diagnostic', label: 'Sistema',     icon: Shield },
+  ];
+
   const settings = getSettings();
 
   const handleImportM3U = () => {
@@ -56,18 +70,8 @@ export default function SettingsPanel({
 
   if (!isOpen) return null;
 
-  const tabs = [
-    { id: 'sources',    label: 'Fontes',      icon: Database },
-    { id: 'status',     label: 'Sinal',       icon: Activity },
-    { id: 'ai',         label: 'AI Hub',       icon: Sparkles },
-    { id: 'favorites',  label: 'Favoritos',   icon: Heart },
-    { id: 'history',    label: 'Histórico',   icon: History },
-    { id: 'settings',   label: 'Ajustes',     icon: Settings },
-    { id: 'diagnostic', label: 'Sistema',     icon: Shield },
-  ];
-
   return (
-    <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-500">
+    <div ref={panelRef} className="fixed inset-0 z-[500] flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-500" data-nav-zone="settings">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
 
@@ -96,11 +100,20 @@ export default function SettingsPanel({
               return (
                 <button
                   key={tab.id}
+                  tabIndex={0}
+                  data-focusable
+                  data-nav-zone="settings-tabs"
                   onClick={() => setActiveTab(tab.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setActiveTab(tab.id);
+                    }
+                  }}
                   className={`flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-500 whitespace-nowrap group
                     ${isActive 
                       ? 'bg-red-600 text-white shadow-2xl shadow-red-600/20' 
-                      : 'text-white/30 hover:bg-white/5 hover:text-white'}`}
+                      : 'text-white/30 hover:bg-white/5 hover:text-white focus:bg-white/5 focus:text-white focus:outline-none focus:ring-2 focus:ring-white/30'}`}
                 >
                   <Icon size={20} className={`shrink-0 ${isActive ? '' : 'group-hover:scale-110 transition-transform'}`} />
                   <span className="text-[10px] font-black uppercase tracking-[0.2em]">{tab.label}</span>
@@ -132,7 +145,8 @@ export default function SettingsPanel({
                   Gerenciamento de Experiência Elite 4K
                 </p>
              </div>
-             <button
+              <button
+                data-close-panel
                 onClick={onClose}
                 className="w-12 h-12 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-all active:scale-90"
               >
@@ -170,11 +184,20 @@ export default function SettingsPanel({
                     return (
                       <button
                         key={source.id}
+                        tabIndex={0}
+                        data-focusable
+                        data-nav-zone="settings-sources"
                         onClick={() => onSelectSource(source)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            onSelectSource(source);
+                          }
+                        }}
                         className={`group relative flex items-center gap-4 p-5 rounded-[1.5rem] transition-all duration-500 border
                           ${isActive
                             ? 'bg-red-600 text-white border-red-500 shadow-2xl shadow-red-600/20 scale-[1.02]'
-                            : 'bg-white/5 border-white/5 text-white/40 hover:border-white/20 hover:bg-white/10 hover:text-white'
+                            : 'bg-white/5 border-white/5 text-white/40 hover:border-white/20 hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/30'
                           }`}
                       >
                         <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border transition-colors ${

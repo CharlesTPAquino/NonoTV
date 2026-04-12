@@ -16,7 +16,24 @@ const SourceContext = createContext();
 
 export const SourceProvider = ({ children }) => {
   const [sources] = useState(INITIAL_SOURCES);
-  const [activeSource, setActiveSource] = useState(null);
+  
+  const getInitialSource = () => {
+    console.log('[SourceContext] Determinando fonte inicial...');
+    const saved = localStorage.getItem('activeSourceUrl');
+    if (saved) {
+      console.log('[SourceContext] Fonte salva encontrada:', saved.substring(0, 50));
+      const found = INITIAL_SOURCES.find(s => s.url === saved);
+      if (found) {
+        console.log('[SourceContext] Usando fonte salva:', found.name);
+        return found;
+      }
+    }
+    const americakg = INITIAL_SOURCES.find(s => s.id === 'americakg-1');
+    console.log('[SourceContext] Usando AmericaKG como padrão:', americakg?.name);
+    return americakg || INITIAL_SOURCES[0];
+  };
+  
+  const [activeSource, setActiveSource] = useState(getInitialSource);
   const [channels, setChannels] = useState(LOCAL_CHANNELS);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -196,10 +213,15 @@ export const SourceProvider = ({ children }) => {
       // e depois o resto para não travar a UI
       if (validChannels.length > 2000) {
         setChannels(validChannels.slice(0, 1000));
-        setTimeout(() => {
+        // CORREÇÃO: requestIdleCallback carrega o resto quando o browser estiver ocioso
+        // Fallback para setTimeout em browsers que não suportam (ex: Firestick antigo)
+        const scheduleRest = window.requestIdleCallback
+          ? (cb) => window.requestIdleCallback(cb, { timeout: 3000 })
+          : (cb) => setTimeout(cb, 200);
+
+        scheduleRest(() => {
           setChannels(validChannels);
-          console.log('[SourceContext] Lista completa carregada em background');
-        }, 1500);
+        });
       } else {
         setChannels(validChannels);
       }
@@ -359,18 +381,18 @@ export const SourceProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    if (sources.length > 0) {
+    if (sources.length > 0 && activeSource) {
       const saved = localStorage.getItem('activeSourceUrl');
       const source = sources.find(s => s.url === saved);
       
-      if (source) {
+      if (source && source.id !== activeSource.id) {
         selectSource(source);
-      } else {
-        localStorage.removeItem('activeSourceUrl');
-        selectSource(sources[0]);
+      } else if (!saved && activeSource.id !== 'americakg-1') {
+        const americakg = sources.find(s => s.id === 'americakg-1');
+        if (americakg) selectSource(americakg);
       }
     }
-  }, [sources, selectSource]);
+  }, [sources]);
 
   return (
     <SourceContext.Provider value={{

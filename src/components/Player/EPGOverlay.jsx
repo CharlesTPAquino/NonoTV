@@ -155,9 +155,9 @@ export default function EPGOverlay({ channel, epgData, onClose, onPlayChannel, a
         <div className="flex items-center justify-center gap-4 py-3 bg-white/5 border-b border-white/5">
           <button 
             onClick={() => navigateDate(-1)}
-            className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-all"
+            className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-all focus:ring-2 focus:ring-white/50 focus:outline-none"
           >
-            <ArrowLeft size={16} />
+            <ArrowLeft size={20} />
           </button>
           <div className="flex items-center gap-2 px-4 py-1 bg-white/5 rounded-xl">
             <Calendar size={14} className="text-white/50" />
@@ -168,9 +168,9 @@ export default function EPGOverlay({ channel, epgData, onClose, onPlayChannel, a
           <button 
             onClick={() => navigateDate(1)}
             disabled={isToday}
-            className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+            className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-all disabled:opacity-30 disabled:cursor-not-allowed focus:ring-2 focus:ring-white/50 focus:outline-none"
           >
-            <ArrowRight size={16} />
+            <ArrowRight size={20} />
           </button>
         </div>
       )}

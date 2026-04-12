@@ -51,7 +51,7 @@ function detectStreamType(url) {
 
 export default function useHlsPlayer(url, videoRef, options = {}, channel = null) {
   const [playerState, setPlayerState] = useState({
-    playing: false, buffering: true, error: null, status: 'idle', quality: 'auto'
+    playing: false, buffering: true, error: null, status: 'idle', quality: 'auto', isWarmed: false
   });
 
   const hlsRef = useRef(null);
@@ -80,7 +80,7 @@ export default function useHlsPlayer(url, videoRef, options = {}, channel = null
       console.log('[Turbo-Player] Zapping Instantâneo: Reaproveitando buffer quente.');
       hlsRef.current = warmHls;
       warmHls.attachMedia(video);
-      update({ buffering: false, status: 'ready' });
+      update({ buffering: false, status: 'ready', isWarmed: true });
       if (optionsRef.current.autoPlay !== false) video.play().catch(() => {});
       return;
     }
@@ -114,7 +114,6 @@ export default function useHlsPlayer(url, videoRef, options = {}, channel = null
   }, [destroyHls, update]);
 
   const setupHls = useCallback((video, loadUrl, originalSrc, type, deviceProfile, tier, isLive) => {
-    // P4: Auto-Quality Selector — detecta conexão E hardware
     const autoConfig = aiService.getAutoQualityConfig(isLive);
     const deviceConfig = {
       maxBufferLength: Math.min(autoConfig.maxBufferLength, deviceProfile.maxBuffer, tier.maxBufferLength),
@@ -122,7 +121,14 @@ export default function useHlsPlayer(url, videoRef, options = {}, channel = null
       abrBandWidthFactor: deviceProfile.abrFactor,
     };
     
-    const finalConfig = { ...autoConfig, ...deviceConfig, enableWorker: true };
+    // Combina autoConfig, deviceConfig, e define worker/low-latency explicitamente
+    const finalConfig = { 
+      ...autoConfig, 
+      ...deviceConfig,
+      enableWorker: true, // Habilita worker para performance
+      lowLatencyMode: autoConfig.lowLatencyMode, // Usa o valor dinâmico de autoConfig
+      abrEwmaDefaultEstimate: autoConfig.abrEwmaDefaultEstimate 
+    };
     
     const conn = aiService.detectConnectionQuality();
     console.log(`[Turbo-Player] ${type} | ${deviceProfile.label} | ${tier.name} | ${conn.effectiveType} (${conn.downlink}Mbps)`);
@@ -158,12 +164,20 @@ export default function useHlsPlayer(url, videoRef, options = {}, channel = null
 
     hls.on(Hls.Events.ERROR, (_, data) => {
       if (!data.fatal) return;
-      if (data.type === Hls.ErrorTypes.NETWORK_ERROR) hls.startLoad();
-      else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) hls.recoverMediaError();
+      if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+        console.warn('[Turbo-Player] Erro de rede fatal, tentando recarregar...');
+        hls.startLoad();
+      }
+      else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+        console.warn('[Turbo-Player] Erro de mídia fatal, tentando recuperar...');
+        hls.recoverMediaError();
+      }
       else {
+        console.error('[Turbo-Player] Erro crítico, reinicializando em 2000ms...');
         destroyHls();
         setTimeout(() => initHlsRef.current?.(video, originalSrc), 2000);
       }
+
     });
   }, [destroyHls, update]);
 

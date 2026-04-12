@@ -9,6 +9,8 @@ export default function Navbar({ search, setSearch, syncStatus, onOpenSettings, 
   const [isListening, setIsListening] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
+  const hasVoiceSupport = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+
   const handleVoiceCommand = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -72,32 +74,36 @@ export default function Navbar({ search, setSearch, syncStatus, onOpenSettings, 
               className="w-full h-10 pl-2 pr-10 bg-transparent outline-none text-xs font-medium text-white placeholder:text-white/15 tracking-wide"
             />
             
-            <button 
-              onClick={handleVoiceCommand}
-              disabled={isListening || isProcessing}
-              className={`absolute right-2 p-1.5 rounded-lg transition-all outline-none ${isListening ? 'text-red-500 bg-red-500/10' : isProcessing ? 'text-blue-400 bg-blue-400/10' : 'text-white/30 hover:text-white hover:bg-white/10'}`}
-            >
-              {isProcessing ? <Loader2 size={14} className="animate-spin" /> : <Mic size={14} className={isListening ? 'animate-pulse' : ''} />}
-            </button>
+            {hasVoiceSupport && (
+              <button 
+                onClick={handleVoiceCommand}
+                disabled={isListening || isProcessing}
+                data-touch-only
+                className={`absolute right-2 p-1.5 rounded-lg transition-all outline-none ${isListening ? 'text-red-500 bg-red-500/10' : isProcessing ? 'text-blue-400 bg-blue-400/10' : 'text-white/30 hover:text-white hover:bg-white/10'}`}
+              >
+                {isProcessing ? <Loader2 size={14} className="animate-spin" /> : <Mic size={14} className={isListening ? 'animate-pulse' : ''} />}
+              </button>
+            )}
           </div>
         </div>
 
         {/* Right - Server Status + Settings */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/5 rounded-xl backdrop-blur-xl">
+        <div className="flex items-center gap-2 md:gap-3">
+          <div className="flex items-center gap-2 px-2.5 py-1.5 md:px-3 bg-white/5 border border-white/5 rounded-xl backdrop-blur-xl">
             {isOnline && <CheckCircle size={12} className="text-green-500" />}
             {isOffline && <XCircle size={12} className="text-red-500" />}
             {!isOnline && !isOffline && <Zap size={12} className="text-white/40 animate-pulse" />}
-            <span className={`text-[9px] font-semibold uppercase tracking-widest hidden sm:inline ${isOnline ? 'text-green-500' : isOffline ? 'text-red-500' : 'text-white/30'}`}>
+            <span className={`text-[9px] font-bold uppercase tracking-widest hidden md:inline ${isOnline ? 'text-green-500' : isOffline ? 'text-red-500' : 'text-white/30'}`}>
               {isOnline ? 'ON' : isOffline ? 'OFF' : '...'}
             </span>
           </div>
 
           <button 
             onClick={onOpenSettings}
-            className="w-9 h-9 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-all active:scale-90"
+            tabIndex={0}
+            className="w-10 h-10 md:w-9 md:h-9 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-all active:scale-90 focus:ring-2 focus:ring-white/50 focus:outline-none"
           >
-            <Settings size={16} />
+            <Settings size={18} />
           </button>
         </div>
       </div>

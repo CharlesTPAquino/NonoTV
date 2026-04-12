@@ -119,7 +119,9 @@ function findScrollParent(el) {
 function getNavigationZone(el) {
   // Player: foco confinado inteiramente
   if (el.closest('[data-nav-zone="player"]')) return 'player';
-  // Settings/Overlay: confinado
+  // Settings: confinado ao painel
+  if (el.closest('[data-nav-zone="settings"]')) return 'settings';
+  // Overlay/ChannelList: confinado
   if (el.closest('[data-nav-zone="overlay"]')) return 'overlay';
   // Sidebar
   if (el.closest('aside') || el.closest('[data-nav-zone="sidebar"]')) return 'sidebar';
@@ -183,6 +185,8 @@ export function initSpatialNavigation() {
       candidates = getVisibleFocusable(current.closest('aside'));
     } else if (zone === 'player') {
       candidates = getVisibleFocusable(current.closest('[data-nav-zone="player"]'));
+    } else if (zone === 'settings') {
+      candidates = getVisibleFocusable(current.closest('[data-nav-zone="settings"]'));
     } else if (zone === 'overlay') {
       candidates = getVisibleFocusable(current.closest('[data-nav-zone="overlay"]'));
     } else if (zone === 'bottomnav') {

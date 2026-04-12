@@ -86,8 +86,8 @@ export default function HeroSection({ channels, onPlay, validity = {}, isPlayerO
         )}
         
         {/* Gradients */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#050505] via-[#050505]/80 to-transparent z-10" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-transparent z-10" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#050505] via-[#050505]/80 to-transparent z-10" style={{ borderRadius: '0px' }} />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-transparent z-10" style={{ borderRadius: '0px' }} />
       </div>
 
       {/* Content Overlay */}

@@ -164,13 +164,14 @@ async function semanticSearch(query) {
   if (!genAI) return { search: query, category: 'All' };
   try {
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-1.5-flash",
+      model: "gemini-1.5-flash", // Garantindo o nome estável do modelo
       systemInstruction: "Você é o cérebro de um app IPTV. Receba uma frase e retorne APENAS um JSON com: 'search' (termo simplificado), 'category' ('live', 'movie', 'series' ou 'All'). Ex: 'Quero ver um desenho' -> { 'search': 'infantil', 'category': 'live' }"
     });
     const result = await model.generateContent(query);
     const text = result.response.text();
     return JSON.parse(text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1));
-  } catch {
+  } catch (err) {
+    console.warn('[AI Search] Erro ou Modelo não encontrado:', err.message);
     return { search: query, category: 'All' };
   }
 }
@@ -210,20 +211,31 @@ function getAutoQualityConfig(isLive = true) {
     ? { ...profile, maxBufferLength: Math.max(profile.maxBufferLength / 2, 10), startLevel: 0 }
     : profile;
 
-  // Live vs VOD: live precisa de buffer menor
+  // Live vs VOD: live precisa de buffer resiliente (v8.6 style)
+  // AJUSTE CRÍTICO: Se a rede for < 2Mbps (como no seu log), reduzimos estimativa inicial de banda
+  const isUltraSlow = (conn.downlink || 10) < 2;
+  const initialBandwidth = isUltraSlow ? 800000 : (profile.abrEwmaDefaultEstimate || 5000000);
+  
   const baseConfig = isLive
-    ? { liveSyncDurationCount: 4, liveMaxLatencyDurationCount: 8, backBufferLength: 5 }
+    ? { 
+        liveSyncDurationCount: 4, // Valor padrão estável
+        liveMaxLatencyDurationCount: 10, 
+        backBufferLength: 5,
+        lowLatencyMode: false,
+        maxLiveSyncPlaybackRate: 1.0,
+        initialLiveManifestSize: 3 // Valor padrão estável
+      }
     : { backBufferLength: 30 };
 
   return {
     enableWorker: true,
-    lowLatencyMode: false,
     manifestLoadingMaxRetry: profile.maxBufferLength > 30 ? 12 : 8,
     levelLoadingMaxRetry: profile.maxBufferLength > 30 ? 12 : 8,
     fragLoadingMaxRetry: profile.maxBufferLength > 30 ? 15 : 10,
     manifestLoadingRetryDelay: profile.maxBufferLength > 30 ? 2000 : 1000,
     abrBandWidthFactor: 0.8,
     abrBandWidthUpFactor: 0.5,
+    abrEwmaDefaultEstimate: initialBandwidth,
     ...baseConfig,
     ...finalProfile
   };
@@ -284,8 +296,7 @@ export const aiService = {
             'Content-Type': 'application/json',
             'X-Goog-Api-Key': API_KEY
           },
-          body: JSON.stringify(sessionData),
-          signal: AbortSignal.timeout(5000)
+          body: JSON.stringify(sessionData)
         }
       );
 

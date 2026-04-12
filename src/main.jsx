@@ -7,8 +7,13 @@ import { SourceProvider } from './context/SourceContext'
 import { ThemeProvider } from './context/ThemeContext'
 import { PodcastProvider } from './context/PodcastContext'
 import ErrorBoundary from './components/UI/ErrorBoundary.jsx'
+import { detectDevice } from './hooks/useDevice.js'
 
-console.log('[NonoTV] Iniciando app...');
+// Aplicar classe TV antes de qualquer render — evita flash de layout errado
+const { isTV } = detectDevice();
+if (isTV) {
+  document.documentElement.classList.add('tv-mode');
+}
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

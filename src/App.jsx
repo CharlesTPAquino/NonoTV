@@ -4,7 +4,7 @@ import {
   Globe, Server
 } from 'lucide-react';
 import { initSpatialNavigation } from './utils/spatialNavigation';
-import { ThemeProvider, useTheme, getKidsChannels } from './context/ThemeContext';
+import { ThemeProvider, useTheme } from './context/ThemeContext';
 import Sidebar from './components/Layout/Sidebar';
 import Navbar from './components/Layout/Navbar';
 import ChannelGrid from './components/Channels/ChannelGrid';
@@ -18,6 +18,7 @@ import { useSources } from './context/SourceContext';
 import { usePodcasts } from './context/PodcastContext';
 import { useChannelValidator } from './hooks/useChannelValidator';
 import { useHorizontalSwipe } from './hooks/useSwipeGesture';
+import { useTVNavigation } from './hooks/useTVNavigation';
 import { aiService } from './services/AIService';
 import { CHANNELS as LOCAL_CHANNELS } from './data/channels';
 
@@ -32,6 +33,15 @@ const PodcastPlayer = lazy(() => import('./components/Podcast/PodcastPlayer'));
 
 export default function App() {
   const [showSplash, setShowSplash] = useState(true);
+
+  // Ativar navegação D-pad para TV
+  useTVNavigation();
+
+  // Garante que o app nunca fica preso na splash (ex: Firestick com RAM baixa)
+  useEffect(() => {
+    const fallback = setTimeout(() => setShowSplash(false), 5000);
+    return () => clearTimeout(fallback);
+  }, []);
   const [activeCategory,  setActiveCategory]  = useState('All');
   const [activeGroup,     setActiveGroup]     = useState('All');
   const [search,          setSearch]          = useState('');
@@ -118,7 +128,10 @@ export default function App() {
     };
   }, [showPlayer, settingsOpen, channelListOpen, activeCategory, activeGroup, search, closePlayer]);
 
-  useEffect(() => { initSpatialNavigation(); }, []);
+  useEffect(() => { 
+    // Spatial navigation desabilitado temporariamente - usando useTVNavigation
+    // initSpatialNavigation(); 
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -226,7 +239,7 @@ export default function App() {
             serverStatus={syncStatus?.includes('Conectado') || syncStatus?.includes('Carregado') ? 'online' : error ? 'offline' : 'checking'}
           />
 
-          <div className="flex-1 overflow-y-auto custom-scrollbar px-4 md:px-8 pt-4 pb-20 lg:pb-8">
+          <div className="flex-1 overflow-y-auto custom-scrollbar main-scroll px-4 md:px-8 pt-4 lg:pb-8 pb-24 md:pb-32">
             
             {error && (
               <div className="p-6 mb-8 bg-red-500/10 border border-red-500/20 rounded-3xl flex items-center gap-6 animate-in slide-in-from-top duration-500 shrink-0">

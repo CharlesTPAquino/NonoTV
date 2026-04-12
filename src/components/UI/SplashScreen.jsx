@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import logoImg from '../../assets/logo.png';
+import useSound from '../../hooks/useSound';
 
 const LOADING_STEPS = [
   "Iniciando Protocolos NonoTV Elite...",
@@ -14,12 +15,16 @@ export default function SplashScreen({ onFinish }) {
   const [stepIndex, setStepIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const [logoPhase, setLogoPhase] = useState('enter');
+  const { playSound } = useSound();
 
   useEffect(() => {
+    playSound('intro');
+    
     const t1 = setTimeout(() => setLogoPhase('scale'), 100);
     const t2 = setTimeout(() => setLogoPhase('settle'), 900);
 
     const stepInterval = setInterval(() => {
+      playSound('transition');
       setStepIndex((prev) => (prev + 1) % LOADING_STEPS.length);
     }, 1200);
 
@@ -28,6 +33,7 @@ export default function SplashScreen({ onFinish }) {
     }, 30);
 
     const t3 = setTimeout(() => {
+      playSound('success');
       if (onFinish) onFinish();
     }, 3500);
 
@@ -38,7 +44,7 @@ export default function SplashScreen({ onFinish }) {
       clearInterval(stepInterval);
       clearInterval(progressInterval);
     };
-  }, [onFinish]);
+  }, [onFinish, playSound]);
 
   const logoScale = logoPhase === 'enter' ? 0.5 : logoPhase === 'scale' ? 1.1 : 1;
   const logoOpacity = logoPhase === 'enter' ? 0 : 1;

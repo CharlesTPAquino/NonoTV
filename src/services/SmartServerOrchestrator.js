@@ -50,7 +50,7 @@ export const resetMetrics = () => localStorage.removeItem('nono_server_stats');
 export const testSourceSmart = async (url) => {
   const start = Date.now();
   try {
-    const res = await fetch(url, { method: 'HEAD', signal: AbortSignal.timeout(5000) });
+    const res = await fetch(url, { method: 'HEAD' });
     recordMetric(url, res.ok, Date.now() - start);
     return { ok: res.ok, time: Date.now() - start };
   } catch {

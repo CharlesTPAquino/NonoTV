@@ -112,42 +112,55 @@ export default function ChannelGrid({ channels, activeGroup, activeCategory, set
         </div>
       ) : (
         <div className="flex flex-col">
-          {/* Category Header */}
-          <div className="text-center mb-6 md:mb-8">
-            <div className="flex items-center justify-center gap-3 mb-1">
-              {CatIcon && !isSearching && <CatIcon size={20} className="text-white/40" strokeWidth={1.5} />}
-              <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-white tracking-tight leading-tight">
+          {/* Category Header (Premium Ultra Style) */}
+          <div className="text-center mb-12 md:mb-16">
+            <div className="flex flex-col items-center justify-center gap-3 mb-3">
+              <div className="w-16 h-16 rounded-[24px] bg-gradient-to-br from-white/10 to-transparent border border-white/10 flex items-center justify-center mb-2 shadow-2xl">
+                {CatIcon && !isSearching && <CatIcon size={32} className="text-white/80" strokeWidth={1} />}
+                {isSearching && <Search size={32} className="text-white/80" strokeWidth={1} />}
+              </div>
+              <h2 className="text-2xl sm:text-3xl md:text-5xl font-black text-white tracking-tighter leading-none uppercase italic">
                 {isSearching ? search : activeGroup === 'All' ? (catMeta?.label || activeCategory) : activeGroup}
               </h2>
             </div>
-            <p className="text-white/25 text-[10px] font-medium tracking-wide mt-1">{standard.length} itens</p>
+            <div className="flex items-center justify-center gap-4">
+               <div className="h-[1px] w-12 bg-gradient-to-r from-transparent to-white/20" />
+               <p className="text-white/40 text-[10px] font-black uppercase tracking-[0.4em]">{standard.length} Títulos de Elite</p>
+               <div className="h-[1px] w-12 bg-gradient-to-l from-transparent to-white/20" />
+            </div>
           </div>
 
-          {/* Group pills */}
+          {/* Group pills (Sophisticated Style) */}
           {groups.length > 1 && (
-            <div className="flex items-center gap-2 mb-5 md:mb-6 overflow-x-auto no-scrollbar pb-1">
-              {groups.slice(0, 20).map((g) => (
+            <div className="flex items-center gap-3 mb-10 md:mb-12 overflow-x-auto no-scrollbar pb-2 px-1">
+              {groups.slice(0, 30).map((g) => (
                 <button
                   key={g.id}
                   onClick={() => setActiveGroup(g.name)}
-                  className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-lg text-[11px] font-medium tracking-wide transition-all whitespace-nowrap border ${
+                  className={`flex-shrink-0 flex items-center px-6 py-3 text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500 border ${
                     activeGroup === g.name
-                      ? 'bg-white text-black border-white/20 shadow-sm'
-                      : 'bg-white/[0.04] text-white/35 border-white/[0.04] hover:bg-white/[0.08] hover:text-white/60 hover:border-white/[0.08]'
+                      ? 'bg-red-600 text-white border-red-500 shadow-[0_8px_20px_rgba(220,38,38,0.25)] scale-105'
+                      : 'bg-white/[0.03] text-white/30 border-white/5 hover:bg-white/[0.08] hover:text-white/60 hover:border-white/10'
                   }`}
+                  style={{ borderRadius: '0px' }}
                 >
                   {g.name}
                 </button>
+              ))}
+
               ))}
             </div>
           )}
 
 
-          <div className={`grid gap-3 md:gap-4 lg:gap-5 ${
-            isPosterContent 
-              ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6' 
-              : 'grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7'
-          }`}>
+          <div 
+            className={`grid gap-5 md:gap-6 lg:gap-8 ${
+              isPosterContent 
+                ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6' 
+                : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7'
+            }`}
+            data-nav-zone="grid"
+          >
             {displayChannels.map((ch) => (
               <ChannelCard key={ch.id} channel={ch} onPlay={() => onPlay(ch)} isValid={channelValidity[ch.id]} isPlayerOpen={isPlayerOpen} />
             ))}

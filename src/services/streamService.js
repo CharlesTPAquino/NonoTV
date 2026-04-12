@@ -10,7 +10,7 @@ const PUBLIC_PROXIES = [
 
 const PROXY_URL = 'http://localhost:3131';
 
-const STREAM_TIMEOUT = 25000;
+const STREAM_TIMEOUT = 20000; // 20s para resiliência máxima (padrão v8.6)
 
 const STREAM_CONFIG = {
   live: {
@@ -88,7 +88,7 @@ export function detectCodec(url, type) {
 }
 
 /**
- * Busca o conteúdo M3U da fonte
+ * Busca o conteúdo M3U da fonte com lógica sequencial resiliente
  */
 export async function fetchSource(url) {
   const isNative = isNativePlatform();
@@ -97,8 +97,7 @@ export async function fetchSource(url) {
   // Função para tentar fetch direto
   async function tryDirect() {
     const res = await fetch(url, { 
-      headers: config.headers,
-      signal: AbortSignal.timeout(STREAM_TIMEOUT)
+      headers: config.headers
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.text();
@@ -110,8 +109,7 @@ export async function fetchSource(url) {
       try {
         const proxyUrl = proxy + encodeURIComponent(url);
         const res = await fetch(proxyUrl, {
-          headers: config.headers,
-          signal: AbortSignal.timeout(STREAM_TIMEOUT)
+          headers: config.headers
         });
         if (res.ok) return await res.text();
       } catch {
@@ -123,8 +121,7 @@ export async function fetchSource(url) {
 
   try {
     if (isNative) {
-      // APK: fetch direto primeiro, depois proxies
-      console.log('[StreamService] APK modo:', url.substring(0, 40) + '...');
+      // APK (CapacitorHttp): Direto primeiro, depois proxies (Fallback Estável)
       try {
         return await tryDirect();
       } catch {
@@ -132,12 +129,12 @@ export async function fetchSource(url) {
       }
     }
 
+
     // Web mode
     if (import.meta.env.DEV) {
       try {
         const proxyRes = await fetch(`${PROXY_URL}/?url=${encodeURIComponent(url)}`, {
-          headers: config.headers,
-          signal: AbortSignal.timeout(STREAM_TIMEOUT)
+          headers: config.headers
         });
         if (proxyRes.ok) return await proxyRes.text();
       } catch (e) {
@@ -179,8 +176,7 @@ export async function validateStreamUrl(url, type = 'live') {
   try {
     const res = await fetch(url, { 
       method: 'HEAD',
-      headers: config.headers,
-      signal: AbortSignal.timeout(10000)
+      headers: config.headers
     });
     return res.ok;
   } catch {
@@ -188,8 +184,7 @@ export async function validateStreamUrl(url, type = 'live') {
     try {
       const proxyUrl = PUBLIC_PROXIES[0] + encodeURIComponent(url);
       const res = await fetch(proxyUrl, {
-        method: 'HEAD',
-        signal: AbortSignal.timeout(10000)
+        method: 'HEAD'
       });
       return res.ok;
     } catch {
