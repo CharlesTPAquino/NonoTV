@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { initSpatialNavigation } from './utils/spatialNavigation';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import Sidebar from './components/Layout/Sidebar';
 import Navbar from './components/Layout/Navbar';
 import ChannelGrid from './components/Channels/ChannelGrid';
@@ -13,6 +14,7 @@ import ContinueWatching from './components/Channels/ContinueWatching';
 import VideoPlayerMinimal from './components/Player/VideoPlayerMinimal';
 import { ChannelGridSkeleton, HeroSkeleton } from './components/UI/Skeleton';
 import SplashScreen from './components/UI/SplashScreen';
+import LoginScreen from './components/Auth/LoginScreen';
 import { usePlayer } from './context/PlayerContext';
 import { useSources } from './context/SourceContext';
 import { usePodcasts } from './context/PodcastContext';
@@ -32,6 +34,7 @@ const PodcastGrid = lazy(() => import('./components/Podcast/PodcastGrid'));
 const PodcastPlayer = lazy(() => import('./components/Podcast/PodcastPlayer'));
 
 export default function App() {
+  const { user, loading } = useAuth();
   const [showSplash, setShowSplash] = useState(true);
 
   // Ativar navegação D-pad para TV
@@ -177,6 +180,16 @@ export default function App() {
   // Se estiver na Home (All), usamos o scroll do App. 
   // Se estiver em categoria (Grid Virtualizada), o scroll é interno à Grid.
   const isHome = activeCategory === 'All' && activeGroup === 'All' && !search;
+
+  // Se ainda está verificando auth, mostrar splash
+  if (loading) {
+    return <SplashScreen onFinish={() => {}} />;
+  }
+
+  // Se não está logado, mostrar tela de login
+  if (!user) {
+    return <LoginScreen />;
+  }
 
   if (showSplash) {
     return <SplashScreen onFinish={() => setShowSplash(false)} />;

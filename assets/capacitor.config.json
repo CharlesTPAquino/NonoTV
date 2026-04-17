@@ -1,0 +1,25 @@
+{
+	"appId": "com.nonotv.app",
+	"appName": "NonoTV",
+	"webDir": "dist",
+	"android": {
+		"allowMixedContent": true,
+		"captureInput": true,
+		"webContentsDebuggingEnabled": true
+	},
+	"plugins": {
+		"StatusBar": {
+			"style": "DARK",
+			"backgroundColor": "#1A1A1A",
+			"overlaysWebView": false
+		},
+		"Keyboard": {
+			"resize": "body",
+			"style": "DARK",
+			"resizeOnFullScreen": true
+		},
+		"CapacitorHttp": {
+			"enabled": true
+		}
+	}
+}

@@ -1,202 +1,190 @@
-# NonoTV - Guia para Agentes de IA
+# NonoTV Elite 4K — Project Rules
 
-## Regras de Nomenclatura de APK
+> Este arquivo é lido automaticamente pelo OpenCode e injetado como contexto
+> em TODOS os modelos (Elephant, Claude, GPT-4o, Gemini etc.).
+> Salve como: `/home/pcnono/Secretária/IPTV/meu-iptv/AGENTS.md`
 
-### Formato Obrigatório
+---
+
+## Identidade do Projeto
+
+- **Nome:** NonoTV Elite 4K — app IPTV premium para Android
+- **Dono:** Charles
+- **Idioma:** Responda sempre em **Português (BR)**
+- **Raiz do projeto:** `/home/pcnono/Secretária/IPTV/meu-iptv/`
+
+---
+
+## Stack Técnica
+
+| Camada | Tecnologia |
+|---|---|
+| Frontend | React (JSX) + Vite |
+| Bridge nativa | Capacitor v6 |
+| Android nativo | Java (plugins customizados) |
+| Workers | Cloudflare Workers (off-main-thread) |
+| Estilização | CSS puro — `src/index.css` |
+| Build | `npm run build` → `npx cap sync android` → `./gradlew assembleDebug` |
+| APK output | `android/app/build/outputs/apk/debug/app-debug.apk` (~8.4 MB) |
+
+**Nunca sugira, introduza ou mencione:** TypeScript, Tailwind, Expo, React Native,
+Kotlin, Vite plugins não listados, ou qualquer tecnologia fora desta lista —
+a menos que Charles peça explicitamente.
+
+---
+
+## Estrutura de Arquivos
+
 ```
-NonoTV_vYYYY-MM-DD_HH-MM.apk
+meu-iptv/
+├── src/
+│   ├── App.jsx                          ← roteamento principal
+│   ├── main.jsx
+│   ├── index.css
+│   ├── components/
+│   │   ├── Player/
+│   │   │   ├── VideoPlayerMinimal.jsx   ← ARQUIVO CRÍTICO
+│   │   │   ├── VodPlayer.jsx
+│   │   │   ├── MiniPlayer.jsx
+│   │   │   ├── EPGOverlay.jsx
+│   │   │   └── EPGGrid.jsx
+│   │   ├── Channels/
+│   │   ├── Layout/
+│   │   ├── Settings/
+│   │   ├── Podcast/
+│   │   └── UI/
+│   ├── hooks/
+│   ├── services/
+│   │   ├── api.js                       ← fetch direto + proxy (SEM CapacitorHttp)
+│   │   ├── SyncService.js
+│   │   ├── ServerHealthService.js
+│   │   └── RetryService.js
+│   ├── context/
+│   │   └── SourceContext.jsx
+│   ├── data/
+│   │   ├── sources.js
+│   │   └── credentials.js
+│   └── constants/
+├── android/                             ← projeto Android nativo
+├── .agents/                             ← Antigravity Kit (20 agentes, 36 skills)
+├── .memoria/                            ← IMPLEMENTACAO.md, CHARLES.md
+├── .planning/                           ← GSD workflow
+├── cloudflare-workers/
+├── releases/                            ← APKs estáveis salvos manualmente
+├── vite.config.js
+└── deploy.sh
 ```
 
-Exemplos:
-- `NonoTV_v2026-03-30_20-46.apk`
-- `NonoTV_v2026-03-29_23-50_debug.apk`
+---
 
-### Regras
-1. **Sempre** usar data e hora da mudança (não hora atual)
-2. **Sempre** incluir `_debug` ou `_release` no sufixo quando aplicável
-3. **Sempre** fazer upload para Drive: `gdrive:Nono+/`
-4. O APK deve ser copiado para a raiz do projeto antes do upload
+## Git — Estado Atual
 
-### Script de Build (Use este padrão)
+| Branch | Estado |
+|---|---|
+| `main` | ✅ Estável — última versão consolidada |
+| `tv-performance-experimental` | ✅ Branch de trabalho ativa (restaurada) |
+
+- **Commit estável:** `a571852` — *"feat(player): stabilize channel tuning and refine UI with sharp-edge design"* (12/04/2026)
+- **Tag:** `stable-2026-04-15-0940`
+
+---
+
+## Decisões Técnicas Permanentes
+
+Estas decisões já foram tomadas e validadas. **Não reverta, não questione, não "otimize" sem ser solicitado.**
+
+1. **Sem CapacitorHttp** — removido. Use apenas `fetch` direto com fallback para proxy público.
+2. **Barreira de montagem no player** — `VideoPlayerMinimal.jsx` tem uma barreira entre montagem do componente e renderização da lista. Ela resolve uma race condition. Não remova.
+3. **Layout full-screen** — as propriedades de posicionamento do player estão calibradas. Não altere sem aprovação.
+4. **Health check é manual** — fica em Settings > Status. Não adicione health check automático na inicialização.
+5. **Timeouts:** 20s por tentativa, 45s global. Não altere.
+6. **Workers off-main-thread** — não mova lógica de volta para a main thread.
+
+---
+
+## Regras de Comportamento
+
+### Antes de editar qualquer arquivo
+
+- Leia o arquivo **completo** antes de propor mudanças.
+- Nunca edite mais de um arquivo por vez sem listar todos e pedir confirmação.
+- Se a tarefa exigir mudanças em 3+ arquivos, apresente o plano e aguarde aprovação.
+
+### Nunca faça sem confirmação explícita de Charles
+
+- Renomear ou deletar arquivos/pastas
+- Alterar `vite.config.js`, `capacitor.config.json` ou configs de build
+- Modificar qualquer coisa dentro de `android/`
+- Operações git: `commit`, `reset`, `push`, `merge`, `rebase`
+- `npm install` ou alterações em `package.json`
+- Editar `.memoria/`, `.planning/` ou `AGENTS.md`
+
+### Ao encontrar um problema
+
+1. Descreva o problema claramente.
+2. Proponha **uma solução** — não listas de alternativas.
+3. Aguarde aprovação antes de implementar.
+4. Se for ambíguo, pergunte antes de agir.
+
+### Proibido em qualquer circunstância
+
+- Sugerir refatorações não solicitadas ("aproveitando, poderíamos também…")
+- Introduzir TypeScript em arquivos `.jsx`
+- Alterar paleta de cores ou design system sem pedido
+- Executar o build por conta própria
+- Reescrever lógica que já funciona com o objetivo de "melhorar"
+
+---
+
+## Debug (sem ADB disponível)
+
+Use `console.log` com prefixos padronizados:
+
+```js
+console.log('[API] ...')
+console.log('[Player] ...')
+console.log('[SourceContext] ...')
+console.log('[SyncService] ...')
+```
+
+Erros em produção: **Settings > Status** dentro do app.
+
+---
+
+## Workflow de Build
+
+Execute sempre nesta ordem, um de cada vez:
+
 ```bash
-# 1. Build e sync
-cd /home/pcnono/Secretária/IPTV/meu-iptv
 npm run build
 npx cap sync android
 cd android && ./gradlew assembleDebug
-
-# 2. Copiar com nome correto (use a hora da mudança)
-TIMESTAMP=$(date +"%Y-%m-%d_%H-%M")
-cp android/app/build/outputs/apk/debug/NonoTV-debug.apk "../NonoTV_v${TIMESTAMP}_debug.apk"
-
-# 3. Upload para Drive
-rclone copy "../NonoTV_v${TIMESTAMP}_debug.apk" "gdrive:Nono+/" -v
 ```
+
+Se qualquer passo falhar: **pare e reporte o erro completo.** Não tente corrigir sozinho.
 
 ---
 
-## Decisões de Arquitetura (29/03/2026)
+## Backup Antes de Mudanças em Arquivos Críticos
 
-### Projeto Principal
-- **Diretório**: `/home/pcnono/Secretária/IPTV/meu-iptv/`
-- **Versão**: Ativa/em desenvolvimento
-- **Build APK**: Execute neste diretório
+Antes de tocar em `VideoPlayerMinimal.jsx`, `App.jsx`, `api.js` ou `SourceContext.jsx`:
 
-### Projeto Legado
-- **Diretório**: `/home/pcnono/Secretária/IPTV/meu-iptv/meu-iptv/`
-- **Status**: Legado - NÃO usar para desenvolvimento
-- **Função**: Backup/disaster recovery apenas
-- **Data de migração**: 29/03/2026
-
----
-
-## Como Codificar
-
-### Editar Código Fonte
-Edite SEMPRE no projeto principal:
-```
-/home/pcnono/Secretária/IPTV/meu-iptv/src/
-```
-
-### Arquivos Importantes
-
-| Arquivo | Caminho | Descrição |
-|---------|---------|-----------|
-| Fontes IPTV | `src/data/sources.js` | Lista de servidores (37 fontes) |
-| Credenciais | `src/data/credentials.js` | Sistema de credenciais (leia de .env) |
-| API Principal | `src/services/api.js` | Sistema de fallback (CapacitorHttp → proxies → fetch) |
-| SyncService | `src/services/SyncService.js` | Sincronização de canais |
-| ServerHealth | `src/services/ServerHealthService.js` | Verificação de saúde dos servidores |
-| Context | `src/context/SourceContext.jsx` | Gerenciamento de estado das fontes |
-
----
-
-## Como Buildar
-
-### Android APK (Desenvolvimento)
 ```bash
-cd /home/pcnono/Secretária/IPTV/meu-iptv
-npm run build
-npx cap sync android
-npx cap run android
-```
-
-### Android APK (Produção)
-```bash
-cd /home/pcnono/Secretária/IPTV/meu-iptv
-npm run build
-npx cap sync android
-cd android
-./gradlew assembleRelease
-# APK em: android/app/build/outputs/apk/release/
-```
-
-### Debug APK (Rápido)
-```bash
-cd /home/pcnono/Secretária/IPTV/meu-iptv
-npx cap sync android
-npx cap run android
+git add -A && git commit -m "backup: antes de [descrição]"
 ```
 
 ---
 
-## Estrutura de Diretórios
+## Contexto de Sessão
 
-```
-/home/pcnono/Secretária/IPTV/meu-iptv/
-├── src/
-│   ├── services/           # Lógica de negócio
-│   │   ├── api.js          ← EDITAR AQUÍ
-│   │   ├── SyncService.js
-│   │   ├── ServerHealthService.js
-│   │   ├── RetryService.js
-│   │   ├── AIService.js
-│   │   ├── AISyncService.js
-│   │   ├── EPGService.js
-│   │   ├── PrefetchService.js
-│   │   ├── SyncManager.js
-│   │   └── channelCache.js
-│   ├── data/
-│   │   └── sources.js      ← EDITAR AQUÍ (fontes IPTV)
-│   └── context/
-│       └── SourceContext.jsx
-├── android/                # Build nativo
-├── NonoTV_v*.apk          # APKs pré-compilados
-├── package.json
-└── AGENTS.md              ← Este arquivo
-```
+Ao iniciar uma nova sessão, leia:
+
+1. `.memoria/IMPLEMENTACAO.md` — histórico técnico e problemas resolvidos
+2. `.memoria/CHARLES.md` — perfil e preferências do dono
+3. `RESUMO_TECNICO_FINAL.md` — estado mais recente
+
+Se esses arquivos não estiverem acessíveis, **pergunte a Charles antes de agir.**
 
 ---
 
-## Histórico de Mudanças
-
-### 29/03/2026 - Migração de Projeto
-- Projeto pai (`/meu-iptv/`) definido como principal
-- Fontes do filho migradas (17 → 37 fontes)
-- Filho marcado como legado
-- Sistema de fallback implementado em api.js
-
-### Antes (Legado)
-- Filho tinha 35+ fontes
-- Pai tinha 17 fontes
-- APK anteriorbuildado do filho
-
----
-
-## Regras para Agentes de IA
-
-1. **SEMPRE** edite no projeto pai (`/meu-iptv/src/`)
-2. **NUNCA** edite no projeto filho (`/meu-iptv/meu-iptv/`) - é apenas backup
-3. **NUNCA** delete arquivos .md ou documentação
-4. Execute `npm run build` antes de gerar APK
-5. Use `npx cap sync android` após modificar código nativo
-6. Teste no emulador antes de considerar 功能 completa
-
----
-
-## Sistema de Credenciais
-
-### Arquivos
-- `.env.example` - Template com todas as variáveis
-- `.env` - Suas credenciais (NUNCA commitar)
-- `src/data/credentials.js` - Módulo que lê as credenciais
-
-### Como usar
-1. Copie `.env.example` para `.env`
-2. Preencha as variáveis com suas credenciais
-3. As credenciais são lidas em tempo de build
-
-### Segurança
-- As credenciais são embedadas no APK em tempo de build
-- Para máxima segurança, implemente um servidor de autenticação
-- Nunca commit arquivos `.env`
-
----
-
-## Problemas Conhecidos
-
-### APK não carrega canais
-- Verificar `src/services/api.js` - sistema de fallback pode falhar
-- Logs: Abra DevTools (ADB) e procure por `[API]` ou `[SyncService]`
-
-### Servidor não responde
-- Fontes podem ter expirado - verificar campo `expires` em `sources.js`
-- Testar URLs manualmente no navegador
-
-### Build falha
-- Limpar cache: `rm -rf node_modules/.cache`
-- Reinstalar deps: `rm -rf node_modules && npm install`
-
----
-
-## Contato /调试
-
-Para debugar no Android:
-```bash
-# Ver logs em tempo real
-adb logcat | grep -i "NonoTV\|Capacitor"
-
-# Abrir DevTools
-adb forward tcp:9222 localabstract:chrome_devtools_remote
-# Abra chrome://inspect no Chrome Desktop
-```
+*AGENTS.md — NonoTV Elite 4K — atualizado em 17/04/2026*

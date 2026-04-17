@@ -6,6 +6,7 @@ import { PlayerProvider } from './context/PlayerContext'
 import { SourceProvider } from './context/SourceContext'
 import { ThemeProvider } from './context/ThemeContext'
 import { PodcastProvider } from './context/PodcastContext'
+import { AuthProvider } from './context/AuthContext'
 import ErrorBoundary from './components/UI/ErrorBoundary.jsx'
 import { detectDevice } from './hooks/useDevice.js'
 
@@ -19,13 +20,15 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <ErrorBoundary>
       <ThemeProvider>
-        <SourceProvider>
-          <PlayerProvider>
-            <PodcastProvider>
-              <App />
-            </PodcastProvider>
-          </PlayerProvider>
-        </SourceProvider>
+        <AuthProvider>
+          <SourceProvider>
+            <PlayerProvider>
+              <PodcastProvider>
+                <App />
+              </PodcastProvider>
+            </PlayerProvider>
+          </SourceProvider>
+        </AuthProvider>
       </ThemeProvider>
     </ErrorBoundary>
   </React.StrictMode>,
