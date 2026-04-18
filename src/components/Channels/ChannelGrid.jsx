@@ -147,8 +147,6 @@ export default function ChannelGrid({ channels, activeGroup, activeCategory, set
                   {g.name}
                 </button>
               ))}
-
-              ))}
             </div>
           )}
 

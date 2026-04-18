@@ -24,6 +24,7 @@ export default function LoginScreen({ onLoginSuccess }) {
     }
 
     const result = await login(email, password);
+    console.log('[LoginScreen] Result:', result);
     
     if (result.success) {
       setSuccess('Login realizado com sucesso!');
@@ -31,7 +32,7 @@ export default function LoginScreen({ onLoginSuccess }) {
         onLoginSuccess?.();
       }, 500);
     } else {
-      setError(result.error || 'Falha no login');
+      setError(result.error + (result.details ? ` (${result.details})` : ''));
     }
     
     setLoading(false);

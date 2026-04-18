@@ -20,6 +20,7 @@ const Input = forwardRef(({
     focus:border-primary focus:ring-1 focus:ring-primary
     transition-all duration-150
     disabled:opacity-50 disabled:cursor-not-allowed
+    min-h-11
   `;
 
   const errorStyles = error 

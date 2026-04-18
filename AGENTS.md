@@ -187,4 +187,46 @@ Se esses arquivos não estiverem acessíveis, **pergunte a Charles antes de agir
 
 ---
 
+## ⚠️ REGRA DE ANÁLISE DE CÓDIGO (Crítica)
+
+**NUNCA sugira exclusão de arquivos sem metodologia rigorosa.**
+
+Erros passados:
+- Taxa de acertividade ~30-40%
+- Marquei arquivos como "mortos" que estavam em uso (HeroSection, ChannelCarousel, VodPlayer, etc)
+- Não tracei as cadeias de import corretamente
+
+### Metodologia Obrigatória para Análise de Código Morto
+
+1. **Rastrear TODOS os imports** — usar grep em TODOS os arquivos .jsx:
+   ```
+   grep -r "import.*NomeDoArquivo" src/
+   ```
+
+2. **Verificar uso real** — não apenas se é importado, mas se é renderizado:
+   ```
+   grep -r "<NomeDoArquivo" src/
+   ```
+
+3. **Testar build** — após qualquer mudança, executar:
+   ```
+   npm run build
+   ```
+
+4. **Confirmar por chain** — arquivos podem ser usados indiretamente:
+   - A → B → C (A usa B, B usa C)
+   - Verificar TODOS os níveis
+
+5. **Build válido é obrigatório** — sem build passando, nenhuma exclusão é válida.
+
+### Padrão de Resposta
+
+Quandoasked sobre código morto ou remoção:
+- ❌ **NUNCA** sugere exclusão baseada em "acho que não usa"
+- ✅ **SEMPRE** forneça evidência de grep showing ZERO usos
+- ✅ **SEMPRE** rodebuild e confirme que passa
+- ✅ **SE** houver dúvida, pergunte antes de agir
+
+---
+
 *AGENTS.md — NonoTV Elite 4K — atualizado em 17/04/2026*

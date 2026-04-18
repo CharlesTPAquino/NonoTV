@@ -7,6 +7,7 @@ import { initSpatialNavigation } from './utils/spatialNavigation';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Sidebar from './components/Layout/Sidebar';
+import BottomNav from './components/Layout/BottomNav';
 import Navbar from './components/Layout/Navbar';
 import ChannelGrid from './components/Channels/ChannelGrid';
 import SeriesGroup from './components/Channels/SeriesGroup';
@@ -15,12 +16,15 @@ import VideoPlayerMinimal from './components/Player/VideoPlayerMinimal';
 import { ChannelGridSkeleton, HeroSkeleton } from './components/UI/Skeleton';
 import SplashScreen from './components/UI/SplashScreen';
 import LoginScreen from './components/Auth/LoginScreen';
+import ConnectionTest from './components/UI/ConnectionTest';
 import { usePlayer } from './context/PlayerContext';
 import { useSources } from './context/SourceContext';
 import { usePodcasts } from './context/PodcastContext';
 import { useChannelValidator } from './hooks/useChannelValidator';
 import { useHorizontalSwipe } from './hooks/useSwipeGesture';
 import { useTVNavigation } from './hooks/useTVNavigation';
+import { useDevice } from './hooks/useDevice';
+import { useAutoHealthCheck } from './hooks/useAutoHealthCheck';
 import { aiService } from './services/AIService';
 import { CHANNELS as LOCAL_CHANNELS } from './data/channels';
 
@@ -35,6 +39,7 @@ const PodcastPlayer = lazy(() => import('./components/Podcast/PodcastPlayer'));
 
 export default function App() {
   const { user, loading } = useAuth();
+  const { isMobile, isTV } = useDevice();
   const [showSplash, setShowSplash] = useState(true);
 
   // Ativar navegação D-pad para TV
@@ -49,6 +54,7 @@ export default function App() {
   const [activeGroup,     setActiveGroup]     = useState('All');
   const [search,          setSearch]          = useState('');
   const [settingsOpen,    setSettingsOpen]    = useState(false);
+  const [connectionTestOpen, setConnectionTestOpen] = useState(false);
   const [settingsTab,      setSettingsTab]      = useState('sources');
   const [channelListOpen, setChannelListOpen] = useState(false);
 
@@ -73,6 +79,8 @@ export default function App() {
     addToHistory, clearHistory, importChannels, exportChannels,
     getSourceStatus, resetSourceStatus, getSettings, updateSettings
   } = useSources();
+
+  const { healthStatus, isChecking: isHealthChecking, getStatusSummary } = useAutoHealthCheck(sources, true);
 
   const { validity, isValidating, validateAll } = useChannelValidator(channels);
 
@@ -230,6 +238,7 @@ export default function App() {
           onOpenChannelList={() => setChannelListOpen(true)}
           onOpenSync={() => { setSettingsTab('sync'); setSettingsOpen(true); }}
           onOpenServerStatus={() => { setSettingsTab('status'); setSettingsOpen(true); }}
+          onOpenConnectionTest={() => setConnectionTestOpen(true)}
           search={search}
           setSearch={setSearch}
           serverStatus={syncStatus?.includes('Conectado') || syncStatus?.includes('Carregado') ? 'online' : error ? 'offline' : 'checking'}
@@ -238,9 +247,11 @@ export default function App() {
         <main 
           className="flex-1 h-full overflow-hidden flex flex-col relative" 
           style={{ 
-            marginLeft: 'calc(var(--sidebar-width) + var(--safe-left))', 
+            marginLeft: isMobile ? '0' : 'calc(var(--sidebar-width) + var(--safe-left))', 
+            marginBottom: isMobile ? 'var(--bottom-nav-h, 68px)' : '0',
             paddingTop: 'var(--safe-top)', 
             paddingRight: 'var(--safe-right)',
+            paddingBottom: isMobile ? '24px' : '0',
             transition: 'margin-left 200ms cubic-bezier(0.25,0.1,0.25,1)' 
           }}
         >
@@ -248,7 +259,8 @@ export default function App() {
           <Navbar 
             search={search} setSearch={setSearch} syncStatus={syncStatus}
             setActiveCategory={(cat) => { setActiveCategory(cat); setActiveGroup('All'); }}
-            onOpenSettings={() => { setSettingsTab('sources'); setSettingsOpen(true); }}
+onOpenSettings={() => { setSettingsTab('sources'); setSettingsOpen(true); }}
+          onOpenConnectionTest={() => setConnectionTestOpen(true)}
             serverStatus={syncStatus?.includes('Conectado') || syncStatus?.includes('Carregado') ? 'online' : error ? 'offline' : 'checking'}
           />
 
@@ -292,6 +304,14 @@ export default function App() {
         </main>
       </div>
 
+      {isMobile && (
+        <BottomNav 
+          activeCategory={activeCategory}
+          setActiveCategory={(cat) => { setActiveCategory(cat); setActiveGroup('All'); }}
+          onOpenSettings={() => { setSettingsTab('sources'); setSettingsOpen(true); }}
+        />
+      )}
+
       {showPlayer && activeChannel && (
         <VideoPlayerMinimal channel={activeChannel} channels={filteredChannels} onClose={closePlayer} />
       )}
@@ -323,6 +343,10 @@ export default function App() {
           <RefreshCw size={16} className={`text-white/50 ${isLoading ? 'animate-spin' : ''}`} />
           <span className="text-[10px] font-semibold uppercase tracking-widest text-white/50">{syncStatus}</span>
         </div>
+      )}
+
+      {connectionTestOpen && (
+        <ConnectionTest onClose={() => setConnectionTestOpen(false)} />
       )}
     </div>
   );

@@ -9,12 +9,14 @@ const PUBLIC_PROXIES = [
 ];
 
 const TIMEOUT_MS = 25000;
+const PRIORITY_TIMEOUT = 45000;
 
 const headers = {
-  'User-Agent': 'VLC/3.0.18 NonoTV/4.2',
+  'User-Agent': 'NonoTV/4.2 (Android/Streaming)',
   'Accept': '*/*',
-  'Accept-Language': 'pt-BR,pt;q=0.9',
-  'Connection': 'keep-alive'
+  'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8',
+  'Connection': 'keep-alive',
+  'Cache-Control': 'no-cache'
 };
 
 function isDevMode() {
@@ -29,20 +31,47 @@ function isNativePlatform() {
   return false;
 }
 
+function getTimeoutForUrl(url) {
+  if (url?.includes('americakg.xyz')) return PRIORITY_TIMEOUT;
+  return TIMEOUT_MS;
+}
+
+function isPrioritySource(url) {
+  return url?.includes('americakg.xyz');
+}
+
+function preconnectAggressive(url) {
+  if (typeof document === 'undefined') return;
+  try {
+    const domain = new URL(url).origin;
+    if (document.querySelector(`link[rel="preconnect"][href="${domain}"]`)) return;
+    const link = document.createElement('link');
+    link.rel = 'preconnect';
+    link.href = domain;
+    link.crossOrigin = 'anonymous';
+    document.head.appendChild(link);
+    console.log('[API] Preconnect ativo para:', domain);
+  } catch (e) {}
+}
+
 async function tryPublicProxy(url, proxyIndex = 0) {
   if (proxyIndex >= PUBLIC_PROXIES.length) {
     throw new Error('All public proxies failed');
   }
   
   const proxy = PUBLIC_PROXIES[proxyIndex];
-  console.log(`[API] Tentando proxy ${proxyIndex + 1}/${PUBLIC_PROXIES.length}`);
+  const timeout = getTimeoutForUrl(url);
+  console.log(`[API] Tentando proxy ${proxyIndex + 1}/${PUBLIC_PROXIES.length} (timeout: ${timeout}ms)`);
+  
+  preconnectAggressive(url);
   
   try {
     const proxyUrl = proxy + encodeURIComponent(url);
     const response = await fetch(proxyUrl, {
       headers,
       mode: 'cors',
-      signal: AbortSignal.timeout(TIMEOUT_MS)
+      signal: AbortSignal.timeout(timeout),
+      priority: isPrioritySource(url) ? 'high' : 'auto'
     });
     
     if (response.ok) {
@@ -59,13 +88,17 @@ async function tryPublicProxy(url, proxyIndex = 0) {
 }
 
 async function tryDirectFetch(url) {
-  console.log('[API] Tentando fetch direto');
+  const timeout = getTimeoutForUrl(url);
+  console.log(`[API] Tentando fetch direto (timeout: ${timeout}ms)`);
+  
+  preconnectAggressive(url);
   
   try {
     const res = await fetch(url, { 
       headers,
       mode: 'cors',
-      signal: AbortSignal.timeout(TIMEOUT_MS)
+      signal: AbortSignal.timeout(timeout),
+      priority: isPrioritySource(url) ? 'high' : 'auto'
     });
     
     if (res.ok) {
@@ -81,11 +114,12 @@ async function tryDirectFetch(url) {
 }
 
 export async function syncSource(url) {
-  console.log('[API] syncSource:', url.substring(0, 50), '...');
+  console.log('[API] syncSource:', url?.substring(0, 60), '...');
   console.log('[API] isNative:', isNativePlatform(), 'isDev:', isDevMode());
   
   const IS_DEV = isDevMode();
   const IS_NATIVE = isNativePlatform();
+  const IS_PRIORITY = isPrioritySource(url);
   
   if (IS_DEV && !IS_NATIVE) {
     console.log('[DEV] Tentando proxy local');
@@ -101,6 +135,20 @@ export async function syncSource(url) {
   }
   
   if (IS_NATIVE) {
+    if (IS_PRIORITY) {
+      console.log('[APK] AmerikaKG detectado: tentativa direta primeiro (sem proxy)');
+      try {
+        return await tryDirectFetch(url);
+      } catch {
+        console.log('[APK] AmerikaKG direto falhou, tentando público...');
+        try {
+          return await tryPublicProxy(url);
+        } catch {
+          throw new Error('AmerikaKG indisponível');
+        }
+      }
+    }
+    
     console.log('[APK] Modo nativo: tentando fetch direto primeiro');
     try {
       return await tryDirectFetch(url);
@@ -114,13 +162,13 @@ export async function syncSource(url) {
     }
   }
   
-  console.log('[WEB] Modo web: tentando proxies públicos');
+  console.log('[WEB] Modo web: tentando fetch direto primeiro (sem proxy)');
   try {
-    return await tryPublicProxy(url);
+    return await tryDirectFetch(url);
   } catch {
-    console.log('[WEB] Proxies falharam, tentando fetch direto');
+    console.log('[WEB] Proxies falharam, tentando público...');
     try {
-      return await tryDirectFetch(url);
+      return await tryPublicProxy(url);
     } catch {
       throw new Error('Falha ao conectar');
     }

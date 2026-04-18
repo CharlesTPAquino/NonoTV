@@ -134,4 +134,69 @@ Para debug no Android (sem ADB disponível):
 
 ---
 
-*Atualizado: 29/03/2026 20:00*
+## Atualização — 17/04/2026
+
+### Auditoria e Limpeza de Código
+
+#### Problema Identificado
+Análise incorreta de código morto (taxa ~30-40% de acertividade).
+
+**Erros cometidos:**
+- Marquei arquivos como "mortos" que estavam em uso (HeroSection, ChannelCarousel, VodPlayer, etc)
+- Não tracei corretamente as cadeias de import
+- Assumi sem verificar
+
+#### Metodologia Aplicada (Regra Clean-Code)
+Seguindo a skill clean-code:
+1. Rastrear TODOS os imports com `grep -r "import.*Arquivo" src/`
+2. Verificar se é renderizado com `grep -r "<Arquivo" src/`
+3. Testar build com `npm run build`
+4. Confirmar cadeia completa (A→B→C)
+5. Build passando é obrigatório para exclusão
+
+#### Ação Corretiva — Regra registrada no AGENTS.md
+Adicionada seção "REGRA DE ANÁLISE DE CÓDIGO" ao AGENTS.md:
+- ❌ NUNCA sugere exclusão baseada em "acho que não usa"
+- ✅ SEMPRE forneça evidência de grep com ZERO usos
+- ✅ SEMPRE rode build e confirme que passa
+- ✅ SE houver dúvida, pergunte antes de agir
+
+#### Limpeza Realizada (14 arquivos removidos)
+
+```
+src/components/Player/
+├── VideoPlayer.jsx       # Old, zero imports
+├── UnifiedPlayer.jsx     # Não usado
+├── MiniPlayer.jsx        # Zero imports
+├── EPGOverlay.jsx        # Zero imports
+├── EPGGrid.jsx           # Zero imports
+└── VodPlayer.jsx         # Zero imports (era dependência de UnifiedPlayer)
+
+src/components/Channels/
+├── CategoryTiles.jsx     # Zero imports
+├── CategorySection.jsx   # Zero imports
+└── VirtualChannelGrid.jsx # Zero imports
+
+src/components/UI/
+├── StatsDashboard.jsx    # Zero imports
+├── PullToRefresh.jsx     # Zero imports
+├── ThemeToggle.jsx       # Zero imports
+└── LockScreen.jsx        # Zero imports
+```
+
+#### Build após limpeza
+✅ Build passando com sucesso
+
+#### Arquivos Confirmados como VIVO (não removidos)
+- HeroSection → ChannelGrid.jsx
+- ChannelCarousel → ChannelGrid.jsx
+- ChannelCard → Múltiplos usos
+- ServerHealthDashboard → SettingsPanel.jsx
+- DiagnosticPanel → SettingsPanel.jsx
+- SyncTab → SettingsPanel.jsx
+- ServerSelector → Navbar.jsx
+- VideoPlayerMinimal → App.jsx
+
+---
+
+*Atualizado: 17/04/2026 19:30*

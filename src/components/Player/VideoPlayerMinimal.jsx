@@ -8,6 +8,7 @@ import useHlsPlayer from '../../hooks/useHlsPlayer';
 import { usePlayer } from '../../context/PlayerContext';
 
 export default function VideoPlayer({ channel, channels, onClose, mode = 'smart' }) {
+  const isVod = channel?.type === 'movie' || channel?.type === 'series';
   const videoRef = useRef(null);
   const containerRef = useRef(null);
   const closeButtonRef = useRef(null);
@@ -20,12 +21,15 @@ export default function VideoPlayer({ channel, channels, onClose, mode = 'smart'
   const [showChannelList, setShowChannelList] = useState(false);
   const [isAiEnhanced, setIsAiEnhanced] = useState(true);
   const [aiStep, setAiStep] = useState('initial');
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
   
   const hideTimerRef = useRef(null);
 
   const { 
     playerState, 
-    togglePlay
+    togglePlay,
+    seekRelative
   } = useHlsPlayer(channel?.url, videoRef, {
     autoPlay: true,
     onQualitiesFound: () => {},
@@ -46,307 +50,166 @@ export default function VideoPlayer({ channel, channels, onClose, mode = 'smart'
   }, [status]);
 
   // ─── CONTROLS VISIBILITY ───
+  // Controles somem após 2 segundos de inatividade
   const showControlsTemporarily = useCallback(() => {
     setShowControls(true);
     if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
-    if (playing) {
-      hideTimerRef.current = setTimeout(() => setShowControls(false), 5000);
-    }
-  }, [playing]);
-
-  const resetHideTimer = useCallback(() => {
-    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
-    if (playing && !showChannelList) {
-      hideTimerRef.current = setTimeout(() => setShowControls(false), 4000);
-    }
-  }, [playing, showChannelList]);
+    hideTimerRef.current = setTimeout(() => {
+      setShowControls(false);
+    }, 2000);
+  }, []);
 
   useEffect(() => {
-    if (buffering) { setShowControls(true); return; }
-    if (playing) resetHideTimer();
-    return () => { if (hideTimerRef.current) clearTimeout(hideTimerRef.current); };
-  }, [playing, buffering, showChannelList, resetHideTimer]);
+    // Inicia timer de 2s quando o player abre
+    hideTimerRef.current = setTimeout(() => setShowControls(false), 2000);
+    return () => {
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    };
+  }, []);
+
+  // Track video time for VOD
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    const updateTime = () => setCurrentTime(video.currentTime);
+    const updateDuration = () => setDuration(video.duration || 0);
+    video.addEventListener('timeupdate', updateTime);
+    video.addEventListener('loadedmetadata', updateDuration);
+    return () => {
+      video.removeEventListener('timeupdate', updateTime);
+      video.removeEventListener('loadedmetadata', updateDuration);
+    };
+  }, [videoRef.current]);
 
   // ─── VOLUME ───
   useEffect(() => {
-    const video = videoRef.current;
-    if (video) {
-      video.volume = volume;
-      video.muted = volume === 0;
-      localStorage.setItem('playerVolume', volume.toString());
-    }
+    if (videoRef.current) videoRef.current.volume = volume;
   }, [volume]);
 
   const toggleMute = useCallback(() => setVolume(prev => prev === 0 ? 0.8 : 0), []);
 
-  // ─── CLOSE ───
-  const handleClose = useCallback((e) => {
-    if (e) { e.preventDefault(); e.stopPropagation(); }
-    if (onClose) onClose();
-  }, [onClose]);
-
-  // ─── CHANNEL NAVIGATION ───
-  const handleNext = useCallback(() => {
-    if (!channels?.length) return;
-    const i = channels.findIndex(c => c.id === channel?.id);
-    if (i < channels.length - 1) playChannel(channels[i + 1]);
-  }, [channels, channel, playChannel]);
-
-  const handlePrev = useCallback(() => {
-    if (!channels?.length) return;
-    const i = channels.findIndex(c => c.id === channel?.id);
-    if (i > 0) playChannel(channels[i - 1]);
-  }, [channels, channel, playChannel]);
-
-  // ─── PIP ───
-  const togglePip = useCallback(async () => {
-    try {
-      if (document.pictureInPictureElement) {
-        await document.exitPictureInPicture();
-        setIsPipActive(false);
-      } else if (videoRef.current) {
-        await videoRef.current.requestPictureInPicture();
-        setIsPipActive(true);
-      }
-    } catch (err) { console.warn('[Player] PiP Error:', err); }
-  }, []);
-
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-    const onEnter = () => setIsPipActive(true);
-    const onLeave = () => setIsPipActive(false);
-    video.addEventListener('enterpictureinpicture', onEnter);
-    video.addEventListener('leavepictureinpicture', onLeave);
-    return () => {
-      video.removeEventListener('enterpictureinpicture', onEnter);
-      video.removeEventListener('leavepictureinpicture', onLeave);
-    };
-  }, []);
-
-  // Auto PiP em background
-  useEffect(() => {
-    if (!document.pictureInPictureEnabled) return;
-    const handleVisibility = () => {
-      if (document.hidden && videoRef.current && !videoRef.current.paused && !document.pictureInPictureElement) {
-        videoRef.current.requestPictureInPicture().catch(() => {});
-      }
-    };
-    document.addEventListener('visibilitychange', handleVisibility);
-    return () => document.removeEventListener('visibilitychange', handleVisibility);
-  }, []);
+  const formatTime = (seconds) => {
+    if (!seconds || isNaN(seconds)) return '00:00';
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
 
   // ─── FULLSCREEN ───
   const toggleFullscreen = useCallback(() => {
-    const elem = containerRef.current;
-    if (!elem) return;
+    if (!containerRef.current) return;
     if (!document.fullscreenElement) {
-      elem.requestFullscreen().then(() => setIsFullscreen(true)).catch(() => {});
+      containerRef.current.requestFullscreen();
+      setIsFullscreen(true);
     } else {
-      document.exitFullscreen().then(() => setIsFullscreen(false));
+      document.exitFullscreen();
+      setIsFullscreen(false);
     }
   }, []);
 
+  // ─── CHANNEL NAV ───
+  const handlePrev = useCallback(() => {
+    if (!channels || !channel) return;
+    const idx = channels.findIndex(c => c.id === channel.id);
+    if (idx > 0) playChannel(channels[idx - 1]);
+  }, [channels, channel, playChannel]);
+
+  const handleNext = useCallback(() => {
+    if (!channels || !channel) return;
+    const idx = channels.findIndex(c => c.id === channel.id);
+    if (idx < channels.length - 1) playChannel(channels[idx + 1]);
+  }, [channels, channel, playChannel]);
+
+  // ─── KEY HANDLER ───
   useEffect(() => {
-    const handler = () => setIsFullscreen(!!document.fullscreenElement);
-    document.addEventListener('fullscreenchange', handler);
-    return () => document.removeEventListener('fullscreenchange', handler);
-  }, []);
-
-  // ─── KEYBOARD HANDLER (PLAYER-SPECIFIC) ───
-  // Este handler é CAPTURADO na fase de capture para ter prioridade sobre o App.jsx
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      // BACK BUTTON — máxima prioridade: fecha player
-      if (e.key === 'Escape' || e.key === 'Back' || e.keyCode === 27 || e.keyCode === 4 || e.keyCode === 10009 || e.keyCode === 461) {
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-
-        if (showChannelList) {
-          setShowChannelList(false);
-        } else if (isFullscreen) {
-          document.exitFullscreen().catch(() => {});
-        } else {
-          handleClose();
-        }
-        return;
-      }
-
-      // Mostrar controles em qualquer tecla
-      showControlsTemporarily();
-
-      if (e.key === 'Enter' || e.key === ' ') {
-        // Se estiver focado num botão (ex: Close, Play), deixa o botão agir nativamente!
-        if (document.activeElement && document.activeElement.tagName === 'BUTTON') return;
-        
-        e.preventDefault();
-        e.stopPropagation();
-        togglePlay();
-        return;
-      }
-
-      if (e.key === 'f' || e.key === 'F') {
-        e.preventDefault();
-        toggleFullscreen();
-      }
+    const onKey = (e) => {
+      if (e.key === 'ArrowLeft') handlePrev();
+      if (e.key === 'ArrowRight') handleNext();
+      if (e.key === ' ') { e.preventDefault(); togglePlay(); }
+      if (e.key === 'f') toggleFullscreen();
+      if (e.key === 'Escape') onClose();
     };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [handlePrev, handleNext, togglePlay, toggleFullscreen, onClose]);
 
-    // Mudei para fase de captura FALSO para não bloquear navegação de botões
-    window.addEventListener('keydown', handleKeyDown, false);
-    window.addEventListener('pointermove', showControlsTemporarily);
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown, false);
-      window.removeEventListener('pointermove', showControlsTemporarily);
-    };
-  }, [togglePlay, handlePrev, handleNext, handleClose, toggleFullscreen, isFullscreen, showChannelList, showControlsTemporarily]);
-
-  // ─── FOCUS TRAP — Foca no close button ao abrir ───
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      closeButtonRef.current?.focus();
-    }, 300);
-    return () => clearTimeout(timer);
-  }, []);
-
-  // ─── VIDEO CLICK ───
-  const handleContainerClick = useCallback(() => {
-    if (!showControls) {
-      showControlsTemporarily();
-    } else {
-      togglePlay();
-    }
-  }, [showControls, showControlsTemporarily, togglePlay]);
-
-  // ─── ERROR STATE ───
-  if (error) {
-    return (
-      <div className="fixed inset-0 z-[500] bg-black flex items-center justify-center p-8" data-nav-zone="player">
-        <div className="max-w-md text-center bg-white/5 backdrop-blur-xl p-8 rounded-2xl border border-white/10">
-          <div className="w-20 h-20 mx-auto mb-6 flex items-center justify-center bg-red-500/20 rounded-full">
-            <X size={40} className="text-red-500" />
-          </div>
-          <h2 className="text-2xl font-bold text-white mb-4">Erro de Reprodução</h2>
-          <p className="text-white/50 mb-8">{error}</p>
-          <button
-            ref={closeButtonRef}
-            onClick={handleClose}
-            className="w-full py-4 font-semibold uppercase text-xs tracking-widest bg-white text-black rounded-xl transition-all active:scale-95 focus:ring-2 focus:ring-white/50"
-          >
-            Voltar
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const ch = channel;
 
   return (
     <div 
       ref={containerRef}
-      className="fixed inset-0 z-[500] bg-black flex items-center justify-center"
+      className="fixed inset-0 z-[200] bg-black flex flex-col"
+      onClick={showControlsTemporarily}
       data-nav-zone="player"
-      onClick={handleContainerClick}
     >
-      <video
-        ref={videoRef}
-        className={`w-full h-full object-contain transition-all duration-700 ${isAiEnhanced && status === 'ready' ? 'brightness-105 contrast-105' : ''}`}
-        style={{ 
-          imageRendering: isAiEnhanced ? 'high-quality' : 'auto',
-          filter: isAiEnhanced && status === 'ready' ? 'contrast(1.08) saturate(1.12) brightness(1.03)' : 'none'
-        }}
-        playsInline
-        autoPlay
-      />
-
-      {/* AI Image Enhancement Overlay (Hardware Accelerated) */}
-      {isAiEnhanced && status === 'ready' && (
-        <div className="absolute inset-0 pointer-events-none z-10 overflow-hidden mix-blend-overlay opacity-30">
-           <div className="w-full h-full backdrop-blur-[0.5px] contrast-[1.1] saturate-[1.15] brightness-[1.05]" />
-        </div>
-      )}
-
-      {/* AI Status Notification (UI Minimal) */}
-      {isAiEnhanced && aiStep !== 'initial' && aiStep !== 'enhanced' && (
-        <div className="absolute top-24 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2 animate-out fade-out zoom-out duration-1000 delay-[2000ms]">
-          {isWarmed && (
-             <div className="px-4 py-2 bg-amber-500/20 backdrop-blur-xl border border-amber-500/30 rounded-full flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-amber-500" />
-              <span className="text-[10px] font-black text-amber-400 uppercase tracking-[0.2em]">
-                Turbo Zapping (Buffer Aquecido)
-              </span>
-            </div>
-          )}
-          <div className="px-4 py-2 bg-blue-500/20 backdrop-blur-xl border border-blue-500/30 rounded-full flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-            <span className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em]">
-              {aiStep === 'analyzing' ? 'IA Analisando Frame...' : 'IA Injetando Hardware Upscale...'}
-            </span>
-          </div>
-        </div>
-      )}
-
-      {/* Loading Spinner */}
-      {(buffering && !playing && status !== 'ready') && (
-        <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none bg-black/30">
-          <div className="relative w-12 h-12">
-            <div className="absolute inset-0 rounded-full border-[3px] border-white/10" />
-            <div className="absolute inset-0 rounded-full animate-spin border-[3px] border-transparent border-t-white/70 border-r-white/70" />
-          </div>
-        </div>
-      )}
-
       {/* ─── TOP BAR ─── */}
       <div 
-        className={`absolute top-0 left-0 right-0 p-4 md:p-6 flex items-start justify-between z-40 transition-opacity duration-300 ${
-          showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        className={`absolute top-0 left-0 right-0 p-4 md:p-6 flex items-center justify-between z-50 transition-all duration-300 ${
+          showControls ? 'opacity-100' : 'opacity-0 -translate-y-2 pointer-events-none'
         }`}
         style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 100%)' }}
         onClick={e => e.stopPropagation()}
       >
+        <button
+          ref={closeButtonRef}
+          onClick={onClose}
+          className="w-11 h-11 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/20 transition-all focus:ring-2 focus:ring-white/50"
+          aria-label="Fechar"
+        >
+          <X size={22} />
+        </button>
+
         <div className="flex items-center gap-3">
           <button
-            ref={closeButtonRef}
-            onClick={handleClose}
-            className="w-11 h-11 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/20 transition-all focus:ring-2 focus:ring-white/50"
-            aria-label="Fechar player"
-          >
-            <X size={20} />
-          </button>
-          
-          <div className="ml-1">
-            <div className="flex items-center gap-2 mb-0.5">
-              <span className="flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded bg-red-600 text-white uppercase">
-                AO VIVO
-              </span>
-              {playerState.quality && playerState.quality !== 'auto' && (
-                <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-white/10 text-white/60 uppercase">
-                  {playerState.quality}
-                </span>
-              )}
-            </div>
-            <h2 className="font-semibold text-base md:text-lg text-white line-clamp-1">
-              {channel?.name}
-            </h2>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
             onClick={() => setShowChannelList(!showChannelList)}
-            className="w-11 h-11 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/20 transition-all focus:ring-2 focus:ring-white/50"
+            className={`w-11 h-11 rounded-full backdrop-blur-md flex items-center justify-center transition-all focus:ring-2 focus:ring-white/50 ${
+              showChannelList ? 'bg-white text-black' : 'bg-white/10 text-white hover:bg-white/20'
+            }`}
             aria-label="Lista de canais"
           >
-            <Tv size={18} />
+            <List size={20} />
           </button>
+
           <button
             onClick={toggleFullscreen}
             className="w-11 h-11 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/20 transition-all focus:ring-2 focus:ring-white/50"
-            aria-label="Tela cheia"
+            aria-label={isFullscreen ? 'Sair da tela cheia' : 'Tela cheia'}
           >
             {isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
           </button>
         </div>
+      </div>
+
+      {/* ─── VIDEO ─── */}
+      <div className="flex-1 relative">
+        {buffering && (
+          <div className="absolute inset-0 flex items-center justify-center z-30">
+            <div className="w-16 h-16 border-4 border-white/20 border-t-white rounded-full animate-spin" />
+          </div>
+        )}
+
+        {error && (
+          <div className="absolute inset-0 flex items-center justify-center z-30 bg-black/80">
+            <div className="text-center p-6">
+              <p className="text-red-500 font-bold mb-2">Erro ao carregar</p>
+              <p className="text-white/60 text-sm">{error}</p>
+            </div>
+          </div>
+        )}
+
+        {/* AI Enhancement Overlay */}
+        {aiStep !== 'initial' && (
+          <div className="absolute top-4 right-4 px-3 py-1.5 bg-black/50 backdrop-blur-md rounded-full text-white text-xs font-mono z-30">
+            AI {aiStep === 'analyzing' ? '🔍' : aiStep === 'upscaling' ? '⚡' : '✨'}
+          </div>
+        )}
+
+        <video
+          ref={videoRef}
+          className="w-full h-full object-contain"
+          playsInline
+          onClick={(e) => { e.stopPropagation(); showControlsTemporarily(); togglePlay(); }}
+        />
       </div>
 
       {/* ─── BOTTOM BAR ─── */}
@@ -377,12 +240,37 @@ export default function VideoPlayer({ channel, channels, onClose, mode = 'smart'
 
         {/* Play/Pause */}
         <button
-          onClick={(e) => { e.stopPropagation(); togglePlay(); }}
+          onClick={(e) => { e.stopPropagation(); showControlsTemporarily(); togglePlay(); }}
           className="w-16 h-16 rounded-full bg-white flex items-center justify-center text-black transition-all hover:scale-105 active:scale-95 focus:ring-2 focus:ring-white/50 shadow-lg"
           aria-label={playing ? 'Pausar' : 'Reproduzir'}
         >
           {playing ? <Pause size={28} /> : <Play size={28} style={{ marginLeft: '3px' }} />}
         </button>
+
+        {/* Seek Controls - Only for VOD (Movies/Series) */}
+        {isVod && (
+          <div className="flex items-center gap-1">
+            <button 
+              onClick={(e) => { e.stopPropagation(); showControlsTemporarily(); seekRelative(-10); }}
+              className="w-9 h-9 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white text-xs font-bold"
+              aria-label="Voltar 10s"
+            >
+              -10
+            </button>
+            <div className="flex items-center gap-1 bg-black/50 backdrop-blur-md rounded-full px-2 py-1 text-white text-xs font-mono">
+              <span>{formatTime(currentTime)}</span>
+              <span className="text-white/50">/</span>
+              <span className="text-white/70">{formatTime(duration)}</span>
+            </div>
+            <button 
+              onClick={(e) => { e.stopPropagation(); showControlsTemporarily(); seekRelative(30); }}
+              className="w-9 h-9 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white text-xs font-bold"
+              aria-label="Avançar 30s"
+            >
+              +30
+            </button>
+          </div>
+        )}
 
         {/* Volume */}
         <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md rounded-full px-3 py-2">
@@ -393,14 +281,6 @@ export default function VideoPlayer({ channel, channels, onClose, mode = 'smart'
           >
             {volume === 0 ? <VolumeX size={18} /> : <Volume2 size={18} />}
           </button>
-          <input 
-            type="range" 
-            min="0" max="1" step="0.1" 
-            value={volume} 
-            onChange={(e) => setVolume(parseFloat(e.target.value))}
-            className="w-20 cursor-pointer accent-white"
-            tabIndex={-1}
-          />
         </div>
       </div>
 

@@ -17,8 +17,9 @@ export default defineConfig({
     minify: 'esbuild',
 
     // CORREÇÃO: remove todos os console.log e debugger em produção automaticamente
+    // Mas mantém logs de [Auth] para debug
     esbuild: {
-      drop: ['console', 'debugger'],
+      drop: process.env.NODE_ENV === 'production' ? ['console', 'debugger'] : [],
     },
 
     rollupOptions: {

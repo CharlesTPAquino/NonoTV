@@ -43,8 +43,8 @@ export default function ContinueWatching({ history = [], onPlayChannel, maxItems
           >
             <div className="relative aspect-video rounded-xl overflow-hidden bg-black/40 border border-white/10 transition-all duration-300 group-hover:scale-105 group-hover:border-white/30 group-focus:border-white group-focus:scale-105 shadow-lg">
               {item.logo ? (
-                <img 
-                  src={item.logo} 
+                <img
+                  src={item.logo}
                   alt={item.name}
                   className="w-full h-full object-cover"
                 />
@@ -76,7 +76,7 @@ export default function ContinueWatching({ history = [], onPlayChannel, maxItems
 
               {item.watchTime > 0 && (
                 <div className="absolute bottom-0 left-0 right-0 h-1 md:h-1.5 bg-white/10">
-                  <div 
+                  <div
                     className="h-full bg-red-600 rounded-r-full shadow-[0_0_8px_rgba(220,38,38,0.8)]"
                     style={{ width: `${Math.min((item.watchTime / 300) * 100, 100)}%` }}
                   />

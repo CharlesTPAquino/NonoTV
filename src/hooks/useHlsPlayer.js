@@ -8,9 +8,10 @@ import { detectServerTech, TECH_PROFILES } from '../services/ServerTechProfiler'
 import { detectTier } from './useDeviceProfile';
 
 /**
- * NonoTV — Hardware-Aware Turbo Player v5.1
+ * NonoTV — Hardware-Aware Turbo Player v5.2
  * P3: AI Metadata Enrichment integrado
  * P4: Auto-Quality Selector (adapta resolução ao bandwidth + hardware)
+ * P5: Otimizado para AmerikaKG (timeouts maiores, retries automáticos)
  */
 
 function detectStreamType(url) {
@@ -49,6 +50,10 @@ function detectStreamType(url) {
   return (type === 'movie' || type === 'series') ? 'hls' : 'live';
 }
 
+function isAmerikaKG(url) {
+  return url?.includes('americakg.xyz');
+}
+
 export default function useHlsPlayer(url, videoRef, options = {}, channel = null) {
   const [playerState, setPlayerState] = useState({
     playing: false, buffering: true, error: null, status: 'idle', quality: 'auto', isWarmed: false
@@ -58,6 +63,8 @@ export default function useHlsPlayer(url, videoRef, options = {}, channel = null
   const optionsRef = useRef(options);
   const initHlsRef = useRef(null);
   const qualityRef = useRef('auto');
+  const retryCountRef = useRef(0);
+  const maxRetries = 3;
 
   useEffect(() => { optionsRef.current = options; }, [options]);
 
@@ -100,33 +107,37 @@ export default function useHlsPlayer(url, videoRef, options = {}, channel = null
     const tier = detectTier();
     const isVod = type === 'direct';
     const isLive = !isVod;
+    const isAmerika = isAmerikaKG(src);
 
-    // Google Video Stitcher — tenta obter manifest otimizado para play instantâneo
-    aiService.getStitchedManifest(src, { name: channel?.name, group: channel?.group }).then(loadUrl => {
-      if (loadUrl !== src) {
-        console.log('[Stitcher] Manifest otimizado recebido');
-      }
-      setupHls(video, loadUrl, src, type, deviceProfile, tier, isLive);
-    }).catch(() => {
-      console.log('[Stitcher] Erro, usando URL original');
-      setupHls(video, src, src, type, deviceProfile, tier, isLive);
-    });
-  }, [destroyHls, update]);
+    if (isAmerika) {
+      console.log('[Turbo-Player] AmerikaKG detectado: modo turbo ativado');
+    }
 
-  const setupHls = useCallback((video, loadUrl, originalSrc, type, deviceProfile, tier, isLive) => {
     const autoConfig = aiService.getAutoQualityConfig(isLive);
+    
+    const amerikaBoost = isAmerika ? {
+      fragLoadingTimeOut: 30000,
+      manifestLoadingTimeOut: 30000,
+      manifestLoadingMaxRetry: 5,
+      fragLoadingMaxRetry: 5,
+      maxBufferLength: 30,
+      maxBufferSize: 60 * 1000 * 1000,
+      liveSyncDurationCount: 10,
+      liveMaxLatencyDurationCount: 15
+    } : {};
+
     const deviceConfig = {
       maxBufferLength: Math.min(autoConfig.maxBufferLength, deviceProfile.maxBuffer, tier.maxBufferLength),
       maxBufferSize: Math.min(autoConfig.maxBufferSize, tier.bufferSize),
-      abrBandWidthFactor: deviceProfile.abrFactor,
+      abrBandwidthFactor: deviceProfile.abrFactor,
     };
     
-    // Combina autoConfig, deviceConfig, e define worker/low-latency explicitamente
     const finalConfig = { 
       ...autoConfig, 
       ...deviceConfig,
-      enableWorker: true, // Habilita worker para performance
-      lowLatencyMode: autoConfig.lowLatencyMode, // Usa o valor dinâmico de autoConfig
+      ...amerikaBoost,
+      enableWorker: true,
+      lowLatencyMode: autoConfig.lowLatencyMode,
       abrEwmaDefaultEstimate: autoConfig.abrEwmaDefaultEstimate 
     };
     
@@ -141,10 +152,10 @@ export default function useHlsPlayer(url, videoRef, options = {}, channel = null
 
     const isDev = import.meta.env.DEV;
     if (isDev) {
-      loadUrl = `http://localhost:3131/?url=${encodeURIComponent(originalSrc)}`;
+      src = `http://localhost:3131/?url=${encodeURIComponent(src)}`;
     }
 
-    hls.loadSource(loadUrl);
+    hls.loadSource(src);
     hls.attachMedia(video);
 
     hls.on(Hls.Events.LEVEL_SWITCHED, (_, data) => {
@@ -159,11 +170,13 @@ export default function useHlsPlayer(url, videoRef, options = {}, channel = null
 
     hls.on(Hls.Events.MANIFEST_PARSED, () => {
       update({ buffering: false, status: 'ready' });
+      retryCountRef.current = 0;
       if (optionsRef.current.autoPlay !== false) video.play().catch(() => {});
     });
 
     hls.on(Hls.Events.ERROR, (_, data) => {
       if (!data.fatal) return;
+      
       if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
         console.warn('[Turbo-Player] Erro de rede fatal, tentando recarregar...');
         hls.startLoad();
@@ -173,9 +186,15 @@ export default function useHlsPlayer(url, videoRef, options = {}, channel = null
         hls.recoverMediaError();
       }
       else {
-        console.error('[Turbo-Player] Erro crítico, reinicializando em 2000ms...');
-        destroyHls();
-        setTimeout(() => initHlsRef.current?.(video, originalSrc), 2000);
+        if (retryCountRef.current < maxRetries) {
+          retryCountRef.current++;
+          console.warn(`[Turbo-Player] Erro crítico, reinicializando em 2000ms (tentativa ${retryCountRef.current}/${maxRetries})...`);
+          destroyHls();
+          setTimeout(() => initHlsRef.current?.(video, src), 2000);
+        } else {
+          console.error('[Turbo-Player] Todas as tentativas esgotadas');
+          update({ error: 'Falha ao reproduzir', buffering: false });
+        }
       }
 
     });
@@ -224,5 +243,17 @@ export default function useHlsPlayer(url, videoRef, options = {}, channel = null
     v.paused ? v.play().catch(() => {}) : v.pause();
   }, [videoRef]);
 
-  return { playerState, togglePlay };
+  const seek = useCallback((time) => {
+    const v = videoRef.current;
+    if (!v) return;
+    v.currentTime = time;
+  }, [videoRef]);
+
+  const seekRelative = useCallback((delta) => {
+    const v = videoRef.current;
+    if (!v) return;
+    v.currentTime = Math.max(0, Math.min(v.duration || 0, v.currentTime + delta));
+  }, [videoRef]);
+
+  return { playerState, togglePlay, seek, seekRelative };
 }

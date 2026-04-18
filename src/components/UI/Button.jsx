@@ -12,6 +12,7 @@ const Button = forwardRef(
     transition-all duration-300 ease-elegant
     disabled:opacity-40 disabled:cursor-not-allowed
     focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand
+    min-h-11
   `;
 
     const variants = {

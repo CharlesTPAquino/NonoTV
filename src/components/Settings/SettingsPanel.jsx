@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { X, Server, Wifi, Heart, History, Upload, Download, RefreshCw, Settings, ChevronRight, Activity, Cloud, Bug, Shield, Database, Zap, Sparkles } from 'lucide-react';
+import { X, Server, Wifi, Heart, History, Upload, Download, RefreshCw, Settings, ChevronRight, Activity, Cloud, Bug, Shield, Database, Zap, User, LogOut, Calendar, CreditCard } from 'lucide-react';
 import ServerHealthDashboard from './ServerHealthDashboard';
 import SyncTab from './SyncTab';
 import DiagnosticPanel from './DiagnosticPanel';
-import { aiService } from '../../services/AIService';
+import { useAuth } from '../../context/AuthContext';
 
 /**
  * PAINEL DE CONFIGURAÇÕES - REDESIGN ULTRA ELITE 4K
@@ -17,9 +17,6 @@ export default function SettingsPanel({
   getSettings, updateSettings, initialTab = 'sources'
 }) {
   const [activeTab, setActiveTab] = useState(initialTab);
-  const [aiEnriching, setAiEnriching] = useState(false);
-  const [aiProgress, setAiProgress] = useState(null);
-  const [aiEnrichedCount, setAiEnrichedCount] = useState(0);
   const panelRef = React.useRef(null);
   
   // Atualizar tab inicial quando changing
@@ -34,14 +31,99 @@ export default function SettingsPanel({
   const tabs = [
     { id: 'sources',    label: 'Fontes',      icon: Database },
     { id: 'status',     label: 'Sinal',       icon: Activity },
-    { id: 'ai',         label: 'AI Hub',       icon: Sparkles },
     { id: 'favorites',  label: 'Favoritos',   icon: Heart },
     { id: 'history',    label: 'Histórico',   icon: History },
+    { id: 'subscription', label: 'Assinatura', icon: CreditCard },
     { id: 'settings',   label: 'Ajustes',     icon: Settings },
     { id: 'diagnostic', label: 'Sistema',     icon: Shield },
   ];
 
   const settings = getSettings();
+
+  // Hook de autenticação
+  const { user, isLocalAuth, logout } = useAuth() || {};
+  
+  // Estado para dados do banco
+  const [subscriptionData, setSubscriptionData] = useState(null);
+  const [loadingSubscription, setLoadingSubscription] = useState(false);
+
+  // Buscar dados atualizados do Supabase
+  useEffect(() => {
+    if (activeTab === 'subscription') {
+      fetchSubscriptionData();
+    }
+  }, [activeTab]);
+
+  const fetchSubscriptionData = async () => {
+    setLoadingSubscription(true);
+    const userName = localStorage.getItem('nono_auth_name');
+    
+    if (!userName) {
+      setLoadingSubscription(false);
+      return;
+    }
+
+    const VITE_SUPABASE_URL = import.meta?.env?.VITE_SUPABASE_URL;
+    const VITE_SUPABASE_ANON_KEY = import.meta?.env?.VITE_SUPABASE_ANON_KEY;
+
+    if (VITE_SUPABASE_URL && VITE_SUPABASE_ANON_KEY) {
+      try {
+        const { createClient } = await import('@supabase/supabase-js');
+        const supabase = createClient(VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY);
+        
+        const { data, error } = await supabase
+          .from('clients')
+          .select('name, plan, expires, active, created_at')
+          .eq('name', userName)
+          .single();
+
+        if (data && !error) {
+          setSubscriptionData(data);
+          // Atualizar localStorage com dados do banco
+          localStorage.setItem('nono_auth_plan', String(data.plan || 30));
+          if (data.expires) {
+            localStorage.setItem('nono_auth_expiry', String(data.expires));
+          }
+        }
+      } catch (err) {
+        console.log('[Assinatura] Erro ao buscar dados:', err.message);
+      }
+    }
+    setLoadingSubscription(false);
+  };
+
+  // Calcular dias restantes
+  const getExpiryInfo = () => {
+    // Primeiro tenta usar dados do banco (mais atualizado)
+    if (subscriptionData?.expires) {
+      const daysLeft = Math.ceil((subscriptionData.expires - Date.now()) / (1000 * 60 * 60 * 24));
+      return daysLeft > 0 ? daysLeft : 0;
+    }
+    // Fallback para localStorage
+    const expiry = localStorage.getItem('nono_auth_expiry');
+    if (!expiry || expiry <= 0) return null;
+    const daysLeft = Math.ceil((expiry - Date.now()) / (1000 * 60 * 60 * 24));
+    return daysLeft > 0 ? daysLeft : 0;
+  };
+
+  const daysRemaining = getExpiryInfo();
+  const userName = localStorage.getItem('nono_auth_name') || (user?.name || 'Usuário');
+  const userPlan = subscriptionData?.plan || localStorage.getItem('nono_auth_plan') || (user?.plan || '30');
+
+  // Função para logout
+  const handleLogout = async () => {
+    if (logout) {
+      await logout();
+    } else {
+      localStorage.removeItem('nono_auth_token');
+      localStorage.removeItem('nono_auth_expiry');
+      localStorage.removeItem('nono_auth_name');
+      localStorage.removeItem('nono_auth_plan');
+      localStorage.removeItem('nono_password');
+      localStorage.removeItem('nono_device_id');
+    }
+    window.location.reload();
+  };
 
   const handleImportM3U = () => {
     const input = document.createElement('input');
@@ -307,104 +389,92 @@ export default function SettingsPanel({
               </div>
             )}
 
-            {activeTab === 'ai' && (
+            {activeTab === 'subscription' && (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                <div className="p-6 bg-gradient-to-br from-white/10 to-transparent border border-white/20/20 rounded-[1.5rem]">
-                  <div className="flex items-center gap-3 mb-4">
-                    <Sparkles size={24} className="text-white/50" />
+                {/* Card do Usuário */}
+                <div className="p-8 bg-gradient-to-br from-white/10 to-transparent border border-white/20/20 rounded-[1.5rem]">
+                  <div className="flex items-center gap-6 mb-6">
+                    <div className="w-20 h-20 bg-gradient-to-br from-red-600 to-red-700 rounded-full flex items-center justify-center shadow-2xl shadow-red-600/30">
+                      <User size={40} className="text-white" />
+                    </div>
                     <div>
-                      <p className="font-black text-white text-sm uppercase tracking-widest">AI Metadata Enrichment</p>
-                      <p className="text-white/30 text-[9px] font-bold uppercase mt-1">Gemini 1.5 Flash</p>
+                      <p className="font-black text-white text-2xl tracking-tighter uppercase">{userName}</p>
+                      <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest mt-1">
+                        {isLocalAuth ? 'Conta Local' : 'Conta Premium'}
+                      </p>
+                      {loadingSubscription && (
+                        <p className="text-white/20 text-[8px] font-bold uppercase tracking-widest mt-1">Sincronizando...</p>
+                      )}
                     </div>
                   </div>
-                  <p className="text-white/40 text-xs leading-relaxed">
-                    Gera descrições automáticas para canais e filmes sem EPG usando inteligência artificial. 
-                    Cada canal recebe uma descrição única e contextual.
-                  </p>
-                </div>
-
-                <div className="flex items-center justify-between p-6 bg-white/5 border border-white/5 rounded-[1.5rem]">
-                  <div>
-                    <p className="font-black text-white text-xs uppercase tracking-widest">Ativar AI</p>
-                    <p className="text-white/20 text-[9px] font-bold uppercase mt-1">Enriquecer metadados automaticamente</p>
+                  
+                  {/* Info do Plano */}
+                  <div className="grid grid-cols-2 gap-4 mt-6">
+                    <div className="p-4 bg-white/5 rounded-xl">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Calendar size={16} className="text-red-500" />
+                        <p className="text-white/30 text-[9px] font-bold uppercase tracking-widest">Plano</p>
+                      </div>
+                      <p className="text-white text-lg font-black">{userPlan} dias</p>
+                    </div>
+                    <div className="p-4 bg-white/5 rounded-xl">
+                      <div className="flex items-center gap-2 mb-2">
+                        <CreditCard size={16} className="text-red-500" />
+                        <p className="text-white/30 text-[9px] font-bold uppercase tracking-widest">Validade</p>
+                      </div>
+                      <p className="text-white text-lg font-black">
+                        {daysRemaining !== null ? `${daysRemaining} dias` : 'Ilimitado'}
+                      </p>
+                    </div>
                   </div>
-                  <button
-                    onClick={() => updateSettings({ aiEnrichment: !settings.aiEnrichment })}
-                    className={`w-12 h-7 rounded-full transition-all p-1 ${
-                      settings.aiEnrichment ? 'bg-red-600' : 'bg-white/10'
-                    }`}
-                  >
-                    <div className={`w-5 h-5 bg-white rounded-full shadow-xl transition-transform ${
-                      settings.aiEnrichment ? 'translate-x-5' : 'translate-x-0'
-                    }`} />
-                  </button>
+
+                  {/* Contador Regressivo Visual */}
+                  {daysRemaining !== null && daysRemaining <= 7 && daysRemaining > 0 && (
+                    <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+                      <p className="text-red-400 text-[10px] font-bold uppercase tracking-widest text-center">
+                        ⚠️ Sua assinatura expira em {daysRemaining} dia{daysRemaining > 1 ? 's' : ''}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
-                <button
-                  onClick={async () => {
-                    if (aiEnriching) return;
-                    setAiEnriching(true);
-                    setAiEnrichedCount(0);
-                    try {
-                      const channels = onExportChannels?.() || [];
-                      const enriched = await aiService.batchEnrichMetadata(
-                        channels, 10,
-                        (done, total) => {
-                          setAiProgress({ done, total });
-                          setAiEnrichedCount(done);
-                        }
-                      );
-                      setAiEnrichedCount(enriched.filter(c => c.aiEnriched).length);
-                    } catch (e) {
-                      console.error('[AI] Erro:', e);
-                    } finally {
-                      setAiEnriching(false);
-                      setAiProgress(null);
-                    }
-                  }}
-                  disabled={aiEnriching}
-                  className={`w-full flex items-center justify-center gap-3 px-6 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all ${
-                    aiEnriching
-                      ? 'bg-white/5 text-white/20 cursor-not-allowed'
-                      : 'bg-red-600 text-white hover:scale-[1.02] hover:bg-red-500 shadow-[0_10px_30px_rgba(220,38,38,0.25)]'
-                  }`}
-                >
-                  {aiEnriching ? (
-                    <>
-                      <RefreshCw size={16} className="animate-spin" />
-                      {aiProgress ? `Enriquecendo ${aiProgress.done}/${aiProgress.total}` : 'Processando...'}
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles size={16} />
-                      Enriquecer Todos com IA
-                    </>
-                  )}
-                </button>
+                {/* Status da Conta */}
+                <div className="p-6 bg-white/5 border border-white/5 rounded-[1.5rem]">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-black text-white text-xs uppercase tracking-widest">Status da Conta</p>
+                      <p className={`text-[10px] font-bold uppercase tracking-widest mt-1 ${subscriptionData?.active === false ? 'text-red-400' : 'text-green-400'}`}>
+                        ● {subscriptionData?.active === false ? 'Inativa' : 'Ativa'}
+                      </p>
+                    </div>
+                    <div className="w-12 h-12 bg-green-500/10 rounded-full flex items-center justify-center">
+                      <Activity size={20} className="text-green-500" />
+                    </div>
+                  </div>
+                </div>
 
-                {aiEnrichedCount > 0 && (
-                  <div className="text-center p-4 bg-green-500/10 border border-green-500/20 rounded-xl">
-                    <p className="text-green-400 text-xs font-bold">{aiEnrichedCount} canais enriquecidos com sucesso</p>
+                {/* Dados do Banco (Debug) */}
+                {subscriptionData && (
+                  <div className="p-4 bg-white/5 border border-white/5 rounded-xl">
+                    <p className="text-white/20 text-[9px] font-bold uppercase tracking-widest mb-2">Dados do Servidor</p>
+                    <p className="text-white/40 text-[8px] font-mono">
+                      ID: {subscriptionData.name} | Plano: {subscriptionData.plan} dias | Expira: {subscriptionData.expires ? new Date(subscriptionData.expires).toLocaleDateString('pt-BR') : 'N/A'}
+                    </p>
                   </div>
                 )}
 
-                <div className="p-4 bg-white/5 border border-white/5 rounded-xl">
-                  <p className="text-white/20 text-[9px] font-bold uppercase tracking-widest">Cache AI</p>
-                  <p className="text-white/40 text-[8px] mt-1">Metadados em cache por 7 dias</p>
-                  <button
-                    onClick={() => {
-                      localStorage.removeItem('nono_ai_metadata');
-                      setAiEnrichedCount(0);
-                    }}
-                    className="mt-2 text-red-400/50 hover:text-red-400 text-[9px] font-black uppercase tracking-widest"
-                  >
-                    Limpar Cache AI
-                  </button>
-                </div>
+                {/* Botão Sair */}
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center justify-center gap-3 px-6 py-5 bg-red-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-red-500 hover:scale-[1.02] transition-all shadow-2xl shadow-red-600/20"
+                >
+                  <LogOut size={18} />
+                  Sair da Conta
+                </button>
               </div>
             )}
 
-            {activeTab === 'settings' && (
+{activeTab === 'settings' && (
               <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
                 <div className="flex items-center justify-between p-6 bg-white/5 border border-white/5 rounded-[1.5rem]">
                   <div>
@@ -417,7 +487,7 @@ export default function SettingsPanel({
                       settings.autoFallback ? 'bg-red-600' : 'bg-white/10'
                     }`}
                   >
-                    <div className={`w-5 h-5 bg-white rounded-full transition-transform shadow-xl ${
+                    <div className={`w-5 h-5 bg-white rounded-full shadow-xl transition-transform ${
                       settings.autoFallback ? 'translate-x-5' : 'translate-x-0'
                     }`} />
                   </button>
