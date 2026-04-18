@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Home, Tv, Film, Clapperboard, Settings, Mic, LayoutGrid, CheckCircle, XCircle, Activity } from 'lucide-react';
 import logoImg from '../../assets/logo.png';
 import { useDevice } from '../../hooks/useDevice';
@@ -13,23 +13,46 @@ const NAV_ITEMS = [
 
 export default function Sidebar({ activeCategory, setActiveCategory, onOpenSettings, onOpenChannelList, onOpenServerStatus, serverStatus }) {
   const { isTV } = useDevice();
-  const [expanded, setExpanded] = useState(isTV); // TV: sempre expandida por padrão
+  const [expanded, setExpanded] = useState(isTV);
+  const hideTimerRef = useRef(null);
 
   const isOnline = serverStatus === 'online' || serverStatus === 'connected';
   const isOffline = serverStatus === 'offline' || serverStatus === 'error';
 
+  // Auto-hide após 3 segundos de inatividade
+  const startHideTimer = () => {
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    hideTimerRef.current = setTimeout(() => setExpanded(false), 3000);
+  };
+
   // Handlers adaptativos: mouse para desktop, foco para TV
   const expandHandlers = isTV
     ? {
-        onFocus: () => setExpanded(true),
+        onFocus: () => {
+          if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+          setExpanded(true);
+        },
         onBlur: (e) => {
           if (!e.currentTarget.contains(e.relatedTarget)) setExpanded(false);
         }
       }
     : {
-        onMouseEnter: () => setExpanded(true),
-        onMouseLeave: () => setExpanded(false),
+        onMouseEnter: () => {
+          if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+          setExpanded(true);
+        },
+        onMouseLeave: () => startHideTimer(),
       };
+
+  // Quando não está expandido, começa timer para colapsar
+  useEffect(() => {
+    if (!expanded && !isTV) {
+      startHideTimer();
+    }
+    return () => {
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    };
+  }, [expanded, isTV]);
 
   const sidebarWidth = isTV ? (expanded ? '240px' : '88px') : (expanded ? '224px' : '68px');
 
