@@ -26,10 +26,6 @@ const supabaseAnon = VITE_SUPABASE_URL && VITE_SUPABASE_ANON_KEY
   ? createClient(VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY) 
   : null;
 
-const supabaseService = VITE_SUPABASE_URL && VITE_SUPABASE_SERVICE_KEY 
-  ? createClient(VITE_SUPABASE_URL, VITE_SUPABASE_SERVICE_KEY) 
-  : null;
-
 function getDeviceId() {
   let deviceId = localStorage.getItem('nono_device_id');
   if (!deviceId) {
@@ -417,6 +413,11 @@ export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+}
+
+export default AuthContext;n AuthProvider');
   }
   return context;
 }

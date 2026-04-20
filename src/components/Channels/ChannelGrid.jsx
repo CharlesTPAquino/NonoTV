@@ -60,8 +60,20 @@ export default function ChannelGrid({ channels, activeGroup, activeCategory, set
         return { ...ch, type: 'live' };
       });
     }
+    if (activeCategory === 'movie') {
+      return sliced.map(ch => {
+        if (ch.type === 'movie') return ch;
+        return { ...ch, type: 'movie' };
+      });
+    }
+    if (activeCategory === 'series') {
+      return sliced.map(ch => {
+        if (ch.type === 'series') return ch;
+        return { ...ch, type: 'series' };
+      });
+    }
     return sliced;
-  }, [standard, limit, isLiveCategory]);
+  }, [standard, limit, isLiveCategory, activeCategory]);
 
   const maxCarousels = profile.carousels || 12;
 

@@ -1,31 +1,75 @@
-# NonoTV IPTV - Contexto da Sessão (v8.7.0 Elite Alpha - AI & Premium UI)
+# NonoTV IPTV - Contexto da Sessão
 
-> Última atualização: 04/04/2026 às 22:30
-> Status: Interface Premium Estabilizada / AI Injecting Ativo
+> Última atualização: 20/04/2026 às 12:20
+> Status: Aspect ratio 2:3 aplicado para movies e series
 
 ---
 
-## 📍 De Onde Viemos (O Passado)
-- **Legado v4.1 - v5.9:** Um player unificado que tentava processar tudo na Main Thread.
-- **Problemas Crônicos:** Travamentos de 15s em listas grandes. Player engasgava em aparelhos Mi Stick, e a UI não parecia premium.
+## 📍 De Onde Viemos
+- **18/04:** Sistema restaurado após reversão / Cloudflare Worker novo
+- **19/04:** -
+- **20/04:** Correção do aspect ratio dos cards
 
-## 🛠️ Onde Estamos (O Hoje - v8.7.0)
+## 🛠️ Onde Estamos (18/04/2026)
 
-### 1. AI Hardware Neural Enhancement (Sucesso ✅)
-- **Injeção de Imagem:** Filtros `contrast`, `saturate` e algoritmos de sharpening de bordas injetados via GPU ao rodar os canais pelo `<VideoPlayerMinimal>`.
-- **Zapping Preditivo:** Implementado `prefetchService` que pré-carrega o manifesto `.m3u8` ao focar (hover/focus) em um card por mais de 800ms.
+### 1. Cloudflare Worker Recriado ✅
+- **URL:** https://nonotv-auth.nonotv-auth.workers.dev
+- **APIs:** login, validate, CRUD clientes
+- **Dados:** KV Namespace (Cloudflare)
 
-### 2. Interface Elite "Deep Layering" (Sucesso ✅)
-- **Hero Section Cinemático:** Reescrita completa do Hero com poster flutuante nítido à direita, sombras pesadas e glow (efeito neon), mantendo fundo embaçado (Glassmorphism). Funciona em TVs (modo paisagem) via responsividade focada.
-- **Categorização Fina (M3U):** Extração de marcas (HBO, Telecine, Premiere, SporTV, ESPN, 4K) agrupando-as automaticamente na UI.
+### 2. Servidores Restaurados ✅
+- **Principal:** Ramys (ethertwo.sbs) - FUNCIONANDO
+- **GPAmigos:** 6 contas (d.plmv.site)
+- **Outros:** +90 servidores
 
-### 3. Voice Control Semântico (Sucesso ✅)
-- **Web Speech + Gemini:** Inserido microfone na barra de busca. A IA capta fala natural (ex: "quero ver esportes"), processa a intenção e filtra o app via busca semântica assíncrona.
+### 3. APK Gerado ✅
+- **Build:** NonoTV_v2026-04-18_16-54_debug.apk
+- **Tamanho:** 11 MB
 
-## 🎯 Para Onde Vamos (O Futuro)
+---
 
-### Prioridade 1: EPG Generativo e Completude de Grades
-> Utilizar a IA para criar um `EPGService` inteligente, que preencha as grades de canais faltantes, sem pesar no motor de renderização.
+## ⚠️ Pendências
 
-### Prioridade 2: Perfis de Usuário & Sincronização em Nuvem (Supabase)
-> Criar a infraestrutura de login/sessão para manter os Favoritos, Histórico e Progresso de "Continue Assistindo" persistentes em qualquer dispositivo.
+1. **KV vazio** - Clientes precisam ser recadastrados
+2. **Teste em device** - Verificar APK
+3. **Limpeza** - Remover contas expiradas
+
+---
+
+## 🎯 Para Onde Vamos
+
+### Prioridade 1: Teste em Produção
+> Verificar se APK conecta nos servidores
+
+### Prioridade 2: Migração de Clientes
+> Transferir dados do Supabase para KV ou usar Supabase direto
+
+### Prioridade 3: Limpeza de Expirados
+> Remover contas com expiry vencido
+
+---
+
+## 📁 Arquivos Importantes
+
+| Arquivo | Descrição |
+|---------|----------|
+| `AGENTS.md` | Regras do projeto |
+| `REGISTRO_SESSAO_18-04-2026.md` | Registro completo |
+| `src/data/sources.js` | Lista servidores |
+| `src/data/credentials.js` | Credenciais |
+| `cloudflare-workers/nonotv-auth/` | Worker |
+
+---
+
+## 🔧 Comandos Úteis
+
+```bash
+# Build APK
+npm run build && npx cap sync android && cd android && ./gradlew assembleDebug
+
+# Teste servidor
+curl "http://d.plmv.site:80/get.php?username=y6kgH8yo5U&password=rvYx1tzezU&type=m3u_plus"
+
+# Deploy Worker
+cd cloudflare-workers/nonotv-auth && wrangler deploy
+```

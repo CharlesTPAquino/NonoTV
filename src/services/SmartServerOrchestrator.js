@@ -7,6 +7,8 @@ const SERVER_CONFIGS = {
   'amsplay.com': { output: 'ts', agent: 'VLC', buffer: 8000 },
   'canal-pro.xyz': { output: 'ts', agent: 'VLC', buffer: 8000 },
   'ultraflex.top': { output: 'm3u8', agent: 'Smarters', buffer: 5000 },
+  'play.dnsrot.vip': { output: 'ts', agent: 'VLC', buffer: 8000 },
+  'flowinbler.net': { output: 'm3u', agent: 'Smarters', buffer: 5000 },
   'default': { output: 'm3u_plus', agent: 'VLC', buffer: 5000 }
 };
 

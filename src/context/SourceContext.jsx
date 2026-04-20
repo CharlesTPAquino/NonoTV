@@ -28,9 +28,9 @@ export const SourceProvider = ({ children }) => {
         return found;
       }
     }
-    const americakg = INITIAL_SOURCES.find(s => s.id === 'americakg-1');
-    console.log('[SourceContext] Usando AmericaKG como padrão:', americakg?.name);
-    return americakg || INITIAL_SOURCES[0];
+    const defaultSource = INITIAL_SOURCES.find(s => s.priority === 'high');
+    console.log('[SourceContext] Usando fonte padrão:', defaultSource?.name);
+    return defaultSource || INITIAL_SOURCES[0];
   };
   
   const [activeSource, setActiveSource] = useState(getInitialSource);
@@ -387,9 +387,9 @@ export const SourceProvider = ({ children }) => {
       
       if (source && source.id !== activeSource.id) {
         selectSource(source);
-      } else if (!saved && activeSource.id !== 'americakg-1') {
-        const americakg = sources.find(s => s.id === 'americakg-1');
-        if (americakg) selectSource(americakg);
+      } else if (!saved && activeSource.priority !== 'high') {
+        const prioritySource = sources.find(s => s.priority === 'high');
+        if (prioritySource) selectSource(prioritySource);
       }
     }
   }, [sources]);

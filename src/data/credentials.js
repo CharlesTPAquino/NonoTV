@@ -220,6 +220,11 @@ export const CREDENTIALS = {
     host: getEnv('VITE_GPAMIGOS_HOST', 'http://d.plmv.site'),
     accounts: [
       { user: 'gerivaldovaldo', pass: '100limitscell', expires: '07-04-26' },
+      { user: 'y6kgH8yo5U', pass: 'rvYx1tzezU', expires: '17-05-26' },
+      { user: 'thiago08023p2', pass: 'fg55c77ee11', expires: '07-05-26' },
+      { user: 'titico9455', pass: 'ticotiti559', expires: '26-04-26' },
+      { user: 'alveswesley', pass: 'wa7868189074', expires: '01-05-26' },
+      { user: 'andre8299x2', pass: 'ijq4ou454d', expires: '23-04-26' },
     ]
   },
 
@@ -241,6 +246,39 @@ export const CREDENTIALS = {
     host: getEnv('VITE_SANSUYTV_HOST', 'http://sansuygtv.site:80'),
     accounts: [
       { user: '19998728046', pass: 'eli19734848', expires: '11-04-26' },
+    ]
+  },
+
+  godofwar: {
+    host: 'http://play.dnsrot.vip:80',
+    accounts: [
+      { user: 'anacarolina284', pass: 'oj2ej4kjuxh', expires: '12-05-26' },
+      { user: 'wandeleyy', pass: 'feplyjvnaq8', expires: '16-05-26' },
+      { user: 'assiskolke', pass: 'nobzh85c38', expires: '30-04-26' },
+      { user: 'renato4730', pass: 'n7dz8ti9rhg', expires: '14-05-26' },
+      { user: '12411235', pass: 'iyouaiw218a', expires: '11-05-26' },
+      { user: '21951001220Anual', pass: 'qf2hs4rv0mk', expires: '05-09-26' },
+    ]
+  },
+
+  suzanor: {
+    host: 'http://flowinbler.net',
+    accounts: [
+      { user: 'brunomartins', pass: 'brunomartins@2021', expires: '25-04-26' },
+    ]
+  },
+
+  srv3: {
+    host: 'http://srv3.site',
+    accounts: [
+      { user: '833179913', pass: '316542245', expires: '20-06-26' },
+    ]
+  },
+
+  cldplay: {
+    host: 'http://srv.cldplay.in',
+    accounts: [
+      { user: 'elisaryasalarecanto01', pass: '75001894857', expires: '18-05-26' },
     ]
   },
 };

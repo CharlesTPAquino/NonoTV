@@ -28,11 +28,11 @@ export const SOURCES = [
     status: 'stable'
   },
 
-  // 🇺🇸 AMERIKAKG - MELHOR SERVIDOR (Principal)
-  ...CREDENTIALS.americakg.accounts.map((acc, i) => ({
-    id: `americakg-${i + 1}`,
-    name: `🇺🇸 AmerikaKG ${i === 0 ? '(Principal)' : `(${i + 1})`}`,
-    url: buildUrl(CREDENTIALS.americakg.host, acc.user, acc.pass),
+  // 🇧🇷 RAMYS (ETHERTWO) - Servidor Principal que está FUNCIONANDO
+  ...CREDENTIALS.ramys.accounts.map((acc, i) => ({
+    id: `ramys-${i + 1}`,
+    name: `🇧🇷 Ramys ${i === 0 ? '(Principal)' : `(${i + 1})`}`,
+    url: buildUrl(CREDENTIALS.ramys.host, acc.user, acc.pass),
     category: 'Premium',
     priority: i === 0 ? 'high' : 'fallback'
   })),
@@ -104,6 +104,103 @@ export const SOURCES = [
     id: `brazilzao-${i + 1}`,
     name: `🇧🇷 Brazilzão (${acc.user})`,
     url: buildUrl(CREDENTIALS.brazilzao.host, acc.user, acc.pass),
+    category: 'Premium'
+  })),
+
+  // 🔵 KAZING FUN
+  ...CREDENTIALS.kazingfun.accounts.map((acc, i) => ({
+    id: `kazingfun-${i + 1}`,
+    name: `🔵 Kazing Fun (${acc.user})`,
+    url: buildUrl(CREDENTIALS.kazingfun.host, acc.user, acc.pass),
+    category: 'Premium'
+  })),
+
+  // 🇺🇸 AMERICAKG - MELHOR SERVIDOR
+  ...CREDENTIALS.americakg.accounts.map((acc, i) => ({
+    id: `americakg-${i + 1}`,
+    name: `🇺🇸 AmerikaKG ${i === 0 ? '(Principal)' : `(${i + 1})`}`,
+    url: buildUrl(CREDENTIALS.americakg.host, acc.user, acc.pass),
+    category: 'Premium',
+    priority: i === 0 ? 'high' : 'fallback'
+  })),
+
+  // 🟢 MX51 (restaurado do backup)
+  ...CREDENTIALS.mx51.accounts.map((acc, i) => ({
+    id: `mx51-${i + 1}`,
+    name: `🟢 MX51 (${acc.user})`,
+    url: buildUrl(CREDENTIALS.mx51.host, acc.user, acc.pass),
+    category: 'Premium'
+  })),
+
+  // 🎬 AMSPLAY (restaurado do backup)
+  ...CREDENTIALS.amsplay.accounts.map((acc, i) => ({
+    id: `amsplay-${i + 1}`,
+    name: `🎬 AmsPlay (${acc.user})`,
+    url: buildUrl(CREDENTIALS.amsplay.host, acc.user, acc.pass),
+    category: 'Premium'
+  })),
+
+  // 👥 GPAMIGOS (restaurado do backup)
+  ...CREDENTIALS.gpamigos.accounts.map((acc, i) => ({
+    id: `gpamigos-${i + 1}`,
+    name: `👥 GPAmigos (${acc.user})`,
+    url: buildUrl(CREDENTIALS.gpamigos.host, acc.user, acc.pass),
+    category: 'Premium'
+  })),
+
+  // 🍳 CHEFEM CASA (restaurado do backup)
+  ...CREDENTIALS.chefemcasa.accounts.map((acc, i) => ({
+    id: `chefemcasa-${i + 1}`,
+    name: `🍳 Chef em Casa (${acc.user})`,
+    url: buildUrl(CREDENTIALS.chefemcasa.host, acc.user, acc.pass),
+    category: 'Premium'
+  })),
+
+  // 🦅 FALCON12 (restaurado do backup)
+  ...CREDENTIALS.falcon12.accounts.map((acc, i) => ({
+    id: `falcon12-${i + 1}`,
+    name: `🦅 Falcon12 (${acc.user})`,
+    url: buildUrl(CREDENTIALS.falcon12.host, acc.user, acc.pass),
+    category: 'Premium'
+  })),
+
+  // 📺 SANSUY TV (restaurado do backup)
+  ...CREDENTIALS.sansuygtv.accounts.map((acc, i) => ({
+    id: `sansuygtv-${i + 1}`,
+    name: `📺 Sansuy TV (${acc.user})`,
+    url: buildUrl(CREDENTIALS.sansuygtv.host, acc.user, acc.pass),
+    category: 'Premium'
+  })),
+
+  // ⚔️ GOD OF WAR (DNSROT.VIP - USA)
+  ...CREDENTIALS.godofwar.accounts.map((acc, i) => ({
+    id: `godofwar-${i + 1}`,
+    name: `⚔️ God of War ${i + 1}`,
+    url: buildUrl(CREDENTIALS.godofwar.host, acc.user, acc.pass),
+    category: 'Premium'
+  })),
+
+  // 🌙 SUZANOR (FLOWINBLER.NET)
+  ...CREDENTIALS.suzanor.accounts.map((acc, i) => ({
+    id: `suzanor-${i + 1}`,
+    name: `🌙 Suzanor Flowinbler`,
+    url: buildUrl(CREDENTIALS.suzanor.host, acc.user, acc.pass),
+    category: 'Premium'
+  })),
+
+  // 🔷 SRV3 (SRV3.SITE)
+  ...CREDENTIALS.srv3.accounts.map((acc, i) => ({
+    id: `srv3-${i + 1}`,
+    name: `🔷 SRV3`,
+    url: buildUrl(CREDENTIALS.srv3.host, acc.user, acc.pass),
+    category: 'Premium'
+  })),
+
+  // ☁️ CLDPLAY (SRV.CLDPLAY.IN)
+  ...CREDENTIALS.cldplay.accounts.map((acc, i) => ({
+    id: `cldplay-${i + 1}`,
+    name: `☁️ CLDPlay`,
+    url: buildUrl(CREDENTIALS.cldplay.host, acc.user, acc.pass),
     category: 'Premium'
   })),
 ];
